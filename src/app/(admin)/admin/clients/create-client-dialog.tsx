@@ -1,0 +1,73 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { createClient } from "./actions";
+
+export function CreateClientDialog() {
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>New client</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create client</DialogTitle>
+          <DialogDescription>
+            An organization that hosts workshops with Fed Pilot.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          action={(fd) => {
+            startTransition(async () => {
+              try {
+                await createClient(fd);
+                toast.success("Client created");
+                setOpen(false);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Failed to create");
+              }
+            });
+          }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" name="name" required placeholder="National Speakers Association" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="slug">Slug (optional)</Label>
+            <Input id="slug" name="slug" placeholder="auto-generated from name" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact_email">Contact email</Label>
+            <Input id="contact_email" name="contact_email" type="email" placeholder="hr@agency.gov" />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
