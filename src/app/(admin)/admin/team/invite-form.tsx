@@ -73,10 +73,24 @@ export function InviteForm({ clients }: { clients: ClientOpt[] }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Initial password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="text"
+            required
+            minLength={8}
+            placeholder="≥ 8 chars"
+          />
+          <p className="text-xs text-ink-4">
+            Share with the user securely. They can change it after signing in.
+          </p>
         </div>
         <div className="space-y-2">
           <Label>Role</Label>

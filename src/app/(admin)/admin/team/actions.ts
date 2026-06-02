@@ -7,6 +7,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const Schema = z.object({
   email: z.string().email(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["admin", "editor", "super_advisor", "advisor"]),
   clientId: z.string().uuid().optional().nullable(),
   superAdvisorClientIds: z.array(z.string().uuid()).optional(),
@@ -20,6 +21,7 @@ export async function inviteUser(formData: FormData) {
 
   const parsed = Schema.parse({
     email: formData.get("email"),
+    password: formData.get("password"),
     role: formData.get("role"),
     clientId: (formData.get("clientId") as string) || null,
     superAdvisorClientIds: superIds,
@@ -33,15 +35,17 @@ export async function inviteUser(formData: FormData) {
   }
 
   const admin = createSupabaseAdminClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.email, {
-    redirectTo: `${appUrl}/auth/callback`,
+  // Create the user directly with a password — bypasses email entirely.
+  // `email_confirm: true` skips the email confirmation step so they can sign in immediately.
+  const { data, error } = await admin.auth.admin.createUser({
+    email: parsed.email,
+    password: parsed.password,
+    email_confirm: true,
   });
   if (error) throw new Error(error.message);
-  if (!data.user) throw new Error("Invite did not return a user");
+  if (!data.user) throw new Error("Create did not return a user");
 
-  // For roles other than advisor, client_id stays null.
   const clientId = parsed.role === "advisor" ? (parsed.clientId ?? null) : null;
 
   const { error: upErr } = await admin.from("app_users").upsert({
@@ -52,7 +56,6 @@ export async function inviteUser(formData: FormData) {
   });
   if (upErr) throw new Error(upErr.message);
 
-  // Replace any existing super_advisor grants with the new set.
   if (parsed.role === "super_advisor" && parsed.superAdvisorClientIds) {
     await admin.from("super_advisor_clients").delete().eq("user_id", data.user.id);
     if (parsed.superAdvisorClientIds.length > 0) {
@@ -64,7 +67,6 @@ export async function inviteUser(formData: FormData) {
       );
     }
   } else {
-    // Clean up any stale super_advisor grants if the role changed.
     await admin.from("super_advisor_clients").delete().eq("user_id", data.user.id);
   }
 
