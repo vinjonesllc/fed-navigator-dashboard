@@ -183,20 +183,39 @@ RLS policies enforce client-isolation everywhere.
 
 ## Status
 
+### Original plan (all complete)
+
 - [x] Sample CSVs analyzed (3 workshops, schema confirmed stable)
 - [x] Decisions locked (stack, branding, ingest path, lead presets, auth)
-- [x] Next.js scaffolded (this directory)
+- [x] Next.js scaffolded
 - [x] Deps installed (Supabase, Anthropic, PapaParse, Recharts, etc.)
-- [ ] shadcn/ui init
-- [ ] Supabase project created (manual — Fed Pilot to do)
-- [ ] Migration applied
-- [ ] Auth scaffolded
-- [ ] Admin UI built
-- [ ] Client dashboard pages built
-- [ ] Theme clustering wired
-- [ ] Lead export built
-- [ ] First client onboarded
-- [ ] DNS + Vercel deploy
+- [x] shadcn/ui init (radix base, Nova preset)
+- [x] Supabase project created (`cvkbbmebyqoalglbqunx`)
+- [x] All 6 migrations applied
+- [x] Auth scaffolded — switched from magic-link to **email + password** during build (SMTP rate-limit pain on free tier)
+- [x] Admin UI built
+- [x] Client dashboard pages built (now unified under `/admin/clients/[id]` with role-gated buttons; the original `/dashboard` route group still exists for legacy paths)
+- [x] Theme clustering wired (Claude Sonnet 4.6)
+- [x] Lead export built (4 presets + admin-only "Export All" with attended Y/N column)
+- [x] DNS + Vercel deploy — live at <https://dashboard.fednavigator.com>
+
+### Built beyond the original spec
+
+- [x] Chat + Q&A transcript ingest (two more Zoom CSVs per workshop)
+- [x] Claude intent extraction: retiring-within-6-months + cliff-notes-request
+- [x] Per-client Google Sheet eval ingestion → Claude-picked top 7 testimonials + aggregate rating tile
+- [x] Re-upload Chat / Re-upload Q&A / Re-extract intents / Re-fetch evals admin actions on the workshop page
+- [x] Four-role permission model (`admin` / `editor` / `super_advisor` / `advisor`) + `super_advisor_clients` many-to-many table
+- [x] Public share page `/share/workshops/[wid]` with copy-link UX
+- [x] Full design port from Claude Design — Space Grotesk + IBM Plex + JetBrains Mono fonts, OKLCH palette, manual dark-mode toggle with anti-FOUC
+- [x] Resend SMTP wired for password-reset emails (fednavigator.com verified)
+
+### Operational follow-ups
+
+- [ ] Test data cleanup (delete test workshops + the Kevin Jones advisor user)
+- [ ] Create `client-logos` Storage bucket if logos are needed
+- [ ] Onboard real advisors (set up clients in `/admin/clients`, invite users at `/admin/team`)
+- [ ] Consider separate Supabase projects for dev vs prod if scale demands it
 
 ## Hand-off note to the next session
 
