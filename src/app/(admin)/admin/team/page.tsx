@@ -41,7 +41,7 @@ export default async function TeamPage() {
 
       <div className={`${CARD} p-5`}>
         <h3 className="m-0 mb-4 font-display text-[14.5px] font-semibold text-ink-1 dark:text-white">
-          Invite user
+          Add user
         </h3>
         <InviteForm clients={clientList} />
       </div>

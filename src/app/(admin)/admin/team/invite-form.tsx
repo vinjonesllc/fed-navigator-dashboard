@@ -59,7 +59,7 @@ export function InviteForm({ clients }: { clients: ClientOpt[] }) {
     startTransition(async () => {
       try {
         await inviteUser(fd);
-        toast.success("Invite sent");
+        toast.success("User created. Share the password with them.");
         (e.target as HTMLFormElement).reset();
         setSuperClientIds(new Set());
         setClientId("");
@@ -157,8 +157,12 @@ export function InviteForm({ clients }: { clients: ClientOpt[] }) {
       )}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Sending..." : "Send invite"}
+        {pending ? "Creating..." : "Create user"}
       </Button>
+      <p className="text-xs text-ink-4">
+        No email is sent — share the password with the user securely (Signal, in
+        person, etc.). They can change it after signing in.
+      </p>
     </form>
   );
 }
