@@ -1,43 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { signInWithPassword } from "./actions";
 
 export function LoginForm({ next, error }: { next?: string; error?: string }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!email || !password) return;
-    setSubmitting(true);
+    const fd = new FormData(e.currentTarget);
+    if (next) fd.set("next", next);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-
-    setSubmitting(false);
-
-    if (err) {
-      toast.error(err.message);
-      return;
-    }
-    // Ensure the app_users row exists before navigating into protected routes.
-    try {
-      await fetch("/auth/bootstrap", { method: "POST" });
-    } catch {
-      /* non-fatal */
-    }
-    toast.success("Signed in");
-    window.location.href = next ?? "/";
-    router.refresh();
+    startTransition(async () => {
+      // The action either redirect()s on success (no return) or returns { error }.
+      const result = await signInWithPassword(fd);
+      if (result?.error) {
+        toast.error(result.error);
+      }
+    });
   }
 
   return (
@@ -61,6 +49,7 @@ export function LoginForm({ next, error }: { next?: string; error?: string }) {
         </Label>
         <Input
           id="email"
+          name="email"
           type="email"
           autoComplete="email"
           required
@@ -84,6 +73,7 @@ export function LoginForm({ next, error }: { next?: string; error?: string }) {
         </div>
         <Input
           id="password"
+          name="password"
           type="password"
           autoComplete="current-password"
           required
@@ -94,10 +84,10 @@ export function LoginForm({ next, error }: { next?: string; error?: string }) {
       </div>
       <Button
         type="submit"
-        disabled={submitting || !email || !password}
+        disabled={pending || !email || !password}
         className="w-full rounded-[9px] border border-[oklch(0.10_0.01_260)] bg-[oklch(0.18_0.02_260)] text-white shadow-[0_1px_0_oklch(1_0_0_/_0.15)_inset,0_6px_18px_oklch(0.20_0.02_260/0.20)] hover:bg-[oklch(0.12_0.02_260)]"
       >
-        {submitting ? "Signing in..." : "Sign in"}
+        {pending ? "Signing in..." : "Sign in"}
       </Button>
     </form>
   );
