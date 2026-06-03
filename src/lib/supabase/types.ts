@@ -17,8 +17,11 @@ export type AppUser = {
   created_at: string;
 };
 
-export const CLIENT_BRANDS = ["Fed Pilot", "Feducate", "MyFedNav"] as const;
+export const CLIENT_BRANDS = ["Fed Pilot", "Feducate", "Feducate DMV", "MyFedNav"] as const;
 export type ClientBrand = (typeof CLIENT_BRANDS)[number];
+
+export const NEXT_WORKSHOP_TIMEZONES = ["Eastern", "Central", "Mountain", "Pacific"] as const;
+export type NextWorkshopTz = (typeof NEXT_WORKSHOP_TIMEZONES)[number];
 
 export type Client = {
   id: string;
@@ -29,6 +32,10 @@ export type Client = {
   accent_color: string | null;
   eval_sheet_url: string | null;
   brand: ClientBrand;
+  next_workshop_date: string | null;
+  next_workshop_hour: number | null;
+  next_workshop_tz: NextWorkshopTz | null;
+  next_workshop_registrant_tab: string | null;
   created_at: string;
   updated_at: string;
 };

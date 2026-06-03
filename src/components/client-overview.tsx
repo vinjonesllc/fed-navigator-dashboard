@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { OverviewTrend } from "@/components/charts/overview-trend";
 import { formatWorkshopDate } from "@/lib/format-date";
 import type { WorkshopWithStats } from "@/lib/queries";
+import type { NextWorkshopCard } from "@/lib/next-workshop";
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -29,12 +29,67 @@ function Stat({
   );
 }
 
+const KELLY_MAILTO = "mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date";
+
+function NextWorkshop({ data }: { data: NextWorkshopCard | null }) {
+  if (!data) {
+    return (
+      <div className={`p-[18px_20px_20px] ${CARD}`}>
+        <div className="mb-2 text-[12px] uppercase tracking-[0.04em] text-ink-3">
+          Next workshop
+        </div>
+        <p className="text-[14px] text-ink-2">
+          No next workshop date.{" "}
+          <span className="text-ink-3">
+            Contact{" "}
+            <a
+              href={KELLY_MAILTO}
+              className="font-medium text-ink-1 underline underline-offset-2 hover:opacity-80 dark:text-white"
+            >
+              Kelly
+            </a>{" "}
+            to schedule your next workshop.
+          </span>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`p-[18px_20px_20px] ${CARD}`}>
+      <div className="mb-3 text-[12px] uppercase tracking-[0.04em] text-ink-3">
+        Next workshop
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+        <div className="font-display text-[28px] font-semibold leading-none tracking-[-0.02em] text-ink-1 dark:text-white">
+          {data.dateLabel}
+        </div>
+        {data.timeLabel && (
+          <div className="font-display text-[20px] font-medium leading-none tracking-[-0.01em] text-ink-2">
+            {data.timeLabel}
+          </div>
+        )}
+        <div className="ml-auto flex items-baseline gap-2">
+          <span className="font-display text-[28px] font-semibold leading-none tabular-nums text-ink-1 dark:text-white">
+            {data.registrants ?? "—"}
+          </span>
+          <span className="text-[12px] uppercase tracking-[0.04em] text-ink-3">
+            registered
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ClientOverview({
   workshops,
   workshopHref,
+  nextWorkshop,
 }: {
   workshops: WorkshopWithStats[];
   workshopHref: (id: string) => string;
+  nextWorkshop?: NextWorkshopCard | null;
 }) {
   const totalAttendees = workshops.reduce((acc, w) => acc + w.live_count, 0);
   const totalRegistered = workshops.reduce((acc, w) => acc + w.registered_count, 0);
@@ -43,6 +98,8 @@ export function ClientOverview({
 
   return (
     <div className="space-y-6">
+      <NextWorkshop data={nextWorkshop ?? null} />
+
       <div className="grid gap-3.5 sm:grid-cols-3">
         <Stat label="Workshops" value={workshops.length} />
         <Stat
@@ -55,26 +112,6 @@ export function ClientOverview({
           value={`${avgAttendancePct}%`}
           hint="Live ÷ registered"
         />
-      </div>
-
-      <div className={`p-[18px_20px_20px] ${CARD}`}>
-        <div className="mb-4 flex items-center gap-2.5">
-          <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">
-            Attendance over time
-          </h3>
-        </div>
-        {workshops.length === 0 ? (
-          <p className="text-[13px] text-ink-3">No workshops yet.</p>
-        ) : (
-          <OverviewTrend
-            data={[...workshops].reverse().map((w) => ({
-              date: w.workshop_date,
-              title: w.title,
-              attendees: w.live_count,
-              engagement: w.avg_engagement ?? 0,
-            }))}
-          />
-        )}
       </div>
 
       <div className={`${CARD} overflow-hidden`}>

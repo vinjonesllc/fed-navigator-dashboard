@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Client } from "@/lib/supabase/types";
 import { getClientWorkshops } from "@/lib/queries";
+import { listSheetTabs } from "@/lib/google-sheets";
+import { getNextWorkshop } from "@/lib/next-workshop";
 import { ClientOverview } from "@/components/client-overview";
 import { EditClientForm } from "./edit-client-form";
 import { LogoUpload } from "./logo-upload";
@@ -30,6 +32,10 @@ export default async function ClientDetailPage({
   if (!client) notFound();
 
   const workshops = await getClientWorkshops(id);
+  const [sheetTabs, nextWorkshop] = await Promise.all([
+    listSheetTabs(client.eval_sheet_url),
+    getNextWorkshop(client),
+  ]);
   const manager = isContentManager(session.appUser?.role);
   const role = session.appUser?.role;
   const isAdvisor = role === "advisor" || role === "client";
@@ -72,6 +78,7 @@ export default async function ClientDetailPage({
           <ClientOverview
             workshops={workshops}
             workshopHref={(wid) => `/admin/clients/${id}/workshops/${wid}`}
+            nextWorkshop={nextWorkshop}
           />
         </TabsContent>
 
@@ -83,7 +90,7 @@ export default async function ClientDetailPage({
                   <CardTitle>Details</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <EditClientForm client={client} />
+                  <EditClientForm client={client} sheetTabs={sheetTabs} />
                 </CardContent>
               </Card>
               <Card>

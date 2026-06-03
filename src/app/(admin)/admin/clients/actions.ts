@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireContentManager } from "@/lib/auth";
 import { slugify } from "@/lib/utils-slug";
-import { CLIENT_BRANDS } from "@/lib/supabase/types";
+import { CLIENT_BRANDS, NEXT_WORKSHOP_TIMEZONES } from "@/lib/supabase/types";
 
 const ClientInput = z.object({
   name: z.string().min(2).max(120),
@@ -14,18 +14,46 @@ const ClientInput = z.object({
   accent_color: z.string().optional(),
   eval_sheet_url: z.string().url().optional().or(z.literal("")),
   brand: z.enum(CLIENT_BRANDS).default("Fed Pilot"),
+  next_workshop_date: z.string().optional(),
+  next_workshop_hour: z.string().optional(),
+  next_workshop_tz: z.string().optional(),
+  next_workshop_registrant_tab: z.string().optional(),
 });
 
-export async function createClient(formData: FormData) {
-  await requireContentManager();
-  const parsed = ClientInput.parse({
+type ClientParsed = z.infer<typeof ClientInput>;
+
+// Normalize the optional "next workshop" form fields into DB-ready values:
+// blanks -> null, hour validated 0-23, timezone validated against the enum.
+function nextWorkshopFields(parsed: ClientParsed) {
+  const hourRaw = parsed.next_workshop_hour?.trim();
+  const hour = hourRaw ? Number(hourRaw) : null;
+  const tz = parsed.next_workshop_tz?.trim() || null;
+  return {
+    next_workshop_date: parsed.next_workshop_date?.trim() || null,
+    next_workshop_hour: hour !== null && Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : null,
+    next_workshop_tz: tz && (NEXT_WORKSHOP_TIMEZONES as readonly string[]).includes(tz) ? tz : null,
+    next_workshop_registrant_tab: parsed.next_workshop_registrant_tab?.trim() || null,
+  };
+}
+
+function readClientForm(formData: FormData) {
+  return ClientInput.parse({
     name: formData.get("name"),
     slug: formData.get("slug") ?? undefined,
     contact_email: formData.get("contact_email") ?? "",
     accent_color: formData.get("accent_color") ?? "",
     eval_sheet_url: formData.get("eval_sheet_url") ?? "",
     brand: formData.get("brand") ?? undefined,
+    next_workshop_date: formData.get("next_workshop_date") ?? undefined,
+    next_workshop_hour: formData.get("next_workshop_hour") ?? undefined,
+    next_workshop_tz: formData.get("next_workshop_tz") ?? undefined,
+    next_workshop_registrant_tab: formData.get("next_workshop_registrant_tab") ?? undefined,
   });
+}
+
+export async function createClient(formData: FormData) {
+  await requireContentManager();
+  const parsed = readClientForm(formData);
 
   const slug = parsed.slug?.trim() ? slugify(parsed.slug) : slugify(parsed.name);
 
@@ -37,6 +65,7 @@ export async function createClient(formData: FormData) {
     accent_color: parsed.accent_color || null,
     eval_sheet_url: parsed.eval_sheet_url || null,
     brand: parsed.brand,
+    ...nextWorkshopFields(parsed),
   });
   if (error) throw new Error(error.message);
 
@@ -45,14 +74,7 @@ export async function createClient(formData: FormData) {
 
 export async function updateClient(id: string, formData: FormData) {
   await requireContentManager();
-  const parsed = ClientInput.parse({
-    name: formData.get("name"),
-    slug: formData.get("slug") ?? undefined,
-    contact_email: formData.get("contact_email") ?? "",
-    accent_color: formData.get("accent_color") ?? "",
-    eval_sheet_url: formData.get("eval_sheet_url") ?? "",
-    brand: formData.get("brand") ?? undefined,
-  });
+  const parsed = readClientForm(formData);
 
   const slug = parsed.slug?.trim() ? slugify(parsed.slug) : slugify(parsed.name);
 
@@ -66,6 +88,7 @@ export async function updateClient(id: string, formData: FormData) {
       accent_color: parsed.accent_color || null,
       eval_sheet_url: parsed.eval_sheet_url || null,
       brand: parsed.brand,
+      ...nextWorkshopFields(parsed),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
