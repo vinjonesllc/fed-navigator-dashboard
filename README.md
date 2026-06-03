@@ -77,7 +77,7 @@ To replicate from scratch:
 - `src/lib/ingest.ts` — full ingest pipeline
 - `src/lib/themes.ts` — registration-question theme clustering
 - `src/lib/intents.ts` — retiring-soon + cliff-notes-request extraction (presenter context preserved, attendee-email gated)
-- `src/lib/eval-comments.ts` — fetches per-client Google Sheet, code-level date prefilter (workshop_date → +5d), Claude picks best 7 testimonials + computes aggregate rating
+- `src/lib/eval-comments.ts` — fetches per-client Google Sheet, code-level date prefilter (workshop_date → +7d), Claude picks best 7 testimonials + computes aggregate rating
 - `src/lib/workshop-stats.ts` — funnel / engagement / retention
 - `src/lib/format-date.ts` — `formatWorkshopDate` (TZ-stable YYYY-MM-DD → "May 20, 2026")
 - `src/proxy.ts` — auth session refresh + route gating (Next 16 renamed middleware → proxy)

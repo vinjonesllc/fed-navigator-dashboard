@@ -161,11 +161,12 @@ export async function fetchEvalComments(
 
   const headers = parsed.meta.fields ?? Object.keys(parsed.data[0]);
 
-  // Strict 5-day forward window: workshop_date through workshop_date + 5 days, inclusive.
+  // Strict forward window: workshop_date through workshop_date + N days, inclusive.
+  const WINDOW_DAYS = 7;
   const workshopDateStr = workshop.workshop_date as string;
   const windowStart = parseLocalDate(workshopDateStr);
   const windowEndDate = parseLocalDate(workshopDateStr);
-  windowEndDate.setDate(windowEndDate.getDate() + 5);
+  windowEndDate.setDate(windowEndDate.getDate() + WINDOW_DAYS);
   const windowEnd = isoDate(windowEndDate);
 
   // Heuristically identify the date column — pick the column whose values
@@ -216,7 +217,7 @@ Sheet columns: ${headers.join(", ")}
 From the rows below:
 
 1. Identify (a) the date column (usually a "Timestamp" or "Date Submitted" column), (b) the **name column** ("First & Last Name" or similar), (c) the **agency column** ("Agency" or similar), and (d) the **two comment columns**: typically named "Tell Coworkers?" and "Other Comments?" (case-insensitive — match anything that looks like recommendation-to-coworkers or open-ended feedback). Treat each non-empty cell in the comment columns as a separate candidate testimonial.
-2. Date filtering is **already done in code** — every row below falls within ${workshop.workshop_date} → ${windowEnd} (workshop day + 5 calendar days). Trust the pre-filtered set; do not re-filter or reject rows on date.
+2. Date filtering is **already done in code** — every row below falls within ${workshop.workshop_date} → ${windowEnd} (workshop day + ${WINDOW_DAYS} calendar days). Trust the pre-filtered set; do not re-filter or reject rows on date.
 3. From the candidate testimonials (across both comment columns, all matching rows), pick up to **7 of the most impressive** — the ones that make Fed Pilot's workshop and service look incredible. Prefer:
    - Glowing praise of the presenter, content, or experience
    - Specific, vivid language (not "great!" alone — pick "Tony's explanation of FERS finally made it click after years of confusion")

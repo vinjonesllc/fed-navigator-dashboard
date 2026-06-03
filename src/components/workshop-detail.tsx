@@ -244,7 +244,7 @@ export function WorkshopDetail({
           <div className={`${CARD} px-5 py-6 text-[13px] text-ink-3`}>
             No eval responses linked to this workshop yet. They&apos;ll appear here once
             attendees fill out the evaluation form and the date in the sheet falls within
-            ±14 days of the workshop date. Click <b className="text-ink-2">Re-fetch evals</b>
+            7 days after the workshop date. Click <b className="text-ink-2">Re-fetch evals</b>
             {" "}to retry.
           </div>
         ) : null}
