@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UploadForm } from "./upload-form";
 import type { Client } from "@/lib/supabase/types";
 
+// Upload ingests CSVs, runs Claude analyses, and (for Fed Pilot clients) tags
+// attendees in ActiveCampaign via `after()`. Give the invocation room so the
+// post-response tagging of ~100-170 contacts has time to finish on Vercel.
+export const maxDuration = 300;
+
 export default async function UploadPage({
   searchParams,
 }: {

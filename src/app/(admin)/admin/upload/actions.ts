@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireContentManager } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -9,6 +10,12 @@ import { parseChatCsv, parseQACsv } from "@/lib/csv/parse-transcripts";
 import { clusterQuestions } from "@/lib/themes";
 import { extractIntents } from "@/lib/intents";
 import { fetchEvalComments } from "@/lib/eval-comments";
+import { tagExistingContacts } from "@/lib/activecampaign";
+
+// Fed Pilot-branded clients get their attendees tagged in ActiveCampaign.
+// Feducate / MyFedNav clients are skipped.
+const AC_ATTENDED_BRAND = "Fed Pilot";
+const AC_ATTENDED_TAG = "FP-Attended";
 
 const Schema = z.object({
   clientId: z.string().uuid(),
@@ -30,13 +37,14 @@ export async function uploadCsv(formData: FormData) {
   if (!attendeeFile || attendeeFile.size === 0) {
     throw new Error("Attendee CSV is required");
   }
-  if (!chatFile || chatFile.size === 0) {
-    throw new Error("Chat CSV is required");
-  }
   if (!qaFile || qaFile.size === 0) {
     throw new Error("Q&A CSV is required");
   }
-  for (const f of [attendeeFile, chatFile, qaFile]) {
+  // Chat transcript is optional — we sometimes don't have it. All workshop
+  // stats come from the attendee + Q&A files; a missing chat just leaves the
+  // message-level transcript empty.
+  const hasChat = !!chatFile && chatFile.size > 0;
+  for (const f of [attendeeFile, qaFile, ...(hasChat ? [chatFile] : [])]) {
     if (f.size > 25 * 1024 * 1024) throw new Error(`File ${f.name} too large (>25MB)`);
   }
 
@@ -52,7 +60,7 @@ export async function uploadCsv(formData: FormData) {
 
   const [attendeeCsv, chatCsv, qaCsv] = await Promise.all([
     attendeeFile.text(),
-    chatFile.text(),
+    hasChat ? chatFile.text() : Promise.resolve(""),
     qaFile.text(),
   ]);
 
@@ -70,8 +78,8 @@ export async function uploadCsv(formData: FormData) {
 
   const admin = createSupabaseAdminClient();
 
-  // 2. Ingest chat transcript.
-  const chatRows = parseChatCsv(chatCsv);
+  // 2. Ingest chat transcript (optional — skipped entirely if not provided).
+  const chatRows = hasChat ? parseChatCsv(chatCsv) : [];
   if (chatRows.length > 0) {
     const { error: chatErr } = await admin
       .from("workshop_chats")
@@ -101,6 +109,46 @@ export async function uploadCsv(formData: FormData) {
   for (const r of claudeResults) {
     if (r.status === "rejected") {
       console.error("[upload] Claude analysis failed:", r.reason);
+    }
+  }
+
+  // 5. If this client is on the Fed Pilot brand, tag everyone who actually
+  //    attended (participation = "Live") in ActiveCampaign. Runs after the
+  //    response is sent (`after`) so it never blocks or slows the upload, and
+  //    is fully best-effort — a tagging failure is logged, never thrown.
+  const { data: client } = await admin
+    .from("clients")
+    .select("brand")
+    .eq("id", parsed.clientId)
+    .maybeSingle();
+
+  if (client?.brand === AC_ATTENDED_BRAND) {
+    const { data: attended } = await admin
+      .from("attendees")
+      .select("email")
+      .eq("workshop_id", result.workshopId)
+      .eq("participation", "Live");
+
+    const emails = (attended ?? [])
+      .map((a) => a.email)
+      .filter((e): e is string => !!e);
+
+    if (emails.length > 0) {
+      after(async () => {
+        try {
+          const r = await tagExistingContacts(emails, AC_ATTENDED_TAG);
+          if (!r.configured) {
+            console.warn("[upload] ActiveCampaign not configured; skipped tagging.");
+          } else {
+            console.log(
+              `[upload] ActiveCampaign ${AC_ATTENDED_TAG}: tagged ${r.tagged}/${r.requested} ` +
+                `(${r.notInAc} not in AC, ${r.errors} errors).`,
+            );
+          }
+        } catch (e) {
+          console.error("[upload] ActiveCampaign tagging failed:", e);
+        }
+      });
     }
   }
 

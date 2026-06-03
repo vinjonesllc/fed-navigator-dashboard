@@ -43,8 +43,8 @@ export function UploadForm({
       toast.error("Pick a client");
       return;
     }
-    if (!attendeeFile || !chatFile || !qaFile) {
-      toast.error("All three CSV files are required (attendees, chat, Q&A)");
+    if (!attendeeFile || !qaFile) {
+      toast.error("Attendees and Q&A CSVs are required (chat transcript is optional)");
       return;
     }
     if (!workshopDate) {
@@ -54,13 +54,14 @@ export function UploadForm({
     const fd = new FormData(e.currentTarget);
     fd.set("clientId", clientId);
     fd.set("attendeeFile", attendeeFile);
-    fd.set("chatFile", chatFile);
+    if (chatFile) fd.set("chatFile", chatFile);
+    else fd.delete("chatFile");
     fd.set("qaFile", qaFile);
     fd.set("presenter", presenter);
     fd.set("workshopDate", workshopDate);
 
     const pendingToast = toast.loading(
-      "Ingesting attendees, chat, Q&A… analyzing transcripts (this takes ~15-30s).",
+      "Ingesting attendees & Q&A… analyzing transcripts (this takes ~15-30s).",
     );
     startTransition(async () => {
       try {
@@ -158,7 +159,12 @@ export function UploadForm({
       </div>
 
       <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <p className="text-sm font-medium">Workshop CSV exports (all required)</p>
+        <p className="text-sm font-medium">
+          Workshop CSV exports{" "}
+          <span className="font-normal text-muted-foreground">
+            (Attendees &amp; Q&amp;A required — chat transcript optional)
+          </span>
+        </p>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
             <Label htmlFor="attendeeFile" className="text-xs uppercase tracking-wide">
@@ -179,13 +185,13 @@ export function UploadForm({
           </div>
           <div className="space-y-1">
             <Label htmlFor="chatFile" className="text-xs uppercase tracking-wide">
-              Chat transcript
+              Chat transcript{" "}
+              <span className="normal-case text-muted-foreground">(optional)</span>
             </Label>
             <Input
               id="chatFile"
               type="file"
               accept=".csv,text/csv"
-              required
               onChange={(e) => setChatFile(e.target.files?.[0] ?? null)}
             />
             {chatFile && (
