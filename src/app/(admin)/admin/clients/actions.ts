@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireContentManager } from "@/lib/auth";
 import { slugify } from "@/lib/utils-slug";
+import { CLIENT_BRANDS } from "@/lib/supabase/types";
 
 const ClientInput = z.object({
   name: z.string().min(2).max(120),
@@ -12,6 +13,7 @@ const ClientInput = z.object({
   contact_email: z.string().email().optional().or(z.literal("")),
   accent_color: z.string().optional(),
   eval_sheet_url: z.string().url().optional().or(z.literal("")),
+  brand: z.enum(CLIENT_BRANDS).default("Fed Pilot"),
 });
 
 export async function createClient(formData: FormData) {
@@ -22,6 +24,7 @@ export async function createClient(formData: FormData) {
     contact_email: formData.get("contact_email") ?? "",
     accent_color: formData.get("accent_color") ?? "",
     eval_sheet_url: formData.get("eval_sheet_url") ?? "",
+    brand: formData.get("brand") ?? undefined,
   });
 
   const slug = parsed.slug?.trim() ? slugify(parsed.slug) : slugify(parsed.name);
@@ -33,6 +36,7 @@ export async function createClient(formData: FormData) {
     contact_email: parsed.contact_email || null,
     accent_color: parsed.accent_color || null,
     eval_sheet_url: parsed.eval_sheet_url || null,
+    brand: parsed.brand,
   });
   if (error) throw new Error(error.message);
 
@@ -47,6 +51,7 @@ export async function updateClient(id: string, formData: FormData) {
     contact_email: formData.get("contact_email") ?? "",
     accent_color: formData.get("accent_color") ?? "",
     eval_sheet_url: formData.get("eval_sheet_url") ?? "",
+    brand: formData.get("brand") ?? undefined,
   });
 
   const slug = parsed.slug?.trim() ? slugify(parsed.slug) : slugify(parsed.name);
@@ -60,6 +65,7 @@ export async function updateClient(id: string, formData: FormData) {
       contact_email: parsed.contact_email || null,
       accent_color: parsed.accent_color || null,
       eval_sheet_url: parsed.eval_sheet_url || null,
+      brand: parsed.brand,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

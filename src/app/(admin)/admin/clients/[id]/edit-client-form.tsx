@@ -1,15 +1,23 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { updateClient } from "../actions";
-import type { Client } from "@/lib/supabase/types";
+import { CLIENT_BRANDS, type Client, type ClientBrand } from "@/lib/supabase/types";
 
 export function EditClientForm({ client }: { client: Client }) {
   const [pending, startTransition] = useTransition();
+  const [brand, setBrand] = useState<ClientBrand>(client.brand ?? "Fed Pilot");
 
   return (
     <form
@@ -41,6 +49,22 @@ export function EditClientForm({ client }: { client: Client }) {
           type="email"
           defaultValue={client.contact_email ?? ""}
         />
+      </div>
+      <div className="space-y-2">
+        <Label>Brand</Label>
+        <input type="hidden" name="brand" value={brand} />
+        <Select value={brand} onValueChange={(v) => setBrand(v as ClientBrand)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CLIENT_BRANDS.map((b) => (
+              <SelectItem key={b} value={b}>
+                {b}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label htmlFor="accent_color">Accent color (hex)</Label>

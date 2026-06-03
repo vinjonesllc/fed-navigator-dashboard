@@ -17,6 +17,9 @@ export type AppUser = {
   created_at: string;
 };
 
+export const CLIENT_BRANDS = ["Fed Pilot", "Feducate", "MyFedNav"] as const;
+export type ClientBrand = (typeof CLIENT_BRANDS)[number];
+
 export type Client = {
   id: string;
   slug: string;
@@ -25,6 +28,7 @@ export type Client = {
   contact_email: string | null;
   accent_color: string | null;
   eval_sheet_url: string | null;
+  brand: ClientBrand;
   created_at: string;
   updated_at: string;
 };

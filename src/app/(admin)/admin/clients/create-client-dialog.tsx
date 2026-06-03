@@ -14,11 +14,20 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CLIENT_BRANDS, type ClientBrand } from "@/lib/supabase/types";
 import { createClient } from "./actions";
 
 export function CreateClientDialog() {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [brand, setBrand] = useState<ClientBrand>("Fed Pilot");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -38,6 +47,7 @@ export function CreateClientDialog() {
               try {
                 await createClient(fd);
                 toast.success("Client created");
+                setBrand("Fed Pilot");
                 setOpen(false);
               } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Failed to create");
@@ -57,6 +67,22 @@ export function CreateClientDialog() {
           <div className="space-y-2">
             <Label htmlFor="contact_email">Contact email</Label>
             <Input id="contact_email" name="contact_email" type="email" placeholder="hr@agency.gov" />
+          </div>
+          <div className="space-y-2">
+            <Label>Brand</Label>
+            <input type="hidden" name="brand" value={brand} />
+            <Select value={brand} onValueChange={(v) => setBrand(v as ClientBrand)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CLIENT_BRANDS.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
