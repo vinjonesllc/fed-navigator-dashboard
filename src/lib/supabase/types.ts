@@ -17,7 +17,14 @@ export type AppUser = {
   created_at: string;
 };
 
-export const CLIENT_BRANDS = ["Fed Pilot", "Feducate", "Feducate DMV", "MyFedNav"] as const;
+export const CLIENT_BRANDS = [
+  "Fed Pilot",
+  "Feducate",
+  "Feducate DMV",
+  "MyFedNav",
+  "FedRetire SME",
+  "Fed Ret Inst",
+] as const;
 export type ClientBrand = (typeof CLIENT_BRANDS)[number];
 
 export const NEXT_WORKSHOP_TIMEZONES = ["Eastern", "Central", "Mountain", "Pacific"] as const;
