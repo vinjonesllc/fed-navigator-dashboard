@@ -24,9 +24,9 @@ export default async function UploadPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Upload workshop</h1>
         <p className="text-sm text-muted-foreground">
-          Drop the three Zoom exports (Attendees, Chat, Q&amp;A). We map the fixed 36 columns,
-          detect custom registration questions, store the transcripts, and run intent
-          extraction.
+          Drop the Zoom exports (Attendees required; Chat and Q&amp;A optional). We map the
+          fixed 36 columns, detect custom registration questions, store the transcripts, and
+          run intent extraction.
         </p>
       </div>
 

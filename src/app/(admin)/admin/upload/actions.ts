@@ -37,14 +37,13 @@ export async function uploadCsv(formData: FormData) {
   if (!attendeeFile || attendeeFile.size === 0) {
     throw new Error("Attendee CSV is required");
   }
-  if (!qaFile || qaFile.size === 0) {
-    throw new Error("Q&A CSV is required");
-  }
-  // Chat transcript is optional — we sometimes don't have it. All workshop
-  // stats come from the attendee + Q&A files; a missing chat just leaves the
-  // message-level transcript empty.
+  // Q&A and chat transcripts are both optional — we sometimes don't have them.
+  // All core workshop stats come from the attendee file; a missing Q&A leaves
+  // the Q&A transcript (and Q&A-derived intents) empty, and a missing chat
+  // leaves the message-level transcript empty.
+  const hasQa = !!qaFile && qaFile.size > 0;
   const hasChat = !!chatFile && chatFile.size > 0;
-  for (const f of [attendeeFile, qaFile, ...(hasChat ? [chatFile] : [])]) {
+  for (const f of [attendeeFile, ...(hasQa ? [qaFile] : []), ...(hasChat ? [chatFile] : [])]) {
     if (f.size > 25 * 1024 * 1024) throw new Error(`File ${f.name} too large (>25MB)`);
   }
 
@@ -61,7 +60,7 @@ export async function uploadCsv(formData: FormData) {
   const [attendeeCsv, chatCsv, qaCsv] = await Promise.all([
     attendeeFile.text(),
     hasChat ? chatFile.text() : Promise.resolve(""),
-    qaFile.text(),
+    hasQa ? qaFile.text() : Promise.resolve(""),
   ]);
 
   // 1. Ingest attendees (creates the workshop row + attendee rows).

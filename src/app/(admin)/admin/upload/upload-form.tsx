@@ -104,11 +104,11 @@ export function UploadForm({
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!clientId) {
-      toast.error("Pick a client");
+      toast.error("Pick an advisor");
       return;
     }
-    if (!attendeeFile || !qaFile) {
-      toast.error("Attendees and Q&A CSVs are required (chat transcript is optional)");
+    if (!attendeeFile) {
+      toast.error("Attendees CSV is required (Q&A and chat transcript are optional)");
       return;
     }
     if (!workshopDate) {
@@ -120,7 +120,8 @@ export function UploadForm({
     fd.set("attendeeFile", attendeeFile);
     if (chatFile) fd.set("chatFile", chatFile);
     else fd.delete("chatFile");
-    fd.set("qaFile", qaFile);
+    if (qaFile) fd.set("qaFile", qaFile);
+    else fd.delete("qaFile");
     fd.set("presenter", presenter);
     fd.set("workshopDate", workshopDate);
 
@@ -146,15 +147,15 @@ export function UploadForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Client</Label>
+          <Label>Advisor</Label>
           <Select value={clientId} onValueChange={setClientId}>
             <SelectTrigger>
-              <SelectValue placeholder="Pick a client" />
+              <SelectValue placeholder="Pick an advisor" />
             </SelectTrigger>
             <SelectContent>
               {clients.length === 0 && (
                 <SelectItem value="__empty" disabled>
-                  No clients — create one first
+                  No advisors — create one first
                 </SelectItem>
               )}
               {clients.map((c) => (
@@ -227,7 +228,7 @@ export function UploadForm({
           <p className="text-sm font-medium">
             Workshop CSV exports{" "}
             <span className="font-normal text-muted-foreground">
-              (drop in all 2–3 files at once — we detect which is which)
+              (drop in your 1–3 files at once — we detect which is which)
             </span>
           </p>
           {(attendeeFile || qaFile || chatFile || unknownFiles.length > 0) && (
@@ -257,7 +258,7 @@ export function UploadForm({
             }}
           />
           <p className="text-xs text-muted-foreground">
-            Attendees &amp; Q&amp;A required · chat transcript optional · any order
+            Attendees required · Q&amp;A and chat transcript optional · any order
           </p>
         </div>
 
@@ -265,7 +266,7 @@ export function UploadForm({
           {(
             [
               { kind: "attendees", required: true },
-              { kind: "qa", required: true },
+              { kind: "qa", required: false },
               { kind: "chat", required: false },
             ] as { kind: CsvKind; required: boolean }[]
           ).map(({ kind, required }) => {
