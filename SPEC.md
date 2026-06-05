@@ -212,7 +212,7 @@ RLS policies enforce client-isolation everywhere.
 
 ### Operational follow-ups
 
-- [ ] Test data cleanup (delete test workshops + the Kevin Jones advisor user)
+- [x] Test data cleanup — KEEP as intentional ongoing test fixtures: the `Kevin Jones - TEST` client, its `FEDUCATE June 2` workshop, the `May 20` workshop, and the `kevin.jonesfam@gmail.com` advisor user. Do NOT delete these. (A duplicate `FEDUCATE June 2` workshop was removed; that's the only deletion.)
 - [ ] Create `client-logos` Storage bucket if logos are needed
 - [ ] Onboard real advisors (set up clients in `/admin/clients`, invite users at `/admin/team`)
 - [ ] Consider separate Supabase projects for dev vs prod if scale demands it
