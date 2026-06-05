@@ -16,10 +16,14 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
 import { uploadCsv } from "./actions";
+import { classifyCsv, CSV_KIND_LABEL, type CsvKind } from "@/lib/csv/classify";
 
 type ClientOption = { id: string; name: string; slug: string };
 
 const PRESENTERS = ["Dionne Belk", "Kevin Jones"];
+
+type DetectedFiles = Partial<Record<CsvKind, File>>;
+type UnknownFile = { name: string };
 
 export function UploadForm({
   clients,
@@ -31,11 +35,71 @@ export function UploadForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [clientId, setClientId] = useState<string>(initialClientId ?? "");
-  const [attendeeFile, setAttendeeFile] = useState<File | null>(null);
-  const [chatFile, setChatFile] = useState<File | null>(null);
-  const [qaFile, setQaFile] = useState<File | null>(null);
+  const [detected, setDetected] = useState<DetectedFiles>({});
+  const [unknownFiles, setUnknownFiles] = useState<UnknownFile[]>([]);
+  const [classifying, setClassifying] = useState(false);
   const [presenter, setPresenter] = useState<string>("");
   const [workshopDate, setWorkshopDate] = useState<string>("");
+
+  const attendeeFile = detected.attendees ?? null;
+  const qaFile = detected.qa ?? null;
+  const chatFile = detected.chat ?? null;
+
+  async function onFilesChosen(fileList: FileList | null) {
+    const files = fileList ? Array.from(fileList) : [];
+    if (files.length === 0) return;
+
+    setClassifying(true);
+    try {
+      // Read just enough of each file to read its header row, then classify.
+      const next: DetectedFiles = { ...detected };
+      const unknown: UnknownFile[] = [];
+      const dupes: string[] = [];
+
+      for (const file of files) {
+        // 64KB is far more than a header row but cheap; classifyCsv only reads
+        // the first line.
+        const sample = await file.slice(0, 64 * 1024).text();
+        const kind = classifyCsv(sample);
+        if (!kind) {
+          unknown.push({ name: file.name });
+          continue;
+        }
+        if (next[kind]) dupes.push(`${CSV_KIND_LABEL[kind]} (kept ${next[kind]!.name})`);
+        else next[kind] = file;
+      }
+
+      setDetected(next);
+      setUnknownFiles(unknown);
+
+      const recognized = files.length - unknown.length - dupes.length;
+      if (recognized > 0) {
+        toast.success(
+          `Detected ${recognized} file${recognized === 1 ? "" : "s"}: ` +
+            (["attendees", "qa", "chat"] as CsvKind[])
+              .filter((k) => next[k])
+              .map((k) => CSV_KIND_LABEL[k])
+              .join(", "),
+        );
+      }
+      if (dupes.length > 0) {
+        toast.warning(`Ignored duplicate: ${dupes.join("; ")}`);
+      }
+      if (unknown.length > 0) {
+        toast.error(
+          `Couldn't recognize ${unknown.length} file${unknown.length === 1 ? "" : "s"}: ` +
+            unknown.map((u) => u.name).join(", "),
+        );
+      }
+    } finally {
+      setClassifying(false);
+    }
+  }
+
+  function clearFiles() {
+    setDetected({});
+    setUnknownFiles([]);
+  }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -159,62 +223,85 @@ export function UploadForm({
       </div>
 
       <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <p className="text-sm font-medium">
-          Workshop CSV exports{" "}
-          <span className="font-normal text-muted-foreground">
-            (Attendees &amp; Q&amp;A required — chat transcript optional)
-          </span>
-        </p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-1">
-            <Label htmlFor="attendeeFile" className="text-xs uppercase tracking-wide">
-              Attendees
-            </Label>
-            <Input
-              id="attendeeFile"
-              type="file"
-              accept=".csv,text/csv"
-              required
-              onChange={(e) => setAttendeeFile(e.target.files?.[0] ?? null)}
-            />
-            {attendeeFile && (
-              <p className="text-xs text-muted-foreground">
-                {attendeeFile.name}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="chatFile" className="text-xs uppercase tracking-wide">
-              Chat transcript{" "}
-              <span className="normal-case text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="chatFile"
-              type="file"
-              accept=".csv,text/csv"
-              onChange={(e) => setChatFile(e.target.files?.[0] ?? null)}
-            />
-            {chatFile && (
-              <p className="text-xs text-muted-foreground">{chatFile.name}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="qaFile" className="text-xs uppercase tracking-wide">
-              Q&A
-            </Label>
-            <Input
-              id="qaFile"
-              type="file"
-              accept=".csv,text/csv"
-              required
-              onChange={(e) => setQaFile(e.target.files?.[0] ?? null)}
-            />
-            {qaFile && <p className="text-xs text-muted-foreground">{qaFile.name}</p>}
-          </div>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-medium">
+            Workshop CSV exports{" "}
+            <span className="font-normal text-muted-foreground">
+              (drop in all 2–3 files at once — we detect which is which)
+            </span>
+          </p>
+          {(attendeeFile || qaFile || chatFile || unknownFiles.length > 0) && (
+            <button
+              type="button"
+              onClick={clearFiles}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Clear
+            </button>
+          )}
         </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="csvFiles" className="text-xs uppercase tracking-wide">
+            Choose files
+          </Label>
+          <Input
+            id="csvFiles"
+            type="file"
+            accept=".csv,text/csv"
+            multiple
+            onChange={(e) => {
+              void onFilesChosen(e.target.files);
+              // Reset so re-selecting the same file fires onChange again.
+              e.target.value = "";
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Attendees &amp; Q&amp;A required · chat transcript optional · any order
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-3">
+          {(
+            [
+              { kind: "attendees", required: true },
+              { kind: "qa", required: true },
+              { kind: "chat", required: false },
+            ] as { kind: CsvKind; required: boolean }[]
+          ).map(({ kind, required }) => {
+            const file = detected[kind];
+            return (
+              <div
+                key={kind}
+                className={`rounded-md border px-3 py-2 text-xs ${
+                  file
+                    ? "border-emerald-500/40 bg-emerald-500/5"
+                    : "border-dashed border-muted-foreground/30"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-medium uppercase tracking-wide">
+                  <span aria-hidden>{file ? "✓" : "○"}</span>
+                  {CSV_KIND_LABEL[kind]}
+                  {!required && (
+                    <span className="normal-case text-muted-foreground">(optional)</span>
+                  )}
+                </div>
+                <p className="mt-0.5 truncate text-muted-foreground" title={file?.name}>
+                  {file ? file.name : classifying ? "detecting…" : "not detected"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {unknownFiles.length > 0 && (
+          <p className="text-xs text-destructive">
+            Unrecognized (ignored): {unknownFiles.map((u) => u.name).join(", ")}
+          </p>
+        )}
       </div>
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending || classifying}>
         {pending ? "Ingesting…" : "Upload and ingest"}
       </Button>
     </form>
