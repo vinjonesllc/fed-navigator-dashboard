@@ -114,6 +114,10 @@ export function EditClientForm({
           defaultValue={client.accent_color ?? ""}
           placeholder="#0F4C81"
         />
+        <p className="text-xs text-muted-foreground">
+          Tints this client&apos;s overview — the header bar and the accent line/strip on
+          each card. Leave blank for the default.
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="eval_sheet_url">Evaluations Google Sheet URL</Label>

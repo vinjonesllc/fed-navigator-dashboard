@@ -14,7 +14,7 @@ export default async function OverviewPage() {
   const { data: client } = await admin
     .from("clients")
     .select(
-      "eval_sheet_url, next_workshop_date, next_workshop_hour, next_workshop_tz, next_workshop_registrant_tab",
+      "accent_color, eval_sheet_url, next_workshop_date, next_workshop_hour, next_workshop_tz, next_workshop_registrant_tab",
     )
     .eq("id", clientId)
     .maybeSingle();
@@ -34,6 +34,7 @@ export default async function OverviewPage() {
         workshops={workshops}
         workshopHref={(id) => `/dashboard/workshops/${id}`}
         nextWorkshop={nextWorkshop}
+        accentColor={client?.accent_color ?? null}
       />
     </div>
   );

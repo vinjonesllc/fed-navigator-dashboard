@@ -57,6 +57,13 @@ export default async function ClientDetailPage({
             {client.name}
           </h1>
           <p className="mt-1.5 font-mono text-[12.5px] text-ink-4">{client.slug}</p>
+          {client.accent_color && (
+            <div
+              className="mt-2.5 h-1 w-14 rounded-full"
+              style={{ background: client.accent_color }}
+              aria-hidden
+            />
+          )}
         </div>
         {manager && (
           <Button
@@ -79,6 +86,7 @@ export default async function ClientDetailPage({
             workshops={workshops}
             workshopHref={(wid) => `/admin/clients/${id}/workshops/${wid}`}
             nextWorkshop={nextWorkshop}
+            accentColor={client.accent_color}
           />
         </TabsContent>
 

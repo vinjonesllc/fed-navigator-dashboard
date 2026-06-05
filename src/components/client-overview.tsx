@@ -12,14 +12,23 @@ function Stat({
   label,
   value,
   hint,
+  accent,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  accent?: string | null;
 }) {
   return (
     <div className="relative overflow-hidden rounded-[14px] border border-line-1 bg-gradient-to-b from-surface to-background p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
-      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[oklch(0.60_0.02_260/0.18)] to-transparent" />
+      <div
+        className="absolute left-0 right-0 top-0 h-px"
+        style={{
+          background: accent
+            ? `linear-gradient(to right, transparent, ${accent}, transparent)`
+            : "linear-gradient(to right, transparent, oklch(0.60 0.02 260 / 0.18), transparent)",
+        }}
+      />
       <div className="mb-3.5 text-[12px] uppercase tracking-[0.04em] text-ink-3">{label}</div>
       <div className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1">
         {value}
@@ -31,10 +40,22 @@ function Stat({
 
 const KELLY_MAILTO = "mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date";
 
-function NextWorkshop({ data }: { data: NextWorkshopCard | null }) {
+function AccentStrip({ accent }: { accent?: string | null }) {
+  if (!accent) return null;
+  return (
+    <span
+      className="absolute left-0 top-0 bottom-0 w-[3px]"
+      style={{ background: accent }}
+      aria-hidden
+    />
+  );
+}
+
+function NextWorkshop({ data, accent }: { data: NextWorkshopCard | null; accent?: string | null }) {
   if (!data) {
     return (
-      <div className={`p-[18px_20px_20px] ${CARD}`}>
+      <div className={`relative overflow-hidden p-[18px_20px_20px] ${CARD}`}>
+        <AccentStrip accent={accent} />
         <div className="mb-2 text-[12px] uppercase tracking-[0.04em] text-ink-3">
           Next workshop
         </div>
@@ -56,7 +77,8 @@ function NextWorkshop({ data }: { data: NextWorkshopCard | null }) {
   }
 
   return (
-    <div className={`p-[18px_20px_20px] ${CARD}`}>
+    <div className={`relative overflow-hidden p-[18px_20px_20px] ${CARD}`}>
+      <AccentStrip accent={accent} />
       <div className="mb-3 text-[12px] uppercase tracking-[0.04em] text-ink-3">
         Next workshop
       </div>
@@ -86,11 +108,14 @@ export function ClientOverview({
   workshops,
   workshopHref,
   nextWorkshop,
+  accentColor,
 }: {
   workshops: WorkshopWithStats[];
   workshopHref: (id: string) => string;
   nextWorkshop?: NextWorkshopCard | null;
+  accentColor?: string | null;
 }) {
+  const accent = accentColor?.trim() || null;
   const totalAttendees = workshops.reduce((acc, w) => acc + w.live_count, 0);
   const totalRegistered = workshops.reduce((acc, w) => acc + w.registered_count, 0);
   const avgAttendancePct =
@@ -98,23 +123,26 @@ export function ClientOverview({
 
   return (
     <div className="space-y-6">
-      <NextWorkshop data={nextWorkshop ?? null} />
+      <NextWorkshop data={nextWorkshop ?? null} accent={accent} />
 
       <div className="grid gap-3.5 sm:grid-cols-3">
-        <Stat label="Workshops" value={workshops.length} />
+        <Stat label="Workshops" value={workshops.length} accent={accent} />
         <Stat
           label="Total attendees"
           value={totalAttendees}
           hint={`${totalRegistered} registered`}
+          accent={accent}
         />
         <Stat
           label="Average attendance"
           value={`${avgAttendancePct}%`}
           hint="Live ÷ registered"
+          accent={accent}
         />
       </div>
 
-      <div className={`${CARD} overflow-hidden`}>
+      <div className={`relative ${CARD} overflow-hidden`}>
+        <AccentStrip accent={accent} />
         <div className="flex items-center gap-2.5 px-5 pb-3.5 pt-4">
           <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">Workshops</h3>
           <span className={PILL}>{workshops.length}</span>
