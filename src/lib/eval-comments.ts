@@ -2,6 +2,7 @@ import "server-only";
 import Papa from "papaparse";
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { listSheetTabs } from "@/lib/google-sheets";
 
 type ExtractedComment = {
   comment_text: string;
@@ -98,8 +99,27 @@ async function fetchSheetCsv(sheetId: string, tab: string): Promise<string | nul
   }
 }
 
-async function fetchEvalCsv(sheetId: string): Promise<{ tab: string; csv: string } | null> {
-  for (const tab of TAB_CANDIDATES) {
+// Pick the evaluation tab from a sheet's REAL tab list. Prefer an exact
+// eval/evaluation(s) name, then any tab containing "eval".
+function pickEvalTab(tabs: string[]): string | null {
+  return (
+    tabs.find((t) => /^\s*eval(uation)?s?\s*$/i.test(t)) ??
+    tabs.find((t) => /eval/i.test(t)) ??
+    null
+  );
+}
+
+async function fetchEvalCsv(
+  sheetId: string,
+  knownTabs: string[],
+): Promise<{ tab: string; csv: string } | null> {
+  // CRITICAL: gviz silently returns the FIRST sheet when asked for a tab name
+  // that doesn't exist. So when we know the real tab names (via the Sheets
+  // API), fetch ONLY the resolved eval tab — never blind-probe candidate names,
+  // or we'd lock onto whatever the first sheet happens to be (e.g. registrations).
+  const resolved = pickEvalTab(knownTabs);
+  const order = resolved ? [resolved] : TAB_CANDIDATES;
+  for (const tab of order) {
     const csv = await fetchSheetCsv(sheetId, tab);
     if (csv) return { tab, csv };
   }
@@ -140,7 +160,8 @@ export async function fetchEvalComments(
     return { inserted: 0, error: "Could not parse sheet ID from URL" };
   }
 
-  const fetched = await fetchEvalCsv(sheetId);
+  const knownTabs = await listSheetTabs(url);
+  const fetched = await fetchEvalCsv(sheetId, knownTabs);
   if (!fetched) {
     return {
       inserted: 0,
