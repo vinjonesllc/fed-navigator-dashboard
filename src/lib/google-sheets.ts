@@ -46,6 +46,21 @@ export async function listSheetTabs(sheetUrl: string | null | undefined): Promis
   }
 }
 
+/**
+ * Fetch the full raw CSV of a single tab (all columns + rows, header included),
+ * for download/export. Uses the keyless gviz endpoint, so it works on any
+ * link-readable sheet. Returns null on any failure.
+ */
+export async function fetchTabCsvForExport(
+  sheetUrl: string | null | undefined,
+  tab: string | null | undefined,
+): Promise<string | null> {
+  if (!sheetUrl || !tab) return null;
+  const sheetId = extractSheetId(sheetUrl);
+  if (!sheetId) return null;
+  return fetchTabCsv(sheetId, tab);
+}
+
 async function fetchTabCsv(sheetId: string, tab: string): Promise<string | null> {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
   try {

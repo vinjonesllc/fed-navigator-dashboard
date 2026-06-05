@@ -87,6 +87,11 @@ export default async function ClientDetailPage({
             workshopHref={(wid) => `/admin/clients/${id}/workshops/${wid}`}
             editHref={manager ? (wid) => `/admin/clients/${id}/workshops/${wid}/edit` : undefined}
             nextWorkshop={nextWorkshop}
+            registrationsExportHref={
+              client.eval_sheet_url && client.next_workshop_registrant_tab
+                ? `/api/registrations/export?clientId=${id}`
+                : undefined
+            }
             accentColor={client.accent_color}
           />
         </TabsContent>

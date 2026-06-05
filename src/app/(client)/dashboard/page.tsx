@@ -34,6 +34,11 @@ export default async function OverviewPage() {
         workshops={workshops}
         workshopHref={(id) => `/dashboard/workshops/${id}`}
         nextWorkshop={nextWorkshop}
+        registrationsExportHref={
+          client?.eval_sheet_url && client?.next_workshop_registrant_tab
+            ? `/api/registrations/export?clientId=${clientId}`
+            : undefined
+        }
         accentColor={client?.accent_color ?? null}
       />
     </div>
