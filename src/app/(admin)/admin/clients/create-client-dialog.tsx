@@ -45,7 +45,11 @@ export function CreateClientDialog() {
           action={(fd) => {
             startTransition(async () => {
               try {
-                await createClient(fd);
+                const res = await createClient(fd);
+                if (!res.ok) {
+                  toast.error(res.error);
+                  return;
+                }
                 toast.success("Client created");
                 setBrand("Fed Pilot");
                 setOpen(false);

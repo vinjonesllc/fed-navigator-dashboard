@@ -60,7 +60,11 @@ export function EditClientForm({
       action={(fd) => {
         startTransition(async () => {
           try {
-            await updateClient(client.id, fd);
+            const res = await updateClient(client.id, fd);
+            if (!res.ok) {
+              toast.error(res.error);
+              return;
+            }
             toast.success("Saved");
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Save failed");

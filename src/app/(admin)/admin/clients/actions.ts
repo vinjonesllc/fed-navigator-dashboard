@@ -36,6 +36,21 @@ function nextWorkshopFields(parsed: ClientParsed) {
   };
 }
 
+export type ActionResult = { ok: true } | { ok: false; error: string };
+
+// Turn a Postgres/Supabase error into a human-friendly message. Returned (not
+// thrown) so the message survives — Next.js sanitizes THROWN server errors in
+// production into a generic "Server Components render" string.
+function friendlyDbError(error: { code?: string; message: string }): string {
+  if (error.code === "23514" && /brand/i.test(error.message)) {
+    return "That brand isn't enabled in the database yet. Apply the latest brand migration, then try again.";
+  }
+  if (error.code === "23505") {
+    return "A client with that name or slug already exists.";
+  }
+  return error.message || "Could not save the client.";
+}
+
 function readClientForm(formData: FormData) {
   return ClientInput.parse({
     name: formData.get("name"),
@@ -51,9 +66,15 @@ function readClientForm(formData: FormData) {
   });
 }
 
-export async function createClient(formData: FormData) {
+export async function createClient(formData: FormData): Promise<ActionResult> {
   await requireContentManager();
-  const parsed = readClientForm(formData);
+
+  let parsed: ClientParsed;
+  try {
+    parsed = readClientForm(formData);
+  } catch {
+    return { ok: false, error: "Please check the form fields and try again." };
+  }
 
   const slug = parsed.slug?.trim() ? slugify(parsed.slug) : slugify(parsed.name);
 
@@ -67,14 +88,21 @@ export async function createClient(formData: FormData) {
     brand: parsed.brand,
     ...nextWorkshopFields(parsed),
   });
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: friendlyDbError(error) };
 
   revalidatePath("/admin/clients");
+  return { ok: true };
 }
 
-export async function updateClient(id: string, formData: FormData) {
+export async function updateClient(id: string, formData: FormData): Promise<ActionResult> {
   await requireContentManager();
-  const parsed = readClientForm(formData);
+
+  let parsed: ClientParsed;
+  try {
+    parsed = readClientForm(formData);
+  } catch {
+    return { ok: false, error: "Please check the form fields and try again." };
+  }
 
   const slug = parsed.slug?.trim() ? slugify(parsed.slug) : slugify(parsed.name);
 
@@ -92,10 +120,11 @@ export async function updateClient(id: string, formData: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: friendlyDbError(error) };
 
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${id}`);
+  return { ok: true };
 }
 
 export async function uploadClientLogo(clientId: string, formData: FormData) {
