@@ -251,6 +251,7 @@ export function UploadForm({
             type="file"
             accept=".csv,text/csv"
             multiple
+            className="w-fit min-w-fit"
             onChange={(e) => {
               void onFilesChosen(e.target.files);
               // Reset so re-selecting the same file fires onChange again.
