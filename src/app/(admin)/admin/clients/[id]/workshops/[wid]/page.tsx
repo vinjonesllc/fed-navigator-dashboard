@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isContentManager, requireConsoleAccess, userCanAccessClient } from "@/lib/auth";
@@ -91,6 +92,12 @@ export default async function AdminWorkshopDetailPage({
       deleteAction={
         manager ? (
           <>
+            <Link
+              href={`/admin/clients/${id}/workshops/${wid}/edit`}
+              className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+            >
+              Edit
+            </Link>
             <ReuploadButton workshopId={wid} kind="chat" label="Re-upload Chat" />
             <ReuploadButton workshopId={wid} kind="qa" label="Re-upload Q&A" />
             <RefetchEvalButton workshopId={wid} />

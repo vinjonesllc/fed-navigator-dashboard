@@ -162,6 +162,56 @@ export async function uploadCsv(formData: FormData) {
   };
 }
 
+// Edit a workshop's metadata. Everything is editable EXCEPT the client and the
+// uploaded files (attendees / chat / Q&A) — those require a re-upload flow.
+const UpdateSchema = z.object({
+  workshopId: z.string().uuid(),
+  title: z.string().min(2),
+  workshopDate: z.string().min(8),
+  presenter: z.string().optional(),
+  topic: z.string().optional(),
+  notes: z.string().optional(),
+  scheduledMinutes: z.coerce.number().int().positive().max(720),
+});
+
+export async function updateWorkshop(formData: FormData) {
+  await requireContentManager();
+  const parsed = UpdateSchema.parse({
+    workshopId: formData.get("workshopId"),
+    title: formData.get("title"),
+    workshopDate: formData.get("workshopDate"),
+    presenter: formData.get("presenter") ?? undefined,
+    topic: formData.get("topic") ?? undefined,
+    notes: formData.get("notes") ?? undefined,
+    scheduledMinutes: formData.get("scheduledMinutes"),
+  });
+
+  const admin = createSupabaseAdminClient();
+  const { data: ws, error } = await admin
+    .from("workshops")
+    .update({
+      title: parsed.title,
+      workshop_date: parsed.workshopDate,
+      presenter: parsed.presenter?.trim() || null,
+      topic: parsed.topic?.trim() || null,
+      notes: parsed.notes?.trim() || null,
+      scheduled_minutes: parsed.scheduledMinutes,
+    })
+    .eq("id", parsed.workshopId)
+    .select("client_id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!ws) throw new Error("Workshop not found");
+
+  revalidatePath("/admin/clients");
+  revalidatePath(`/admin/clients/${ws.client_id}`);
+  revalidatePath(`/admin/clients/${ws.client_id}/workshops/${parsed.workshopId}`);
+  revalidatePath(`/dashboard/workshops/${parsed.workshopId}`);
+
+  return { ok: true as const, clientId: ws.client_id as string };
+}
+
 const ReextractSchema = z.object({ workshopId: z.string().uuid() });
 
 export async function refetchEvalComments(formData: FormData) {

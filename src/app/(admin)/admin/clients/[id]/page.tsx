@@ -85,6 +85,7 @@ export default async function ClientDetailPage({
           <ClientOverview
             workshops={workshops}
             workshopHref={(wid) => `/admin/clients/${id}/workshops/${wid}`}
+            editHref={manager ? (wid) => `/admin/clients/${id}/workshops/${wid}/edit` : undefined}
             nextWorkshop={nextWorkshop}
             accentColor={client.accent_color}
           />

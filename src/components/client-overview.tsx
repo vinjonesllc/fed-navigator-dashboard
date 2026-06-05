@@ -107,11 +107,13 @@ function NextWorkshop({ data, accent }: { data: NextWorkshopCard | null; accent?
 export function ClientOverview({
   workshops,
   workshopHref,
+  editHref,
   nextWorkshop,
   accentColor,
 }: {
   workshops: WorkshopWithStats[];
   workshopHref: (id: string) => string;
+  editHref?: (id: string) => string;
   nextWorkshop?: NextWorkshopCard | null;
   accentColor?: string | null;
 }) {
@@ -201,12 +203,22 @@ export function ClientOverview({
                     {pct}%
                   </td>
                   <td className="border-b border-line-2 px-4 py-3 text-right">
-                    <Link
-                      href={workshopHref(w.id)}
-                      className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
-                    >
-                      View →
-                    </Link>
+                    <div className="inline-flex items-center justify-end gap-1.5">
+                      {editHref && (
+                        <Link
+                          href={editHref(w.id)}
+                          className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                        >
+                          Edit
+                        </Link>
+                      )}
+                      <Link
+                        href={workshopHref(w.id)}
+                        className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                      >
+                        View →
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );
