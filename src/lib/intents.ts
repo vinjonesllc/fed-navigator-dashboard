@@ -108,20 +108,24 @@ The workshop date is **${workshopDate}**. "Within 12 months" means a retirement 
 
 # Task 1 — retiring_soon (retiring within the next 12 months)
 
-Identify ATTENDEES who indicate they are retiring on or before ${cutoff12} (the next 12 months). Be GENEROUS, not strict — **tentative answers COUNT**. Include anyone whose chat or Q&A reasonably implies retiring within the year.
+Identify ATTENDEES who indicate — explicitly OR plausibly — that they are retiring on or before ${cutoff12} (the next 12 months). Be GENEROUS, not strict: **tentative answers COUNT, and ambiguous answers that could reasonably be read as within 12 months COUNT too** (mark them "Possibly …"). When you're unsure whether a stated time falls inside the window, INCLUDE it rather than drop it.
 
-IMPORTANT conversational pattern: roughly 30 minutes into the workshop, after attendees type their AGENCY (e.g. "VA", "IRS", "EPA", "NPS"), the presenter asks something like "Who is going to retire in the next 6 months / next year?" The attendee messages that immediately follow are answers to that question. Treat each such answer as a candidate:
+Scan the ENTIRE transcript — beginning, middle, and end — for any attendee statement of retiring within the year (e.g. "looking to retire next June", "I plan to retire this fall", "my last day is in August", "hoping to go end of this year"). Do NOT restrict yourself to one section.
+
+SPECIAL FOCUS — the ~30-minute mark: after attendees type their AGENCY (e.g. "VA", "IRS", "EPA", "NPS"), the presenter asks "Who is going to retire in the next 6 months / next year?" The terse messages right after are answers to THAT question — capture them even when they're just:
 - Affirmatives: "yes", "me", "meeeee", "yepper", "absolutely", "that's me", "👍"
-- **TENTATIVE affirmatives (INCLUDE these)**: "possibly", "maybe", "probably", "hopefully", "looking to", "planning to", "I think so"
+- **TENTATIVE (INCLUDE these)**: "possibly", "maybe", "probably", "hopefully", "looking to", "planning to", "I think so"
 - Durations / dates: "8 weeks", "a few months", "end of this year", "December", "May 30", "12/31"
 
-Catch all of these patterns anywhere in the transcript:
-- **Explicit date** on or before ${cutoff12}: "May 30", "June 1", "8/31/2026", "Dec 2026", "next June" (if within 12 months)
-- **Countdown / short horizon**: "8 weeks", "33-day countdown", "retiring in a few weeks/months", "next month", "later this year", "end of this year"
-- **Retirement application activity**: "submitting my retirement application", "my last day is …" within the window
-- **Yes / tentative answer** following the presenter's "retire in the next 6 months / next year?" question — possibly / maybe / hopefully all COUNT
+Patterns to catch ANYWHERE in the transcript:
+- **Explicit date** on/before ${cutoff12}: "May 30", "June 1", "8/31/2026", "Dec 2026", "next June"
+- **Ambiguous date that could fall within 12 months** ("next June", "this fall", "later this year", "end of the year") — INCLUDE as "Possibly …"
+- **Countdown / short horizon**: "8 weeks", "33-day countdown", "retiring in a few weeks/months", "next month"
+- **Retirement application activity**: "submitting my retirement application", "my last day is …"
+- **Yes / tentative answer** to the retire-soon question
 
 EXCLUDE:
+- **The generic "what's the best CALENDAR DAY to retire on?" discussion.** Earlier in the workshop the presenter asks what day of the month is best to retire on; attendees answer with general advice like "end of the month", "last day of the month", "Dec 31st", "today", "now", "January 31st". These are NOT statements that the speaker themselves is retiring then — EXCLUDE them, UNLESS that same person also gives a personal near-term retirement signal elsewhere.
 - Clearly more than 12 months out: "2 years out", "6 years!!!", "2028", "Jan 2030", "at age 67" (with no near-term date)
 - Single-digit numbers ("1", "2", "5") that are years-until-retirement (only include if context clearly means months/weeks)
 - Anyone whose role is PRESENTER
@@ -129,7 +133,7 @@ EXCLUDE:
 For each match, return:
 - attendee_name (from the line)
 - attendee_email (lowercase)
-- detail — an indication of WHEN they retire. Use, in order of preference: (1) a specific date normalized to YYYY-MM-DD if one is stated; (2) the stated month or phrase ("December", "end of this year", "8 weeks", "next June"); (3) if only a yes/tentative answer with no timing, output "Within 6 months" when it sounds imminent or is on/before ${cutoff6}, otherwise "Within 12 months". For TENTATIVE answers (possibly/maybe/hopefully), prefix the detail with "Possibly " (e.g. "Possibly December", "Possibly within 12 months").
+- detail — an indication of WHEN they retire, in order of preference: (1) a specific date normalized to YYYY-MM-DD if stated; (2) the stated month or phrase ("December", "end of this year", "next June", "8 weeks") — ALWAYS prefer this over a generic bucket whenever any timing is mentioned; (3) only if NO timing at all is given, use "Within 6 months" (if it sounds imminent or is on/before ${cutoff6}) or "Within 12 months". For TENTATIVE or AMBIGUOUS answers, prefix with "Possibly " (e.g. "Possibly next June", "Possibly December", "Possibly within 12 months").
 - source ("chat" or "qa")
 - source_quote — exact text, ≤140 chars
 
