@@ -92,41 +92,44 @@ export async function extractIntents(
   lines.sort((a, b) => a.ts.localeCompare(b.ts));
 
   const workshopDate = workshop.workshop_date as string;
-  const cutoffISO = (() => {
+  const addMonthsISO = (n: number) => {
     const d = new Date(workshopDate);
-    d.setMonth(d.getMonth() + 6);
+    d.setMonth(d.getMonth() + n);
     return d.toISOString().slice(0, 10);
-  })();
+  };
+  const cutoff6 = addMonthsISO(6);
+  const cutoff12 = addMonthsISO(12);
 
   const prompt = `You are analyzing the full transcript (chat + Q&A, chronological) of a federal retirement-readiness workshop held on ${workshopDate}.
 
 Below, each line is tagged [PRESENTER] (Fed Pilot staff or guest presenter) or [ATTENDEE] (a federal employee participant). Presenter lines are included so you can see the questions being asked. **Only output ATTENDEE rows** in your final answer.
 
-The workshop date is **${workshopDate}**. "Within 6 months" means a retirement date between ${workshopDate} and **${cutoffISO}**.
+The workshop date is **${workshopDate}**. "Within 12 months" means a retirement date between ${workshopDate} and **${cutoff12}**. The 6-month mark is **${cutoff6}** — used only to label HOW SOON someone is retiring.
 
-# Task 1 — retiring_soon
+# Task 1 — retiring_soon (retiring within the next 12 months)
 
-Identify ATTENDEES who indicate they are retiring on or before ${cutoffISO}. Be GENEROUS, not strict. Include anyone whose message OR Q&A reasonably implies imminent retirement in that window. Read in conversational context — when a presenter asks "When are you retiring?" or "Anyone retiring in the next 6 months?", treat each attendee answer that follows as a candidate.
+Identify ATTENDEES who indicate they are retiring on or before ${cutoff12} (the next 12 months). Be GENEROUS, not strict — **tentative answers COUNT**. Include anyone whose chat or Q&A reasonably implies retiring within the year.
 
-Catch all of these patterns:
+IMPORTANT conversational pattern: roughly 30 minutes into the workshop, after attendees type their AGENCY (e.g. "VA", "IRS", "EPA", "NPS"), the presenter asks something like "Who is going to retire in the next 6 months / next year?" The attendee messages that immediately follow are answers to that question. Treat each such answer as a candidate:
+- Affirmatives: "yes", "me", "meeeee", "yepper", "absolutely", "that's me", "👍"
+- **TENTATIVE affirmatives (INCLUDE these)**: "possibly", "maybe", "probably", "hopefully", "looking to", "planning to", "I think so"
+- Durations / dates: "8 weeks", "a few months", "end of this year", "December", "May 30", "12/31"
 
-- **Explicit date** in the window: "May 30", "May30", "June 1", "8/31/2026", "Jan 2027" — *only if Jan 2027 ≤ ${cutoffISO}*, otherwise reject
-- **Short countdown** to retirement: "33-day countdown", "10 days away", "retiring in a few weeks", "I'm retiring on May 30", "retiring next month", "few months out"
-- **Recent retirement application activity**: "I'm submitting my retirement application", "I'm being asked to submit a W-4P with my retirement application", "my last day is …" within window
-- **Yes-answer** following a presenter question about retiring soon / within the year / next 6 months
-- **End of year date** ONLY if that end-of-year falls within the window (e.g., "12/31" said in a workshop dated ${workshopDate} — only include if Dec 31 of that year ≤ ${cutoffISO})
+Catch all of these patterns anywhere in the transcript:
+- **Explicit date** on or before ${cutoff12}: "May 30", "June 1", "8/31/2026", "Dec 2026", "next June" (if within 12 months)
+- **Countdown / short horizon**: "8 weeks", "33-day countdown", "retiring in a few weeks/months", "next month", "later this year", "end of this year"
+- **Retirement application activity**: "submitting my retirement application", "my last day is …" within the window
+- **Yes / tentative answer** following the presenter's "retire in the next 6 months / next year?" question — possibly / maybe / hopefully all COUNT
 
 EXCLUDE:
-- Dates clearly more than 6 months out: "Jan 2030", "2028", "aug 2028", "8/31/2028", "Jan 2027" if Jan 2027 > ${cutoffISO}
-- "2 years out", "6 years!!!", "I have a few more years", "at age 67" (without explicit imminent date)
-- Vague answers like "last day of the month" or "end of pay period" with no year clue
-- Single-digit numbers ("1", "2", "5") — these are usually years-until-retirement answers; only include if context clearly says "months" or matches a "1 → less than 6 months" interpretation
+- Clearly more than 12 months out: "2 years out", "6 years!!!", "2028", "Jan 2030", "at age 67" (with no near-term date)
+- Single-digit numbers ("1", "2", "5") that are years-until-retirement (only include if context clearly means months/weeks)
 - Anyone whose role is PRESENTER
 
 For each match, return:
 - attendee_name (from the line)
 - attendee_email (lowercase)
-- detail — the parsed/normalized date as YYYY-MM-DD if known; otherwise the literal phrase (e.g., "33-day countdown", "May 30"); fallback to "Within 6 months"
+- detail — an indication of WHEN they retire. Use, in order of preference: (1) a specific date normalized to YYYY-MM-DD if one is stated; (2) the stated month or phrase ("December", "end of this year", "8 weeks", "next June"); (3) if only a yes/tentative answer with no timing, output "Within 6 months" when it sounds imminent or is on/before ${cutoff6}, otherwise "Within 12 months". For TENTATIVE answers (possibly/maybe/hopefully), prefix the detail with "Possibly " (e.g. "Possibly December", "Possibly within 12 months").
 - source ("chat" or "qa")
 - source_quote — exact text, ≤140 chars
 

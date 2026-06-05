@@ -342,7 +342,7 @@ export function WorkshopDetail({
         <div className={`px-5 py-4 ${CARD}`}>
           <div className="mb-3 flex items-center gap-2.5">
             <h3 className="m-0 font-display text-[14px] font-semibold text-ink-1">
-              Retiring within 6 months
+              Retiring within the next 12 months
             </h3>
             <span className={PILL}>
               {retiring.length} {retiring.length === 1 ? "person" : "people"}

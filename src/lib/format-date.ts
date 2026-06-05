@@ -29,10 +29,10 @@ export function formatWorkshopDate(date: string | null | undefined): string {
 /**
  * If the value looks like a YYYY-MM-DD date, render it human-readable.
  * Otherwise return the input unchanged (handy for free-text intent details
- * like "33-day countdown" or "Within 6 months").
+ * like "8 weeks", "Possibly December", or "Within 12 months").
  */
 export function humanizeDateIfIso(value: string | null | undefined): string {
-  if (!value) return "Within 6 months";
+  if (!value) return "Within 12 months";
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return formatWorkshopDate(value);
   return value;
 }
