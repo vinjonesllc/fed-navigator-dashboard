@@ -32,11 +32,11 @@ export function CreateClientDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New client</Button>
+        <Button>New advisor</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create client</DialogTitle>
+          <DialogTitle>Create advisor</DialogTitle>
           <DialogDescription>
             An organization that hosts workshops with Fed Navigator.
           </DialogDescription>
@@ -50,7 +50,7 @@ export function CreateClientDialog() {
                   toast.error(res.error);
                   return;
                 }
-                toast.success("Client created");
+                toast.success("Advisor created");
                 setBrand("Fed Pilot");
                 setOpen(false);
               } catch (e) {

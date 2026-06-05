@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const adminUser = isAdmin(role);
   const manager = isContentManager(role);
 
-  const nav: { href: string; label: string }[] = [{ href: "/admin/clients", label: "Clients" }];
+  const nav: { href: string; label: string }[] = [{ href: "/admin/clients", label: "Advisors" }];
   if (adminUser) nav.push({ href: "/admin/team", label: "Team" });
   if (manager) {
     nav.push({ href: "/admin/upload", label: "Upload" });

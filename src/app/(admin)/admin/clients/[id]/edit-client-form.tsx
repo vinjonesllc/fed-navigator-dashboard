@@ -115,7 +115,7 @@ export function EditClientForm({
           placeholder="#0F4C81"
         />
         <p className="text-xs text-muted-foreground">
-          Tints this client&apos;s overview — the header bar and the accent line/strip on
+          Tints this advisor&apos;s overview — the header bar and the accent line/strip on
           each card. Leave blank for the default.
         </p>
       </div>
@@ -138,7 +138,7 @@ export function EditClientForm({
         <div>
           <p className="text-sm font-medium">Next workshop</p>
           <p className="text-xs text-muted-foreground">
-            Shown on the client&apos;s overview. Leave the date blank to hide it.
+            Shown on the advisor&apos;s overview. Leave the date blank to hide it.
           </p>
         </div>
 
@@ -229,7 +229,7 @@ export function EditClientForm({
           </Select>
           <p className="text-xs text-muted-foreground">
             {sheetTabs.length > 0
-              ? "Tabs from this client's evaluations sheet. We count its data rows as the current registrant total."
+              ? "Tabs from this advisor's evaluations sheet. We count its data rows as the current registrant total."
               : "Add an evaluations sheet URL above (and a GOOGLE_API_KEY) to list tabs. The registrant count reads from the selected tab."}
           </p>
         </div>

@@ -67,10 +67,10 @@ export function WorkshopEditForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Client</Label>
+        <Label>Advisor</Label>
         <Input value={clientName} disabled readOnly />
         <p className="text-xs text-muted-foreground">
-          The client can&apos;t be changed. To move a workshop, delete and re-upload it.
+          The advisor can&apos;t be changed. To move a workshop, delete and re-upload it.
         </p>
       </div>
 

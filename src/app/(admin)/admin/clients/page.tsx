@@ -44,7 +44,7 @@ export default async function ClientsPage() {
       <div className="flex items-center justify-between border-b border-line-2 pb-5">
         <div>
           <h1 className="m-0 font-display text-[28px] font-semibold tracking-[-0.025em] text-ink-1 dark:text-white">
-            Clients
+            Advisors
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-3">
             Agencies, associations, and partners that host workshops with Fed Navigator.
@@ -56,7 +56,7 @@ export default async function ClientsPage() {
       <div className={`${CARD} overflow-hidden`}>
         <div className="flex items-center gap-2.5 px-5 pb-3.5 pt-4">
           <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1 dark:text-white">
-            All clients
+            All advisors
           </h3>
           <span className={PILL}>{list.length}</span>
         </div>
@@ -82,7 +82,7 @@ export default async function ClientsPage() {
                   colSpan={4}
                   className="border-b border-line-2 px-4 py-6 text-center text-ink-3"
                 >
-                  {manager ? "No clients yet. Create one above." : "No clients assigned to you."}
+                  {manager ? "No advisors yet. Create one above." : "No advisors assigned to you."}
                 </td>
               </tr>
             )}

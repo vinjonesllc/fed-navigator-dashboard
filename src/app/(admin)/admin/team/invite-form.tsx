@@ -112,10 +112,10 @@ export function InviteForm({ clients }: { clients: ClientOpt[] }) {
 
       {role === "advisor" && (
         <div className="space-y-2">
-          <Label>Client (advisor's assigned page)</Label>
+          <Label>Advisor (assigned page)</Label>
           <Select value={clientId} onValueChange={setClientId}>
             <SelectTrigger>
-              <SelectValue placeholder="Pick a client" />
+              <SelectValue placeholder="Pick an advisor" />
             </SelectTrigger>
             <SelectContent>
               {clients.map((c) => (
@@ -130,10 +130,10 @@ export function InviteForm({ clients }: { clients: ClientOpt[] }) {
 
       {role === "super_advisor" && (
         <div className="space-y-2">
-          <Label>Clients this Super-Advisor can view</Label>
+          <Label>Advisors this Super-Advisor can view</Label>
           <div className="max-h-48 overflow-y-auto rounded border border-line-1 p-2">
             {clients.length === 0 ? (
-              <p className="p-2 text-sm text-ink-4">No clients to assign.</p>
+              <p className="p-2 text-sm text-ink-4">No advisors to assign.</p>
             ) : (
               clients.map((c) => (
                 <label
@@ -151,7 +151,7 @@ export function InviteForm({ clients }: { clients: ClientOpt[] }) {
             )}
           </div>
           <p className="text-xs text-ink-4">
-            Pick at least one. Super-Advisors see these clients' pages read-only.
+            Pick at least one. Super-Advisors see these advisors&apos; pages read-only.
           </p>
         </div>
       )}

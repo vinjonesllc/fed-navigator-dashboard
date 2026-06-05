@@ -56,7 +56,7 @@ export default async function TeamPage() {
         <table className="w-full border-separate border-spacing-0 text-[13px]">
           <thead>
             <tr>
-              {["Email", "Role", "Client / Access", "Joined"].map((h) => (
+              {["Email", "Role", "Advisor / Access", "Joined"].map((h) => (
                 <th
                   key={h}
                   className="border-b border-line-1 bg-bg-2 px-4 py-2.5 text-left font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4"

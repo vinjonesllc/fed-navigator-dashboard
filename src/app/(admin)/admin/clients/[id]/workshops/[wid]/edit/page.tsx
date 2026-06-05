@@ -41,7 +41,7 @@ export default async function EditWorkshopPage({
         <h1 className="text-2xl font-semibold tracking-tight">Edit workshop</h1>
         <p className="text-sm text-muted-foreground">
           Update the title, date, presenter, and other details. Uploaded files and the
-          client stay as-is.
+          advisor stay as-is.
         </p>
       </div>
 

@@ -45,7 +45,7 @@ export default async function ClientDetailPage({
       {!isAdvisor && (
         <div className="flex items-center gap-2.5 text-[12.5px] text-ink-3">
           <Link href="/admin/clients" className="hover:text-ink-1">
-            ← {manager ? "Clients" : "My clients"}
+            ← {manager ? "Advisors" : "My advisors"}
           </Link>
           <span className="text-ink-4">/</span>
           <span className="text-ink-2 dark:text-white">{client.name}</span>
