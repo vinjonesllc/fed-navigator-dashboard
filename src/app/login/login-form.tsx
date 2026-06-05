@@ -35,7 +35,7 @@ export function LoginForm({ next, error }: { next?: string; error?: string }) {
     >
       {error === "no-client" && (
         <p className="rounded border border-amber-bord bg-amber-soft px-3 py-2 text-[13px] text-amber">
-          Your account is not linked to a client. Contact Fed Pilot to be added.
+          Your account is not linked to a client. Contact Fed Navigator to be added.
         </p>
       )}
       {error === "no-role" && (

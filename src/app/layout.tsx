@@ -24,7 +24,7 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Fed Navigator",
-  description: "Workshop attendance and engagement analytics for Fed Pilot clients.",
+  description: "Workshop attendance and engagement analytics for Fed Navigator clients.",
 };
 
 // Runs before React hydrates so the saved theme is applied without a flash of

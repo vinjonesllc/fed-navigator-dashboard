@@ -47,7 +47,7 @@ export default async function ClientsPage() {
             Clients
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-3">
-            Agencies, associations, and partners that host workshops with Fed Pilot.
+            Agencies, associations, and partners that host workshops with Fed Navigator.
           </p>
         </div>
         {manager && <CreateClientDialog />}

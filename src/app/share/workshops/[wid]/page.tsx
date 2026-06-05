@@ -10,7 +10,7 @@ import type {
   WorkshopEvalComment,
 } from "@/lib/supabase/types";
 
-export const metadata = { title: "Workshop summary — Fed Pilot" };
+export const metadata = { title: "Workshop summary — Fed Navigator" };
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";

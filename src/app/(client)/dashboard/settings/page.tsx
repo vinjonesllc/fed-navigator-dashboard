@@ -31,7 +31,7 @@ export default async function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Team and branding. New members are added by Fed Pilot — contact your account manager.
+          Team and branding. New members are added by Fed Navigator — contact your account manager.
         </p>
       </div>
       <Card>

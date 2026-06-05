@@ -38,7 +38,7 @@ export function CreateClientDialog() {
         <DialogHeader>
           <DialogTitle>Create client</DialogTitle>
           <DialogDescription>
-            An organization that hosts workshops with Fed Pilot.
+            An organization that hosts workshops with Fed Navigator.
           </DialogDescription>
         </DialogHeader>
         <form
