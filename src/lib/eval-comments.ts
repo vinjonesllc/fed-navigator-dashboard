@@ -499,17 +499,29 @@ ${rowsAsLines}`;
     };
   }
 
-  const { error } = await admin.from("workshop_eval_comments").insert(
-    comments.slice(0, 7).map((c, i) => ({
-      workshop_id: workshopId,
-      comment_text: c.comment_text.trim().slice(0, 2000),
-      comment_author: c.comment_author?.trim().slice(0, 200) ?? null,
-      comment_agency: c.comment_agency?.trim().slice(0, 100) ?? null,
-      comment_email: c.comment_email?.trim().toLowerCase().slice(0, 200) || null,
-      comment_date: c.comment_date ?? null,
-      display_order: i,
-    })),
-  );
+  const baseRows = comments.slice(0, 7).map((c, i) => ({
+    workshop_id: workshopId,
+    comment_text: c.comment_text.trim().slice(0, 2000),
+    comment_author: c.comment_author?.trim().slice(0, 200) ?? null,
+    comment_agency: c.comment_agency?.trim().slice(0, 100) ?? null,
+    comment_date: c.comment_date ?? null,
+    display_order: i,
+  }));
+  const emails = comments
+    .slice(0, 7)
+    .map((c) => c.comment_email?.trim().toLowerCase().slice(0, 200) || null);
+
+  // Insert with comment_email; if the column isn't there yet (migration 0011
+  // not applied), fall back to inserting without it so testimonials still save.
+  let { error } = await admin
+    .from("workshop_eval_comments")
+    .insert(baseRows.map((r, i) => ({ ...r, comment_email: emails[i] })));
+  if (error && /comment_email/i.test(error.message)) {
+    console.warn(
+      "[eval-comments] comment_email column missing — inserting without it. Run migration 0011 to enable email linking.",
+    );
+    ({ error } = await admin.from("workshop_eval_comments").insert(baseRows));
+  }
 
   if (error) {
     console.error("[eval-comments] insert failed:", error.message);
