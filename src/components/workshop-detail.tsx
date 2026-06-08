@@ -130,6 +130,7 @@ export function WorkshopDetail({
   backLabel = "Back",
   leadsExportHref,
   exportAllHref,
+  evalsExportHref,
   deleteAction,
   shareBar,
 }: {
@@ -143,6 +144,7 @@ export function WorkshopDetail({
   backLabel?: string;
   leadsExportHref?: string;
   exportAllHref?: string;
+  evalsExportHref?: string;
   deleteAction?: React.ReactNode;
   shareBar?: React.ReactNode;
 }) {
@@ -238,6 +240,14 @@ export function WorkshopDetail({
           </h2>
           {evalComments.length > 0 && (
             <span className={PILL}>{evalComments.length} quoted</span>
+          )}
+          {evalsExportHref && (
+            <a
+              href={evalsExportHref}
+              className="ml-auto inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3 py-1.5 text-[12px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
+            >
+              ↓ Download evaluations
+            </a>
           )}
         </div>
         {evalComments.length === 0 && workshop.eval_rating_avg === null ? (

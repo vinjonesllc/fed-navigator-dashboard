@@ -49,16 +49,10 @@ export async function GET(request: NextRequest) {
   if (!workshop) {
     return NextResponse.json({ error: "Workshop not found" }, { status: 404 });
   }
-  // Authorization: must be able to access this client.
-  // Additionally, the "all" preset (which includes non-attendees and an
-  // attended Y/N column) is restricted to admin + editor + super_advisor —
-  // not single-client advisors.
+  // Authorization: must be able to access this client. All presets (including
+  // "all", which includes non-attendees + an attended Y/N column) are available
+  // to anyone who can access the client — advisors included.
   if (!userCanAccessClient(session, workshop.client_id)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  const role = session.appUser?.role;
-  const isAdvisor = role === "advisor" || role === "client";
-  if (preset === "all" && isAdvisor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

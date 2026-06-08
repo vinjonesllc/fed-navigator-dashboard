@@ -31,6 +31,12 @@ export default async function WorkshopDetailPage({
 
   if (!workshop) notFound();
 
+  const { data: client } = await admin
+    .from("clients")
+    .select("eval_sheet_url")
+    .eq("id", clientId)
+    .maybeSingle<{ eval_sheet_url: string | null }>();
+
   const [
     { data: attendees },
     { data: themes },
@@ -72,6 +78,8 @@ export default async function WorkshopDetailPage({
       backHref="/dashboard/workshops"
       backLabel="Workshops"
       leadsExportHref={`/api/leads/export?workshopId=${id}&preset=live`}
+      exportAllHref={`/api/leads/export?workshopId=${id}&preset=all`}
+      evalsExportHref={client?.eval_sheet_url ? `/api/evals/export?workshopId=${id}` : undefined}
     />
   );
 }

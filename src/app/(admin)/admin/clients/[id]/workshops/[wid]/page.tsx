@@ -73,8 +73,6 @@ export default async function AdminWorkshopDetailPage({
 
   const role = session.appUser?.role;
   const manager = isContentManager(role);
-  // Export All available to everyone except single-client advisors.
-  const isAdvisor = role === "advisor" || role === "client";
 
   return (
     <WorkshopDetail
@@ -87,7 +85,8 @@ export default async function AdminWorkshopDetailPage({
       backHref={`/admin/clients/${id}`}
       backLabel={client.name}
       leadsExportHref={`/api/leads/export?workshopId=${wid}&preset=live`}
-      exportAllHref={isAdvisor ? undefined : `/api/leads/export?workshopId=${wid}&preset=all`}
+      exportAllHref={`/api/leads/export?workshopId=${wid}&preset=all`}
+      evalsExportHref={client.eval_sheet_url ? `/api/evals/export?workshopId=${wid}` : undefined}
       shareBar={manager ? <ShareLinkBar workshopId={wid} /> : undefined}
       deleteAction={
         manager ? (

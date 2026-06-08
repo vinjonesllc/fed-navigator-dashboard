@@ -126,6 +126,73 @@ async function fetchEvalCsv(
   return null;
 }
 
+/**
+ * Build a CSV of ALL evaluation responses tied to a workshop — every row in the
+ * eval tab that falls within the same workshop_date → +7-day window the
+ * "What attendees said" section uses, with all columns. Used by the download
+ * button. Returns the CSV string + a little metadata, or an `error`.
+ */
+export async function getEvalExportCsv(
+  sheetUrl: string,
+  workshopDate: string,
+): Promise<
+  | { csv: string; tab: string; total: number; count: number; windowEnd: string }
+  | { error: string }
+> {
+  const sheetId = extractSheetId(sheetUrl);
+  if (!sheetId) return { error: "Could not parse sheet ID from URL" };
+
+  const knownTabs = await listSheetTabs(sheetUrl);
+  const fetched = await fetchEvalCsv(sheetId, knownTabs);
+  if (!fetched) {
+    return {
+      error:
+        "Could not load the EVAL / EVALUATION tab. Make sure the sheet is shared as 'Anyone with the link can view'.",
+    };
+  }
+
+  const parsed = Papa.parse<Record<string, string>>(fetched.csv, {
+    header: true,
+    skipEmptyLines: "greedy",
+    transformHeader: (h) => h.replace(/^﻿/, "").trim(),
+  });
+  if (!parsed.data || parsed.data.length === 0) {
+    return { error: `Tab "${fetched.tab}" was empty` };
+  }
+
+  const headers = parsed.meta.fields ?? Object.keys(parsed.data[0]);
+
+  const WINDOW_DAYS = 7;
+  const windowStart = parseLocalDate(workshopDate);
+  const windowEndDate = parseLocalDate(workshopDate);
+  windowEndDate.setDate(windowEndDate.getDate() + WINDOW_DAYS);
+
+  const dateCol = pickDateColumn(parsed.data, headers);
+  const windowed = dateCol
+    ? parsed.data.filter((row) => {
+        const raw = row[dateCol]?.trim();
+        if (!raw) return false;
+        const d = tryParseDate(raw);
+        if (!d) return false;
+        return d >= windowStart && d <= windowEndDate;
+      })
+    : parsed.data;
+
+  // Preserve original column order; emit header + all windowed rows.
+  const csv = Papa.unparse({
+    fields: headers,
+    data: windowed.map((row) => headers.map((h) => row[h] ?? "")),
+  });
+
+  return {
+    csv,
+    tab: fetched.tab,
+    total: parsed.data.length,
+    count: windowed.length,
+    windowEnd: isoDate(windowEndDate),
+  };
+}
+
 export async function fetchEvalComments(
   workshopId: string,
 ): Promise<{ inserted: number; error?: string }> {
