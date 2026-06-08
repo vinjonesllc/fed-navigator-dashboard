@@ -4,8 +4,11 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatWorkshopDate } from "@/lib/format-date";
 import { buildFunnel, buildRetention, engagementTotals, isLive } from "@/lib/workshop-stats";
 import { RetentionChart } from "@/components/charts/retention-chart";
+import { NextWorkshop } from "@/components/next-workshop-card";
+import { getNextWorkshop } from "@/lib/next-workshop";
 import type {
   Attendee,
+  Client,
   Workshop,
   WorkshopEvalComment,
 } from "@/lib/supabase/types";
@@ -116,27 +119,46 @@ export default async function PublicWorkshopPage({
 
   if (!workshop) notFound();
 
-  const [{ data: attendees }, { data: evalComments }, { count: qaCount }] = await Promise.all([
-    admin
-      .from("attendees")
-      .select("*")
-      .eq("workshop_id", wid)
-      .order("total_time_minutes", { ascending: false }),
-    admin
-      .from("workshop_eval_comments")
-      .select("*")
-      .eq("workshop_id", wid)
-      .order("display_order"),
-    admin
-      .from("workshop_qa")
-      .select("*", { count: "exact", head: true })
-      .eq("workshop_id", wid)
-      .eq("dismissed", false),
-  ]);
+  const [{ data: attendees }, { data: evalComments }, { count: qaCount }, { data: client }] =
+    await Promise.all([
+      admin
+        .from("attendees")
+        .select("*")
+        .eq("workshop_id", wid)
+        .order("total_time_minutes", { ascending: false }),
+      admin
+        .from("workshop_eval_comments")
+        .select("*")
+        .eq("workshop_id", wid)
+        .order("display_order"),
+      admin
+        .from("workshop_qa")
+        .select("*", { count: "exact", head: true })
+        .eq("workshop_id", wid)
+        .eq("dismissed", false),
+      admin
+        .from("clients")
+        .select(
+          "accent_color, eval_sheet_url, next_workshop_date, next_workshop_hour, next_workshop_tz, next_workshop_registrant_tab",
+        )
+        .eq("id", workshop.client_id)
+        .maybeSingle<
+          Pick<
+            Client,
+            | "accent_color"
+            | "eval_sheet_url"
+            | "next_workshop_date"
+            | "next_workshop_hour"
+            | "next_workshop_tz"
+            | "next_workshop_registrant_tab"
+          >
+        >(),
+    ]);
 
   const rows = (attendees ?? []) as Attendee[];
   const liveRows = rows.filter(isLive);
   const evals = (evalComments ?? []) as WorkshopEvalComment[];
+  const nextWorkshop = client ? await getNextWorkshop(client) : null;
 
   const funnel = buildFunnel(rows);
   const totals = engagementTotals(liveRows, qaCount ?? 0);
@@ -272,6 +294,9 @@ export default async function PublicWorkshopPage({
           )}
         </div>
       </div>
+
+      {/* Next workshop */}
+      <NextWorkshop data={nextWorkshop} accent={client?.accent_color ?? null} />
 
       {/* Footer CTA */}
       <div className="flex items-center justify-center gap-4 border-t border-line-2 pt-8">
