@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type {
   Attendee,
@@ -12,6 +15,24 @@ import { buildFunnel, buildRetention, engagementTotals, isLive } from "@/lib/wor
 import { formatWorkshopDate, humanizeDateIfIso } from "@/lib/format-date";
 import { RetentionChart } from "@/components/charts/retention-chart";
 import { AttendeesTable } from "@/components/attendees-table";
+import { AttendeeDetailModal, fullName, type PersonRef } from "@/components/attendee-detail-modal";
+
+const normEmail = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+const normName = (v: string | null | undefined) =>
+  (v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+// Resolve a {name,email} reference (from a Q&A sender or an intent row) to the
+// full attendee row, when present, so the modal can show time/engagement.
+function findAttendee(attendees: Attendee[], ref: PersonRef): Attendee | null {
+  const e = normEmail(ref.email);
+  const n = normName(ref.name);
+  return (
+    attendees.find((a) => {
+      if (e && normEmail(a.email) === e) return true;
+      return !!n && normName(fullName(a)) === n;
+    }) ?? null
+  );
+}
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -162,6 +183,12 @@ export function WorkshopDetail({
   const retiring = intents.filter((i) => i.intent_type === "retiring_soon");
   const cliff = intents.filter((i) => i.intent_type === "cliff_notes_request");
 
+  const [selected, setSelected] = useState<PersonRef | null>(null);
+  const selectedAttendee = useMemo(
+    () => (selected ? findAttendee(attendees, selected) : null),
+    [selected, attendees],
+  );
+
   return (
     <div className="space-y-6">
       {shareBar}
@@ -263,29 +290,45 @@ export function WorkshopDetail({
         ) : null}
         {(evalComments.length > 0 || workshop.eval_rating_avg !== null) && (
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            {evalComments.slice(0, 7).map((c) => (
-              <div
-                key={c.id}
-                className={`relative flex min-h-[188px] flex-col overflow-hidden p-[16px_18px_18px] ${CARD}`}
-              >
-                <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-lime to-cyan opacity-70" />
-                <div className="mb-2.5 font-display text-[30px] font-bold leading-[0.7] tracking-[-0.04em] text-lime opacity-80">
-                  &ldquo;
-                </div>
-                <div className="flex-1 text-[13px] leading-[1.55] text-ink-2 [text-wrap:pretty]">
-                  {c.comment_text}
-                </div>
-                {(c.comment_author || c.comment_agency) && (
-                  <div className="mt-3.5 flex items-center gap-2.5 border-t border-line-2 pt-3 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-3">
-                    <span className="text-ink-4">—</span>
-                    <span>
-                      {c.comment_author ?? "Anonymous"}
-                      {c.comment_agency ? `, ${c.comment_agency}` : ""}
-                    </span>
+            {evalComments.slice(0, 7).map((c) => {
+              const canOpen = !!c.comment_author;
+              const inner = (
+                <>
+                  <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-lime to-cyan opacity-70" />
+                  <div className="mb-2.5 font-display text-[30px] font-bold leading-[0.7] tracking-[-0.04em] text-lime opacity-80">
+                    &ldquo;
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="flex-1 text-[13px] leading-[1.55] text-ink-2 [text-wrap:pretty]">
+                    {c.comment_text}
+                  </div>
+                  {(c.comment_author || c.comment_agency) && (
+                    <div className="mt-3.5 flex items-center gap-2.5 border-t border-line-2 pt-3 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-3">
+                      <span className="text-ink-4">—</span>
+                      <span>
+                        {c.comment_author ?? "Anonymous"}
+                        {c.comment_agency ? `, ${c.comment_agency}` : ""}
+                      </span>
+                    </div>
+                  )}
+                </>
+              );
+              const cardClass = `relative flex min-h-[188px] flex-col overflow-hidden p-[16px_18px_18px] ${CARD}`;
+              return canOpen ? (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelected({ name: c.comment_author, email: null })}
+                  className={`${cardClass} text-left transition hover:border-line-1 hover:shadow-md`}
+                  title="View this person's details"
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div key={c.id} className={cardClass}>
+                  {inner}
+                </div>
+              );
+            })}
             {workshop.eval_rating_avg !== null && (
               <RatingTile
                 avg={workshop.eval_rating_avg}
@@ -366,17 +409,23 @@ export function WorkshopDetail({
           ) : (
             <ul className="divide-y divide-line-2">
               {retiring.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-[13px]"
-                >
-                  <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
-                  <span className="font-mono text-[11.5px] text-ink-4">
-                    {r.attendee_email ?? ""}
-                  </span>
-                  <span className="font-mono text-[11.5px] text-lime">
-                    {humanizeDateIfIso(r.detail)}
-                  </span>
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelected({ name: r.attendee_name, email: r.attendee_email })
+                    }
+                    className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-left text-[13px] hover:bg-bg-2"
+                    title="View this person's details"
+                  >
+                    <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                    <span className="font-mono text-[11.5px] text-ink-4">
+                      {r.attendee_email ?? ""}
+                    </span>
+                    <span className="font-mono text-[11.5px] text-lime">
+                      {humanizeDateIfIso(r.detail)}
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -396,16 +445,23 @@ export function WorkshopDetail({
           ) : (
             <ul className="divide-y divide-line-2">
               {cliff.map((r) => (
-                <li key={r.id} className="space-y-0.5 py-2 text-[13px]">
-                  <div className="flex flex-wrap items-center justify-between gap-x-3">
-                    <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
-                    <span className="font-mono text-[11.5px] text-ink-4">
-                      {r.attendee_email ?? ""}
-                    </span>
-                  </div>
-                  {r.detail && (
-                    <p className="text-[11.5px] text-ink-3">{r.detail}</p>
-                  )}
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelected({ name: r.attendee_name, email: r.attendee_email })
+                    }
+                    className="w-full space-y-0.5 py-2 text-left text-[13px] hover:bg-bg-2"
+                    title="View this person's details"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-x-3">
+                      <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                      <span className="font-mono text-[11.5px] text-ink-4">
+                        {r.attendee_email ?? ""}
+                      </span>
+                    </div>
+                    {r.detail && <p className="text-[11.5px] text-ink-3">{r.detail}</p>}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -438,19 +494,40 @@ export function WorkshopDetail({
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleQA.map((q) => (
-                    <tr key={q.id} className="hover:bg-bg-2">
-                      <td className="border-b border-line-2 px-4 py-3 align-top text-ink-2">
-                        {q.question}
-                      </td>
-                      <td className="border-b border-line-2 px-4 py-3 align-top">
-                        <div className="font-medium text-ink-1">{q.sender_name ?? "—"}</div>
-                        <div className="font-mono text-[11.5px] text-ink-4">
-                          {q.sender_email ?? "—"}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {visibleQA.map((q) => {
+                    const canOpen = !!(q.sender_name || q.sender_email);
+                    return (
+                      <tr key={q.id} className="hover:bg-bg-2">
+                        <td className="border-b border-line-2 px-4 py-3 align-top text-ink-2">
+                          {q.question}
+                        </td>
+                        <td className="border-b border-line-2 px-4 py-3 align-top">
+                          {canOpen ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelected({ name: q.sender_name, email: q.sender_email })
+                              }
+                              className="text-left hover:underline"
+                              title="View this person's details"
+                            >
+                              <div className="font-medium text-ink-1">{q.sender_name ?? "—"}</div>
+                              <div className="font-mono text-[11.5px] text-ink-4">
+                                {q.sender_email ?? "—"}
+                              </div>
+                            </button>
+                          ) : (
+                            <>
+                              <div className="font-medium text-ink-1">{q.sender_name ?? "—"}</div>
+                              <div className="font-mono text-[11.5px] text-ink-4">
+                                {q.sender_email ?? "—"}
+                              </div>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -492,11 +569,23 @@ export function WorkshopDetail({
         <AttendeesTable
           attendees={liveAttendees}
           scheduledMinutes={workshop.scheduled_minutes}
-          workshopId={workshop.id}
-          chats={chats}
-          qa={qa}
+          onSelect={(a) => setSelected({ name: fullName(a), email: a.email })}
         />
       </div>
+
+      {selected && (
+        <AttendeeDetailModal
+          key={`${selected.email ?? ""}|${selected.name ?? ""}`}
+          person={selected}
+          attendee={selectedAttendee}
+          workshopId={workshop.id}
+          scheduledMinutes={workshop.scheduled_minutes}
+          chats={chats}
+          qa={qa}
+          hasChatTranscript={chats.length > 0}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }
