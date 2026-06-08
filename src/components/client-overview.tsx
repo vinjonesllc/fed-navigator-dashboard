@@ -177,12 +177,12 @@ export function ClientOverview({
         <table className="w-full border-separate border-spacing-0 text-[13px]">
           <thead>
             <tr>
-              {["Date", "Title", "Presenter", "Registered", "Attended (live)", "% Attended", "Actions"].map(
+              {["Date", "Title", "Registered", "Attended (live)", "% Attended", "Actions"].map(
                 (h, i) => (
                   <th
                     key={h}
                     className={`border-b border-line-1 bg-bg-2 px-4 py-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4 ${
-                      i >= 3 && i <= 5 ? "text-right" : i === 6 ? "text-right" : "text-left"
+                      i >= 2 ? "text-right" : "text-left"
                     }`}
                   >
                     {h}
@@ -195,7 +195,7 @@ export function ClientOverview({
             {workshops.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="border-b border-line-2 px-4 py-6 text-center text-ink-3"
                 >
                   No workshops yet.
@@ -214,9 +214,6 @@ export function ClientOverview({
                   </td>
                   <td className="border-b border-line-2 px-4 py-3 font-medium text-ink-1">
                     {w.title}
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3 text-ink-3">
-                    {w.presenter ?? "—"}
                   </td>
                   <td className="border-b border-line-2 px-4 py-3 text-right font-mono text-ink-2">
                     {w.registered_count}
