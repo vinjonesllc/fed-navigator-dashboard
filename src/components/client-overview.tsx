@@ -38,6 +38,76 @@ function Stat({
   );
 }
 
+function RatingStat({
+  avg,
+  count,
+  accent,
+}: {
+  avg: number | null;
+  count: number;
+  accent?: string | null;
+}) {
+  const full = avg !== null ? Math.floor(avg) : 0;
+  const hasHalf = avg !== null && avg - full >= 0.25 && avg - full < 0.75;
+  return (
+    <div className="relative overflow-hidden rounded-[14px] border border-line-1 bg-gradient-to-b from-surface to-background p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
+      <div
+        className="absolute left-0 right-0 top-0 h-px"
+        style={{
+          background: accent
+            ? `linear-gradient(to right, transparent, ${accent}, transparent)`
+            : "linear-gradient(to right, transparent, oklch(0.60 0.02 260 / 0.18), transparent)",
+        }}
+      />
+      <div className="mb-3.5 text-[12px] uppercase tracking-[0.04em] text-ink-3">Average rating</div>
+      {avg === null ? (
+        <>
+          <div className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] text-ink-3">
+            —
+          </div>
+          <div className="mt-2.5 text-[12px] text-ink-3">No ratings yet</div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1">
+              {avg.toFixed(1)}
+            </span>
+            <span className="text-[18px] font-medium text-ink-3">/ 5</span>
+          </div>
+          <div
+            aria-label={`${avg.toFixed(1)} out of 5 stars`}
+            className="mt-2 text-[18px] leading-none tracking-wide"
+          >
+            {Array.from({ length: 5 }).map((_, i) => {
+              if (i < full)
+                return (
+                  <span key={i} style={{ color: "oklch(0.66 0.17 60)" }}>
+                    ★
+                  </span>
+                );
+              if (i === full && hasHalf)
+                return (
+                  <span key={i} style={{ color: "oklch(0.66 0.17 60)", opacity: 0.6 }}>
+                    ★
+                  </span>
+                );
+              return (
+                <span key={i} style={{ color: "oklch(0.66 0.17 60)", opacity: 0.25 }}>
+                  ★
+                </span>
+              );
+            })}
+          </div>
+          <div className="mt-2.5 text-[12px] text-ink-3">
+            Across {count} rated workshop{count === 1 ? "" : "s"}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 const KELLY_MAILTO = "mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date";
 
 function AccentStrip({ accent }: { accent?: string | null }) {
@@ -147,6 +217,19 @@ export function ClientOverview({
   const avgAttendancePct =
     totalRegistered > 0 ? Math.round((totalAttendees / totalRegistered) * 100) : 0;
 
+  // Average of each workshop's own "average rating" (unweighted mean across the
+  // workshops that have one).
+  const ratedWorkshops = workshops.filter(
+    (w): w is WorkshopWithStats & { eval_rating_avg: number } => w.eval_rating_avg !== null,
+  );
+  const avgRating =
+    ratedWorkshops.length > 0
+      ? Math.round(
+          (ratedWorkshops.reduce((acc, w) => acc + w.eval_rating_avg, 0) / ratedWorkshops.length) *
+            10,
+        ) / 10
+      : null;
+
   return (
     <div className="space-y-6">
       <NextWorkshop
@@ -155,7 +238,7 @@ export function ClientOverview({
         exportHref={registrationsExportHref}
       />
 
-      <div className="grid gap-3.5 sm:grid-cols-3">
+      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Workshops" value={workshops.length} accent={accent} />
         <Stat
           label="Total attendees"
@@ -169,6 +252,7 @@ export function ClientOverview({
           hint="Live ÷ registered"
           accent={accent}
         />
+        <RatingStat avg={avgRating} count={ratedWorkshops.length} accent={accent} />
       </div>
 
       <div className={`relative ${CARD} overflow-hidden`}>
