@@ -3,6 +3,7 @@ import type {
   Attendee,
   QuestionTheme,
   Workshop,
+  WorkshopChat,
   WorkshopEvalComment,
   WorkshopIntent,
   WorkshopQA,
@@ -125,6 +126,7 @@ export function WorkshopDetail({
   themes: _themes,
   intents,
   qa,
+  chats = [],
   evalComments,
   backHref,
   backLabel = "Back",
@@ -139,6 +141,7 @@ export function WorkshopDetail({
   themes: QuestionTheme[];
   intents: WorkshopIntent[];
   qa: WorkshopQA[];
+  chats?: WorkshopChat[];
   evalComments: WorkshopEvalComment[];
   backHref: string;
   backLabel?: string;
@@ -489,6 +492,9 @@ export function WorkshopDetail({
         <AttendeesTable
           attendees={liveAttendees}
           scheduledMinutes={workshop.scheduled_minutes}
+          workshopId={workshop.id}
+          chats={chats}
+          qa={qa}
         />
       </div>
     </div>

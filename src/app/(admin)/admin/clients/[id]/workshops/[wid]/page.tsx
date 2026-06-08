@@ -8,6 +8,7 @@ import type {
   Client,
   QuestionTheme,
   Workshop,
+  WorkshopChat,
   WorkshopEvalComment,
   WorkshopIntent,
   WorkshopQA,
@@ -46,6 +47,7 @@ export default async function AdminWorkshopDetailPage({
     { data: themes },
     { data: intents },
     { data: qa },
+    { data: chats },
     { data: evalComments },
   ] = await Promise.all([
     admin
@@ -65,6 +67,11 @@ export default async function AdminWorkshopDetailPage({
       .eq("workshop_id", wid)
       .order("submitted_at"),
     admin
+      .from("workshop_chats")
+      .select("*")
+      .eq("workshop_id", wid)
+      .order("sent_at"),
+    admin
       .from("workshop_eval_comments")
       .select("*")
       .eq("workshop_id", wid)
@@ -81,6 +88,7 @@ export default async function AdminWorkshopDetailPage({
       themes={(themes ?? []) as QuestionTheme[]}
       intents={(intents ?? []) as WorkshopIntent[]}
       qa={(qa ?? []) as WorkshopQA[]}
+      chats={(chats ?? []) as WorkshopChat[]}
       evalComments={(evalComments ?? []) as WorkshopEvalComment[]}
       backHref={`/admin/clients/${id}`}
       backLabel={client.name}

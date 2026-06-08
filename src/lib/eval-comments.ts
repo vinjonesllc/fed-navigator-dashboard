@@ -126,17 +126,14 @@ async function fetchEvalCsv(
   return null;
 }
 
-/**
- * Build a CSV of ALL evaluation responses tied to a workshop — every row in the
- * eval tab that falls within the same workshop_date → +7-day window the
- * "What attendees said" section uses, with all columns. Used by the download
- * button. Returns the CSV string + a little metadata, or an `error`.
- */
-export async function getEvalExportCsv(
+// Shared loader: resolve the eval tab, parse it, and filter to the same
+// workshop_date → +7-day window the testimonials use. Returns the windowed
+// rows + headers, or an `error`.
+async function loadWindowedEvalRows(
   sheetUrl: string,
   workshopDate: string,
 ): Promise<
-  | { csv: string; tab: string; total: number; count: number; windowEnd: string }
+  | { tab: string; headers: string[]; total: number; windowed: Record<string, string>[]; windowEnd: string }
   | { error: string }
 > {
   const sheetId = extractSheetId(sheetUrl);
@@ -178,19 +175,99 @@ export async function getEvalExportCsv(
       })
     : parsed.data;
 
-  // Preserve original column order; emit header + all windowed rows.
+  return {
+    tab: fetched.tab,
+    headers,
+    total: parsed.data.length,
+    windowed,
+    windowEnd: isoDate(windowEndDate),
+  };
+}
+
+/**
+ * Build a CSV of ALL evaluation responses tied to a workshop — every row in the
+ * eval tab within the workshop_date → +7-day window, all columns. Used by the
+ * download button. Returns the CSV string + metadata, or an `error`.
+ */
+export async function getEvalExportCsv(
+  sheetUrl: string,
+  workshopDate: string,
+): Promise<
+  | { csv: string; tab: string; total: number; count: number; windowEnd: string }
+  | { error: string }
+> {
+  const loaded = await loadWindowedEvalRows(sheetUrl, workshopDate);
+  if ("error" in loaded) return loaded;
+
   const csv = Papa.unparse({
-    fields: headers,
-    data: windowed.map((row) => headers.map((h) => row[h] ?? "")),
+    fields: loaded.headers,
+    data: loaded.windowed.map((row) => loaded.headers.map((h) => row[h] ?? "")),
   });
 
   return {
     csv,
-    tab: fetched.tab,
-    total: parsed.data.length,
-    count: windowed.length,
-    windowEnd: isoDate(windowEndDate),
+    tab: loaded.tab,
+    total: loaded.total,
+    count: loaded.windowed.length,
+    windowEnd: loaded.windowEnd,
   };
+}
+
+const normEmail = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+const normName = (v: string | null | undefined) =>
+  (v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * Find one attendee's evaluation response in the windowed eval rows, matched by
+ * email (when the sheet has an email column) and otherwise by full name. The
+ * eval sheet is keyed by name, so name matching is best-effort. Returns the
+ * matched row's non-empty cells as label/value pairs, or `found: false`.
+ */
+export async function getAttendeeEval(
+  sheetUrl: string,
+  workshopDate: string,
+  email: string | null,
+  name: string | null,
+): Promise<
+  | { found: true; tab: string; fields: { label: string; value: string }[] }
+  | { found: false; tab?: string }
+  | { error: string }
+> {
+  const loaded = await loadWindowedEvalRows(sheetUrl, workshopDate);
+  if ("error" in loaded) return loaded;
+
+  const wantEmail = normEmail(email);
+  const wantName = normName(name);
+  if (!wantEmail && !wantName) return { found: false, tab: loaded.tab };
+
+  // Identify email/name columns by header keyword. Handle both a single
+  // combined name column ("First & Last Name") and split first/last columns.
+  const emailCol = loaded.headers.find((h) => /e-?mail/i.test(h)) ?? null;
+  const nameCols = loaded.headers.filter((h) => /name/i.test(h));
+  const firstCol = loaded.headers.find((h) => /first.*name/i.test(h)) ?? null;
+  const lastCol = loaded.headers.find((h) => /last.*name/i.test(h)) ?? null;
+
+  const match = loaded.windowed.find((row) => {
+    if (emailCol && wantEmail && normEmail(row[emailCol]) === wantEmail) return true;
+    if (!wantName) return false;
+    // Each name-ish column on its own (covers a single "Full Name" column).
+    for (const nc of nameCols) {
+      if (normName(row[nc]) === wantName) return true;
+    }
+    // Split first + last columns combined.
+    if (firstCol && lastCol) {
+      if (normName(`${row[firstCol] ?? ""} ${row[lastCol] ?? ""}`) === wantName) return true;
+    }
+    return false;
+  });
+
+  if (!match) return { found: false, tab: loaded.tab };
+
+  const fields = loaded.headers
+    .map((h) => ({ label: h, value: (match[h] ?? "").trim() }))
+    .filter((f) => f.value !== "");
+
+  return { found: true, tab: loaded.tab, fields };
 }
 
 export async function fetchEvalComments(
