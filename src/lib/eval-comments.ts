@@ -8,6 +8,7 @@ type ExtractedComment = {
   comment_text: string;
   comment_author?: string | null;
   comment_agency?: string | null;
+  comment_email?: string | null;
   comment_date?: string | null;
 };
 
@@ -381,7 +382,7 @@ Sheet columns: ${headers.join(", ")}
 
 From the rows below:
 
-1. Identify (a) the date column (usually a "Timestamp" or "Date Submitted" column), (b) the **name column** ("First & Last Name" or similar), (c) the **agency column** ("Agency" or similar), and (d) the **two comment columns**: typically named "Tell Coworkers?" and "Other Comments?" (case-insensitive — match anything that looks like recommendation-to-coworkers or open-ended feedback). Treat each non-empty cell in the comment columns as a separate candidate testimonial.
+1. Identify (a) the date column (usually a "Timestamp" or "Date Submitted" column), (b) the **name column** ("First & Last Name", or separate "First name"/"Last name" columns), (c) the **agency column** ("Agency" or similar), (d) the **email column** (anything like "Email" / "Email address"), and (e) the **two comment columns**: typically named "Tell Coworkers?" and "Other Comments?" (case-insensitive — match anything that looks like recommendation-to-coworkers or open-ended feedback). Treat each non-empty cell in the comment columns as a separate candidate testimonial.
 2. Date filtering is **already done in code** — every row below falls within ${workshop.workshop_date} → ${windowEnd} (workshop day + ${WINDOW_DAYS} calendar days). Trust the pre-filtered set; do not re-filter or reject rows on date.
 3. From the candidate testimonials (across both comment columns, all matching rows), pick up to **7 of the most impressive** — the ones that make Fed Pilot's workshop and service look incredible. Prefer:
    - Glowing praise of the presenter, content, or experience
@@ -398,7 +399,7 @@ Strict JSON only, no prose or markdown:
 {
   "diagnostic": "<one sentence: which column was the date, which were the comment columns, how many rows fell in the ${workshop.workshop_date} → ${windowEnd} window, and (if 0) what date range you saw>",
   "rating": {"avg": <number 0-5 with one decimal, or null if no rating data>, "responses": <int — number of distinct rows that contributed at least one rating>},
-  "comments": [{"comment_text":"<verbatim>","comment_author":"<name or null>","comment_agency":"<agency or null>","comment_date":"<YYYY-MM-DD or null>"}]
+  "comments": [{"comment_text":"<verbatim>","comment_author":"<name or null>","comment_agency":"<agency or null>","comment_email":"<email from that row's email column, or null>","comment_date":"<YYYY-MM-DD or null>"}]
 }
 
 If no rows match the date window, return comments=[] BUT still fill in diagnostic so we can debug.
@@ -504,6 +505,7 @@ ${rowsAsLines}`;
       comment_text: c.comment_text.trim().slice(0, 2000),
       comment_author: c.comment_author?.trim().slice(0, 200) ?? null,
       comment_agency: c.comment_agency?.trim().slice(0, 100) ?? null,
+      comment_email: c.comment_email?.trim().toLowerCase().slice(0, 200) || null,
       comment_date: c.comment_date ?? null,
       display_order: i,
     })),

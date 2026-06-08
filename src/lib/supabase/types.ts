@@ -53,6 +53,7 @@ export type WorkshopEvalComment = {
   comment_text: string;
   comment_author: string | null;
   comment_agency: string | null;
+  comment_email: string | null;
   comment_date: string | null;
   display_order: number;
   created_at: string;

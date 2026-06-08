@@ -317,7 +317,7 @@ export function WorkshopDetail({
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelected({ name: c.comment_author, email: null })}
+                  onClick={() => setSelected({ name: c.comment_author, email: c.comment_email })}
                   className={`${cardClass} text-left transition hover:border-line-1 hover:shadow-md`}
                   title="View this person's details"
                 >
