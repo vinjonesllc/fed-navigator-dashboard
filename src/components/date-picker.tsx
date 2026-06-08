@@ -14,10 +14,13 @@ import { formatWorkshopDate } from "@/lib/format-date";
 export function DatePicker({
   value,
   onChange,
+  onClear,
   placeholder = "Pick a date",
 }: {
   value: string;
   onChange: (next: string) => void;
+  /** When provided, a "Clear date" action appears in the popover while a date is set. */
+  onClear?: () => void;
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -51,6 +54,22 @@ export function DatePicker({
           }}
           autoFocus
         />
+        {onClear && value && (
+          <div className="border-t border-line-1 p-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full justify-center text-ink-2 hover:text-ink-1"
+              onClick={() => {
+                onClear();
+                setOpen(false);
+              }}
+            >
+              Clear date
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

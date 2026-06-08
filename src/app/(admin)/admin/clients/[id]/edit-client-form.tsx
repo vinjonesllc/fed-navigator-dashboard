@@ -164,6 +164,7 @@ export function EditClientForm({
           <DatePicker
             value={nextDate}
             onChange={setNextDate}
+            onClear={() => setNextDate("")}
             placeholder="No next workshop date"
           />
           {nextDate && (
