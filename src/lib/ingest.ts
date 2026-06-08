@@ -43,6 +43,36 @@ export type IngestResult = {
   registrationQuestionHeader: string | null;
 };
 
+const DEFAULT_DURATION_MINUTES = 180;
+
+/**
+ * Derive the workshop duration from the attendee export itself, so it never
+ * has to be typed in by hand. Prefers the session's wall-clock span (latest
+ * exit − earliest join across attendees); falls back to the single longest
+ * attendance (max "Total time spent"); finally to a sensible default. Returns
+ * whole minutes.
+ */
+export function deriveDurationMinutes(rows: ParsedAttendee[]): number {
+  const joins: number[] = [];
+  const exits: number[] = [];
+  for (const r of rows) {
+    if (r.first_join_time) {
+      const t = Date.parse(r.first_join_time);
+      if (Number.isFinite(t)) joins.push(t);
+    }
+    if (r.last_exit_time) {
+      const t = Date.parse(r.last_exit_time);
+      if (Number.isFinite(t)) exits.push(t);
+    }
+  }
+  if (joins.length > 0 && exits.length > 0) {
+    const spanMin = (Math.max(...exits) - Math.min(...joins)) / 60_000;
+    if (spanMin >= 1) return Math.round(spanMin);
+  }
+  const maxTime = rows.reduce((m, r) => Math.max(m, r.total_time_minutes ?? 0), 0);
+  return maxTime >= 1 ? Math.round(maxTime) : DEFAULT_DURATION_MINUTES;
+}
+
 export async function ingestZoomCsv(opts: {
   clientId: string;
   title: string;
@@ -50,10 +80,21 @@ export async function ingestZoomCsv(opts: {
   presenter?: string | null;
   topic?: string | null;
   notes?: string | null;
-  scheduledMinutes: number;
+  // Optional manual override. When omitted, duration is derived from the
+  // attendee data (join/exit timestamps or longest attendance).
+  scheduledMinutes?: number | null;
   csv: string;
 }): Promise<IngestResult> {
-  const parsed = parseZoomCsv(opts.csv, opts.scheduledMinutes);
+  // Parse once with a provisional length to read the raw timing fields (which
+  // don't depend on duration), derive the real duration, then re-parse so the
+  // attendance buckets + lead scores use it. Skip the re-parse when nothing changed.
+  const provisional = parseZoomCsv(opts.csv, DEFAULT_DURATION_MINUTES);
+  const minutes =
+    opts.scheduledMinutes && opts.scheduledMinutes > 0
+      ? opts.scheduledMinutes
+      : deriveDurationMinutes(provisional.rows);
+  const parsed =
+    minutes === DEFAULT_DURATION_MINUTES ? provisional : parseZoomCsv(opts.csv, minutes);
   const agencyMap = await resolveAgencies(parsed.rows);
 
   const admin = createSupabaseAdminClient();
@@ -67,7 +108,7 @@ export async function ingestZoomCsv(opts: {
       presenter: opts.presenter || null,
       topic: opts.topic || null,
       notes: opts.notes || null,
-      scheduled_minutes: opts.scheduledMinutes,
+      scheduled_minutes: minutes,
       registered_count: parsed.rows.length,
       attended_count: parsed.rows.filter((r) => r.participation === "Live").length,
     })
@@ -121,7 +162,7 @@ export async function ingestZoomCsv(opts: {
     registration_question: r.registration_question,
     custom_responses: r.custom_responses,
     attendance_bucket: r.attendance_bucket,
-    lead_score: leadScore(r, opts.scheduledMinutes),
+    lead_score: leadScore(r, minutes),
   }));
 
   // Chunked insert to stay within payload limits.

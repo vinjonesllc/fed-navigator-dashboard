@@ -24,7 +24,6 @@ const Schema = z.object({
   presenter: z.string().optional(),
   topic: z.string().optional(),
   notes: z.string().optional(),
-  scheduledMinutes: z.coerce.number().int().positive().max(720),
 });
 
 export async function uploadCsv(formData: FormData) {
@@ -54,7 +53,6 @@ export async function uploadCsv(formData: FormData) {
     presenter: formData.get("presenter") ?? undefined,
     topic: formData.get("topic") ?? undefined,
     notes: formData.get("notes") ?? undefined,
-    scheduledMinutes: formData.get("scheduledMinutes"),
   });
 
   const [attendeeCsv, chatCsv, qaCsv] = await Promise.all([
@@ -71,7 +69,7 @@ export async function uploadCsv(formData: FormData) {
     presenter: parsed.presenter ?? null,
     topic: parsed.topic ?? null,
     notes: parsed.notes ?? null,
-    scheduledMinutes: parsed.scheduledMinutes,
+    // scheduledMinutes omitted → ingest derives it from the attendee data.
     csv: attendeeCsv,
   });
 

@@ -199,23 +199,12 @@ export function UploadForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="topic">Topic</Label>
-          <Input id="topic" name="topic" placeholder="TSP, FERS, etc." />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="scheduledMinutes">Scheduled minutes</Label>
-          <Input
-            id="scheduledMinutes"
-            name="scheduledMinutes"
-            type="number"
-            min={5}
-            max={720}
-            defaultValue={180}
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="topic">Topic</Label>
+        <Input id="topic" name="topic" placeholder="TSP, FERS, etc." />
+        <p className="text-xs text-muted-foreground">
+          Duration is detected automatically from the attendee data — no need to enter it.
+        </p>
       </div>
 
       <div className="space-y-2">
