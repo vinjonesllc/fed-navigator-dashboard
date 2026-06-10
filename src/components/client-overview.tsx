@@ -3,6 +3,7 @@ import { formatWorkshopDate } from "@/lib/format-date";
 import type { WorkshopWithStats } from "@/lib/queries";
 import type { NextWorkshopCard } from "@/lib/next-workshop";
 import { NextWorkshop, AccentStrip } from "@/components/next-workshop-card";
+import { ClickableRow } from "@/components/clickable-row";
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -177,25 +178,30 @@ export function ClientOverview({
         <table className="w-full border-separate border-spacing-0 text-[13px]">
           <thead>
             <tr>
-              {["Date", "Title", "Registered", "Attended (live)", "% Attended", "Actions"].map(
-                (h, i) => (
-                  <th
-                    key={h}
-                    className={`border-b border-line-1 bg-bg-2 px-4 py-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4 ${
-                      i >= 2 ? "text-right" : "text-left"
-                    }`}
-                  >
-                    {h}
-                  </th>
-                ),
-              )}
+              {[
+                "Date",
+                "Title",
+                "Registered",
+                "Attended (live)",
+                "% Attended",
+                ...(editHref ? ["Actions"] : []),
+              ].map((h, i) => (
+                <th
+                  key={h}
+                  className={`border-b border-line-1 bg-bg-2 px-4 py-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4 ${
+                    i >= 2 ? "text-right" : "text-left"
+                  }`}
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {workshops.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={editHref ? 6 : 5}
                   className="border-b border-line-2 px-4 py-6 text-center text-ink-3"
                 >
                   No workshops yet.
@@ -208,7 +214,12 @@ export function ClientOverview({
                   ? Math.round((w.live_count / w.registered_count) * 100)
                   : 0;
               return (
-                <tr key={w.id} className="hover:bg-bg-2">
+                <ClickableRow
+                  key={w.id}
+                  href={workshopHref(w.id)}
+                  className="cursor-pointer hover:bg-bg-2"
+                  title="Click to view this workshop"
+                >
                   <td className="border-b border-line-2 px-4 py-3 font-mono text-[12px] text-ink-2">
                     {formatWorkshopDate(w.workshop_date)}
                   </td>
@@ -224,25 +235,17 @@ export function ClientOverview({
                   <td className="border-b border-line-2 px-4 py-3 text-right font-mono text-ink-2">
                     {pct}%
                   </td>
-                  <td className="border-b border-line-2 px-4 py-3 text-right">
-                    <div className="inline-flex items-center justify-end gap-1.5">
-                      {editHref && (
-                        <Link
-                          href={editHref(w.id)}
-                          className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
-                        >
-                          Edit
-                        </Link>
-                      )}
+                  {editHref && (
+                    <td className="border-b border-line-2 px-4 py-3 text-right">
                       <Link
-                        href={workshopHref(w.id)}
+                        href={editHref(w.id)}
                         className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
                       >
-                        View →
+                        Edit
                       </Link>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  )}
+                </ClickableRow>
               );
             })}
           </tbody>

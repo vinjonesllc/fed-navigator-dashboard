@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireConsoleAccess, isContentManager } from "@/lib/auth";
 import { CreateClientDialog } from "./create-client-dialog";
+import { ClickableRow } from "@/components/clickable-row";
 import type { Client } from "@/lib/supabase/types";
 
 const CARD =
@@ -63,12 +63,10 @@ export default async function ClientsPage() {
         <table className="w-full border-separate border-spacing-0 text-[13px]">
           <thead>
             <tr>
-              {["Name", "Slug", "Contact", "Actions"].map((h, i) => (
+              {["Name", "Slug", "Contact"].map((h) => (
                 <th
                   key={h}
-                  className={`border-b border-line-1 bg-bg-2 px-4 py-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4 ${
-                    i === 3 ? "text-right w-32" : "text-left"
-                  }`}
+                  className="border-b border-line-1 bg-bg-2 px-4 py-2.5 text-left font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4"
                 >
                   {h}
                 </th>
@@ -79,7 +77,7 @@ export default async function ClientsPage() {
             {list.length === 0 && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   className="border-b border-line-2 px-4 py-6 text-center text-ink-3"
                 >
                   {manager ? "No advisors yet. Create one above." : "No advisors assigned to you."}
@@ -87,7 +85,12 @@ export default async function ClientsPage() {
               </tr>
             )}
             {list.map((c) => (
-              <tr key={c.id} className="hover:bg-bg-2">
+              <ClickableRow
+                key={c.id}
+                href={`/admin/clients/${c.id}`}
+                className="cursor-pointer hover:bg-bg-2"
+                title="Click to view this advisor"
+              >
                 <td className="border-b border-line-2 px-4 py-3 font-medium text-ink-1 dark:text-white">
                   {c.name}
                 </td>
@@ -97,15 +100,7 @@ export default async function ClientsPage() {
                 <td className="border-b border-line-2 px-4 py-3 text-ink-3">
                   {c.contact_email ?? "—"}
                 </td>
-                <td className="border-b border-line-2 px-4 py-3 text-right">
-                  <Link
-                    href={`/admin/clients/${c.id}`}
-                    className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
-                  >
-                    View →
-                  </Link>
-                </td>
-              </tr>
+              </ClickableRow>
             ))}
           </tbody>
         </table>
