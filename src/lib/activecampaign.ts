@@ -92,6 +92,158 @@ async function applyTag(contactId: string, tagId: string): Promise<void> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Contact sync (create-or-update) with custom fields — used by the optional
+// "Upload to AC?" flow on Fed Pilot workshop uploads.
+// ---------------------------------------------------------------------------
+
+// Exact custom-field titles we write to in ActiveCampaign. Matched against the
+// account's field list by title (case-insensitive). We never create fields —
+// missing titles are reported back so the user can add them in AC.
+export const AC_FIELD_TITLES = {
+  oneQuestion: "1 Question",
+  age: "Age",
+  agency: "Agency",
+  advisorNames: "Advisor NAMES",
+  workshopDate: "Workshop Date",
+  nextWorkshopDate: "Next Workshop Date",
+  nextWorkshopText: "Next Workshop (text)",
+  nextWorkshopTime: "Next Workshop Time",
+  advInfoUrl: "ADV Info URL",
+  textUpdates2: "Text Updates 2",
+} as const;
+
+type FieldInfo = { id: string; type: string };
+export type AcFieldMap = Map<string, FieldInfo>;
+
+const titleKey = (t: string) => t.trim().toLowerCase();
+
+/**
+ * Map every custom field title → {id, type}. Paginated (AC caps at 100/page).
+ * Keyed by lowercased/trimmed title.
+ */
+export async function getCustomFieldMap(): Promise<AcFieldMap> {
+  const map: AcFieldMap = new Map();
+  let offset = 0;
+  for (;;) {
+    const res = await acFetch(`/fields?limit=100&offset=${offset}`);
+    if (!res.ok) throw new Error(`field list failed (${res.status})`);
+    const body = (await res.json()) as {
+      fields?: { id: string; title: string; type: string }[];
+      meta?: { total?: string };
+    };
+    const fields = body.fields ?? [];
+    for (const f of fields) map.set(titleKey(f.title), { id: f.id, type: f.type });
+    offset += fields.length;
+    const total = Number(body.meta?.total ?? fields.length);
+    if (fields.length === 0 || offset >= total) break;
+  }
+  return map;
+}
+
+/** Of the given titles, which ones are NOT present in the account. */
+export function missingFieldTitles(map: AcFieldMap, titles: string[]): string[] {
+  return titles.filter((t) => !map.has(titleKey(t)));
+}
+
+export type AcContactInput = {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  /** Custom fields keyed by their AC title. Empty/blank values are skipped. */
+  fields: { title: string; value: string }[];
+  /** When true, apply the attended tag after syncing. */
+  attended: boolean;
+};
+
+export type AcUploadResult = {
+  configured: boolean;
+  requested: number;
+  synced: number;
+  tagged: number;
+  errors: number;
+  missingFields: string[];
+};
+
+/**
+ * Create-or-update each contact by email (AC `/contact/sync`), writing the
+ * custom fields that exist in the account, then applying `attendedTag` to those
+ * marked attended. Only non-empty values are sent, so we never blank an
+ * existing field we have no value for. Best-effort: one bad contact never
+ * aborts the rest. Pass a pre-fetched `fieldMap` to avoid re-listing fields.
+ */
+export async function uploadContactsToAc(
+  contacts: AcContactInput[],
+  attendedTag: string,
+  fieldMap?: AcFieldMap,
+): Promise<AcUploadResult> {
+  const result: AcUploadResult = {
+    configured: isActiveCampaignConfigured(),
+    requested: contacts.length,
+    synced: 0,
+    tagged: 0,
+    errors: 0,
+    missingFields: [],
+  };
+  if (!result.configured || contacts.length === 0) return result;
+
+  const map = fieldMap ?? (await getCustomFieldMap());
+  const usedTitles = Array.from(new Set(contacts.flatMap((c) => c.fields.map((f) => f.title))));
+  result.missingFields = missingFieldTitles(map, usedTitles);
+
+  let tagId: string | null = null;
+  try {
+    tagId = await resolveTagId(attendedTag);
+  } catch (e) {
+    console.error("[activecampaign] tag resolve failed:", e);
+  }
+
+  for (const c of contacts) {
+    const email = c.email.trim().toLowerCase();
+    if (!email) continue;
+    try {
+      const fieldValues = c.fields
+        .map((f) => {
+          const info = map.get(titleKey(f.title));
+          const value = (f.value ?? "").trim();
+          return info && value ? { field: info.id, value } : null;
+        })
+        .filter((x): x is { field: string; value: string } => x !== null);
+
+      const contact: Record<string, unknown> = { email };
+      if (c.firstName?.trim()) contact.firstName = c.firstName.trim();
+      if (c.lastName?.trim()) contact.lastName = c.lastName.trim();
+      if (c.phone?.trim()) contact.phone = c.phone.trim();
+      if (fieldValues.length > 0) contact.fieldValues = fieldValues;
+
+      const res = await acFetch(`/contact/sync`, {
+        method: "POST",
+        body: JSON.stringify({ contact }),
+      });
+      if (!res.ok) {
+        result.errors += 1;
+        console.error(`[activecampaign] sync failed for ${email} (${res.status})`);
+        continue;
+      }
+      result.synced += 1;
+      if (c.attended && tagId) {
+        const body = (await res.json()) as { contact?: { id?: string } };
+        const contactId = body.contact?.id;
+        if (contactId) {
+          await applyTag(contactId, tagId);
+          result.tagged += 1;
+        }
+      }
+    } catch (e) {
+      result.errors += 1;
+      console.error(`[activecampaign] sync error for ${email}:`, e);
+    }
+  }
+
+  return result;
+}
+
 export type TagResult = {
   configured: boolean;
   requested: number;

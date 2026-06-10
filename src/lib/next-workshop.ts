@@ -47,6 +47,42 @@ export function formatNextWorkshopTime(
   return `${h12}${suffix} ${tz}`;
 }
 
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
+
+/** "2026-05-10" -> "Friday, May 10th" (weekday + month + ordinal day). */
+export function formatNextWorkshopDateOrdinal(date: string): string {
+  const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return date;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const weekday = WEEKDAY_NAMES[d.getDay()];
+  const month = MONTH_NAMES[Number(m[2]) - 1] ?? m[2];
+  return `${weekday}, ${month} ${ordinal(Number(m[3]))}`;
+}
+
+/** "2026-05-10" -> "05/10/2026" (US mm/dd/yyyy). Empty string on bad input. */
+export function toUsDate(date: string | null | undefined): string {
+  if (!date) return "";
+  const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : "";
+}
+
+/** Today's date as YYYY-MM-DD in the server's local timezone. */
+export function todayIsoLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** True only when `date` (YYYY-MM-DD) is strictly after today. */
+export function isFutureWorkshopDate(date: string | null | undefined): boolean {
+  if (!date) return false;
+  const iso = date.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso > todayIsoLocal();
+}
+
 export type NextWorkshopCard = {
   dateLabel: string;
   timeLabel: string | null;

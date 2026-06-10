@@ -10,11 +10,23 @@ import { parseChatCsv, parseQACsv } from "@/lib/csv/parse-transcripts";
 import { clusterQuestions } from "@/lib/themes";
 import { extractIntents } from "@/lib/intents";
 import { fetchEvalComments } from "@/lib/eval-comments";
-import { tagExistingContacts } from "@/lib/activecampaign";
+import {
+  AC_FIELD_TITLES,
+  getCustomFieldMap,
+  isActiveCampaignConfigured,
+  missingFieldTitles,
+  uploadContactsToAc,
+  type AcContactInput,
+} from "@/lib/activecampaign";
+import {
+  formatNextWorkshopDateOrdinal,
+  formatNextWorkshopTime,
+  isFutureWorkshopDate,
+  toUsDate,
+} from "@/lib/next-workshop";
 
-// Fed Pilot-branded clients get their attendees tagged in ActiveCampaign.
-// Feducate / MyFedNav clients are skipped.
-const AC_ATTENDED_BRAND = "Fed Pilot";
+// Only Fed Pilot-branded advisors get the optional ActiveCampaign upload.
+const AC_BRAND = "Fed Pilot";
 const AC_ATTENDED_TAG = "FP-Attended";
 
 const Schema = z.object({
@@ -24,6 +36,7 @@ const Schema = z.object({
   presenter: z.string().optional(),
   topic: z.string().optional(),
   notes: z.string().optional(),
+  uploadToAc: z.coerce.boolean().optional(),
 });
 
 export async function uploadCsv(formData: FormData) {
@@ -53,6 +66,7 @@ export async function uploadCsv(formData: FormData) {
     presenter: formData.get("presenter") ?? undefined,
     topic: formData.get("topic") ?? undefined,
     notes: formData.get("notes") ?? undefined,
+    uploadToAc: formData.get("uploadToAc") === "true",
   });
 
   const [attendeeCsv, chatCsv, qaCsv] = await Promise.all([
@@ -109,41 +123,109 @@ export async function uploadCsv(formData: FormData) {
     }
   }
 
-  // 5. If this client is on the Fed Pilot brand, tag everyone who actually
-  //    attended (participation = "Live") in ActiveCampaign. Runs after the
-  //    response is sent (`after`) so it never blocks or slows the upload, and
-  //    is fully best-effort — a tagging failure is logged, never thrown.
+  // 5. Optional ActiveCampaign upload — only when "Upload to AC?" was checked
+  //    AND the advisor is on the Fed Pilot brand. Creates-or-updates each
+  //    attendee as a contact with their workshop info + custom fields, and tags
+  //    live attendees FP-Attended. Heavy syncing runs after the response
+  //    (`after`) so it never blocks the upload; a field-existence pre-check runs
+  //    synchronously so we can flag any missing AC fields in the result.
+  let ac: { enabled: boolean; requested: number; missingFields: string[] } | undefined;
+
   const { data: client } = await admin
     .from("clients")
-    .select("brand")
+    .select(
+      "brand, name, slug, next_workshop_date, next_workshop_hour, next_workshop_tz",
+    )
     .eq("id", parsed.clientId)
     .maybeSingle();
 
-  if (client?.brand === AC_ATTENDED_BRAND) {
-    const { data: attended } = await admin
+  if (parsed.uploadToAc && client?.brand === AC_BRAND) {
+    const { data: attRows } = await admin
       .from("attendees")
-      .select("email")
-      .eq("workshop_id", result.workshopId)
-      .eq("participation", "Live");
+      .select(
+        "first_name, last_name, email, phone, age, registration_question, agency, organization, text_opt_in, participation",
+      )
+      .eq("workshop_id", result.workshopId);
 
-    const emails = (attended ?? [])
-      .map((a) => a.email)
-      .filter((e): e is string => !!e);
+    // Next Workshop fields only when the advisor has a *future* date set.
+    const nextDate = client.next_workshop_date as string | null;
+    const futureNext = isFutureWorkshopDate(nextDate)
+      ? {
+          date: toUsDate(nextDate),
+          text: formatNextWorkshopDateOrdinal(nextDate as string),
+          time:
+            formatNextWorkshopTime(
+              client.next_workshop_hour as number | null,
+              client.next_workshop_tz as string | null,
+            ) ?? "",
+        }
+      : null;
 
-    if (emails.length > 0) {
+    const workshopDateUs = toUsDate(parsed.workshopDate);
+    const advInfoUrl = client.slug ? `https://fedpilot.com/info-${client.slug}` : "";
+    const advisorName = (client.name as string) ?? "";
+
+    const contacts: AcContactInput[] = (attRows ?? [])
+      .filter((a) => !!a.email)
+      .map((a) => {
+        const fields: { title: string; value: string }[] = [
+          { title: AC_FIELD_TITLES.workshopDate, value: workshopDateUs },
+          { title: AC_FIELD_TITLES.advisorNames, value: advisorName },
+          { title: AC_FIELD_TITLES.advInfoUrl, value: advInfoUrl },
+          { title: AC_FIELD_TITLES.oneQuestion, value: a.registration_question ?? "" },
+          { title: AC_FIELD_TITLES.age, value: a.age != null ? String(a.age) : "" },
+          { title: AC_FIELD_TITLES.agency, value: a.agency ?? a.organization ?? "" },
+          { title: AC_FIELD_TITLES.textUpdates2, value: a.text_opt_in ? "YES" : "" },
+        ];
+        if (futureNext) {
+          fields.push(
+            { title: AC_FIELD_TITLES.nextWorkshopDate, value: futureNext.date },
+            { title: AC_FIELD_TITLES.nextWorkshopText, value: futureNext.text },
+            { title: AC_FIELD_TITLES.nextWorkshopTime, value: futureNext.time },
+          );
+        }
+        return {
+          email: a.email as string,
+          firstName: a.first_name,
+          lastName: a.last_name,
+          phone: a.phone,
+          attended: a.participation === "Live",
+          fields,
+        };
+      });
+
+    // Synchronous pre-check: which target fields are missing in AC (so the
+    // upload toast can flag them). Best-effort; never blocks the upload.
+    let fieldMap: Awaited<ReturnType<typeof getCustomFieldMap>> | undefined;
+    let missingFields: string[] = [];
+    if (isActiveCampaignConfigured()) {
+      try {
+        fieldMap = await getCustomFieldMap();
+        const usedTitles = Array.from(
+          new Set(contacts.flatMap((c) => c.fields.map((f) => f.title))),
+        );
+        missingFields = missingFieldTitles(fieldMap, usedTitles);
+      } catch (e) {
+        console.error("[upload] AC field pre-check failed:", e);
+      }
+    }
+
+    ac = { enabled: true, requested: contacts.length, missingFields };
+
+    if (contacts.length > 0) {
       after(async () => {
         try {
-          const r = await tagExistingContacts(emails, AC_ATTENDED_TAG);
+          const r = await uploadContactsToAc(contacts, AC_ATTENDED_TAG, fieldMap);
           if (!r.configured) {
-            console.warn("[upload] ActiveCampaign not configured; skipped tagging.");
+            console.warn("[upload] ActiveCampaign not configured; skipped contact upload.");
           } else {
             console.log(
-              `[upload] ActiveCampaign ${AC_ATTENDED_TAG}: tagged ${r.tagged}/${r.requested} ` +
-                `(${r.notInAc} not in AC, ${r.errors} errors).`,
+              `[upload] AC upload: synced ${r.synced}/${r.requested}, tagged ${r.tagged}, ` +
+                `${r.errors} errors. Missing fields: ${r.missingFields.join(", ") || "none"}.`,
             );
           }
         } catch (e) {
-          console.error("[upload] ActiveCampaign tagging failed:", e);
+          console.error("[upload] ActiveCampaign upload failed:", e);
         }
       });
     }
@@ -156,6 +238,7 @@ export async function uploadCsv(formData: FormData) {
     ...result,
     chatRows: chatRows.length,
     qaRows: qaRows.length,
+    ac,
   };
 }
 

@@ -18,12 +18,29 @@ import { DatePicker } from "@/components/date-picker";
 import { uploadCsv } from "./actions";
 import { classifyCsv, CSV_KIND_LABEL, type CsvKind } from "@/lib/csv/classify";
 
-type ClientOption = { id: string; name: string; slug: string };
+type ClientOption = {
+  id: string;
+  name: string;
+  slug: string;
+  brand?: string | null;
+  next_workshop_date?: string | null;
+};
 
 const PRESENTERS = ["Dionne Belk", "Kevin Jones"];
+const AC_BRAND = "Fed Pilot";
 
 type DetectedFiles = Partial<Record<CsvKind, File>>;
 type UnknownFile = { name: string };
+
+// Strictly after today (local). Mirrors isFutureWorkshopDate on the server.
+function isFutureDate(date: string | null | undefined): boolean {
+  if (!date) return false;
+  const iso = date.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return iso > today;
+}
 
 export function UploadForm({
   clients,
@@ -40,6 +57,11 @@ export function UploadForm({
   const [classifying, setClassifying] = useState(false);
   const [presenter, setPresenter] = useState<string>("");
   const [workshopDate, setWorkshopDate] = useState<string>("");
+  const [uploadToAc, setUploadToAc] = useState(false);
+
+  const selectedClient = clients.find((c) => c.id === clientId) ?? null;
+  const isFedPilot = selectedClient?.brand === AC_BRAND;
+  const hasFutureNext = isFutureDate(selectedClient?.next_workshop_date);
 
   const attendeeFile = detected.attendees ?? null;
   const qaFile = detected.qa ?? null;
@@ -124,6 +146,7 @@ export function UploadForm({
     else fd.delete("qaFile");
     fd.set("presenter", presenter);
     fd.set("workshopDate", workshopDate);
+    fd.set("uploadToAc", isFedPilot && uploadToAc ? "true" : "false");
 
     const pendingToast = toast.loading(
       "Ingesting attendees & Q&A… analyzing transcripts (this takes ~15-30s).",
@@ -135,6 +158,17 @@ export function UploadForm({
           `Ingested ${result.inserted} attendees (${result.attended} live), ${result.chatRows} chats, ${result.qaRows} Q&A.`,
           { id: pendingToast },
         );
+        if (result.ac?.enabled) {
+          toast.success(
+            `ActiveCampaign: uploading ${result.ac.requested} contact${result.ac.requested === 1 ? "" : "s"} in the background.`,
+          );
+          if (result.ac.missingFields.length > 0) {
+            toast.warning(
+              `AC fields not found (skipped — create them in ActiveCampaign): ${result.ac.missingFields.join(", ")}`,
+              { duration: 12000 },
+            );
+          }
+        }
         router.push(`/admin/clients/${clientId}/workshops/${result.workshopId}`);
         router.refresh();
       } catch (e) {
@@ -291,6 +325,35 @@ export function UploadForm({
           </p>
         )}
       </div>
+
+      {isFedPilot && (
+        <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+          <label className="flex items-start gap-2.5">
+            <input
+              type="checkbox"
+              checked={uploadToAc}
+              onChange={(e) => setUploadToAc(e.target.checked)}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span className="text-sm">
+              <span className="font-medium">Upload to ActiveCampaign?</span>
+              <span className="block text-xs text-muted-foreground">
+                Create/update each attendee as a contact (name, email, phone, agency, age,
+                workshop date, &amp; next-workshop info) and tag live attendees{" "}
+                <code>FP-Attended</code>.
+              </span>
+            </span>
+          </label>
+
+          {uploadToAc && !hasFutureNext && (
+            <p className="rounded border border-amber-bord bg-amber-soft px-3 py-2 text-[13px] text-amber">
+              ⚠ This advisor has no <b>future</b> next-workshop date set (it&apos;s missing or set
+              to today). The <b>Next Workshop</b> fields will be left blank in ActiveCampaign. Set a
+              future date on the advisor&apos;s Settings page to include them.
+            </p>
+          )}
+        </div>
+      )}
 
       <Button type="submit" disabled={pending || classifying}>
         {pending ? "Ingesting…" : "Upload and ingest"}

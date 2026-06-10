@@ -16,8 +16,14 @@ export default async function UploadPage({
   const { clientId: initialClientId } = await searchParams;
 
   const admin = createSupabaseAdminClient();
-  const { data } = await admin.from("clients").select("id, name, slug").order("name");
-  const clients = (data ?? []) as Pick<Client, "id" | "name" | "slug">[];
+  const { data } = await admin
+    .from("clients")
+    .select("id, name, slug, brand, next_workshop_date")
+    .order("name");
+  const clients = (data ?? []) as Pick<
+    Client,
+    "id" | "name" | "slug" | "brand" | "next_workshop_date"
+  >[];
 
   return (
     <div className="space-y-6">
