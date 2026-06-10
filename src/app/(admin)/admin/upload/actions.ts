@@ -15,6 +15,7 @@ import {
   getCustomFieldMap,
   isActiveCampaignConfigured,
   missingFieldTitles,
+  resolveAutomationId,
   uploadContactsToAc,
   type AcContactInput,
 } from "@/lib/activecampaign";
@@ -28,6 +29,8 @@ import {
 // Only Fed Pilot-branded advisors get the optional ActiveCampaign upload.
 const AC_BRAND = "Fed Pilot";
 const AC_ATTENDED_TAG = "FP-Attended";
+// Every uploaded contact is enrolled in this post-event automation.
+const AC_AUTOMATION = "FP-ZOOM EVENT MASTER (POST-EVENT)";
 
 const Schema = z.object({
   clientId: z.string().uuid(),
@@ -129,7 +132,9 @@ export async function uploadCsv(formData: FormData) {
   //    live attendees FP-Attended. Heavy syncing runs after the response
   //    (`after`) so it never blocks the upload; a field-existence pre-check runs
   //    synchronously so we can flag any missing AC fields in the result.
-  let ac: { enabled: boolean; requested: number; missingFields: string[] } | undefined;
+  let ac:
+    | { enabled: boolean; requested: number; missingFields: string[]; automationMissing: boolean }
+    | undefined;
 
   const { data: client } = await admin
     .from("clients")
@@ -194,10 +199,12 @@ export async function uploadCsv(formData: FormData) {
         };
       });
 
-    // Synchronous pre-check: which target fields are missing in AC (so the
-    // upload toast can flag them). Best-effort; never blocks the upload.
+    // Synchronous pre-check: which target fields are missing in AC and whether
+    // the post-event automation exists (so the upload toast can flag them).
+    // Best-effort; never blocks the upload.
     let fieldMap: Awaited<ReturnType<typeof getCustomFieldMap>> | undefined;
     let missingFields: string[] = [];
+    let automationMissing = false;
     if (isActiveCampaignConfigured()) {
       try {
         fieldMap = await getCustomFieldMap();
@@ -208,19 +215,25 @@ export async function uploadCsv(formData: FormData) {
       } catch (e) {
         console.error("[upload] AC field pre-check failed:", e);
       }
+      try {
+        automationMissing = (await resolveAutomationId(AC_AUTOMATION)) === null;
+      } catch (e) {
+        console.error("[upload] AC automation pre-check failed:", e);
+      }
     }
 
-    ac = { enabled: true, requested: contacts.length, missingFields };
+    ac = { enabled: true, requested: contacts.length, missingFields, automationMissing };
 
     if (contacts.length > 0) {
       after(async () => {
         try {
-          const r = await uploadContactsToAc(contacts, AC_ATTENDED_TAG, fieldMap);
+          const r = await uploadContactsToAc(contacts, AC_ATTENDED_TAG, AC_AUTOMATION, fieldMap);
           if (!r.configured) {
             console.warn("[upload] ActiveCampaign not configured; skipped contact upload.");
           } else {
             console.log(
               `[upload] AC upload: synced ${r.synced}/${r.requested}, tagged ${r.tagged}, ` +
+                `added to automation ${r.automationAdded} (found=${r.automationFound}), ` +
                 `${r.errors} errors. Missing fields: ${r.missingFields.join(", ") || "none"}.`,
             );
           }

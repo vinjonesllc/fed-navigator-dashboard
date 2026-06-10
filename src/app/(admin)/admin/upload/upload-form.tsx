@@ -168,6 +168,12 @@ export function UploadForm({
               { duration: 12000 },
             );
           }
+          if (result.ac.automationMissing) {
+            toast.warning(
+              'AC automation "FP-ZOOM EVENT MASTER (POST-EVENT)" not found — contacts were uploaded but not enrolled.',
+              { duration: 12000 },
+            );
+          }
         }
         router.push(`/admin/clients/${clientId}/workshops/${result.workshopId}`);
         router.refresh();

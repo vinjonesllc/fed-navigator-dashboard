@@ -162,20 +162,45 @@ export type AcUploadResult = {
   requested: number;
   synced: number;
   tagged: number;
+  automationAdded: number;
+  /** false when the named automation couldn't be found in the account. */
+  automationFound: boolean;
   errors: number;
   missingFields: string[];
 };
 
+/** Find an automation id by exact name (case-insensitive). null if not found. */
+export async function resolveAutomationId(name: string): Promise<string | null> {
+  const res = await acFetch(`/automations?filters[name]=${encodeURIComponent(name)}&limit=100`);
+  if (!res.ok) throw new Error(`automation lookup failed (${res.status})`);
+  const body = (await res.json()) as { automations?: { id: string; name: string }[] };
+  const want = name.trim().toLowerCase();
+  return body.automations?.find((a) => a.name.trim().toLowerCase() === want)?.id ?? null;
+}
+
+async function addContactToAutomation(contactId: string, automationId: string): Promise<void> {
+  const res = await acFetch(`/contactAutomations`, {
+    method: "POST",
+    body: JSON.stringify({ contactAutomation: { contact: contactId, automation: automationId } }),
+  });
+  // 422 = already in the automation; treat as success (idempotent).
+  if (!res.ok && res.status !== 422) {
+    throw new Error(`automation add failed (${res.status})`);
+  }
+}
+
 /**
  * Create-or-update each contact by email (AC `/contact/sync`), writing the
- * custom fields that exist in the account, then applying `attendedTag` to those
- * marked attended. Only non-empty values are sent, so we never blank an
- * existing field we have no value for. Best-effort: one bad contact never
- * aborts the rest. Pass a pre-fetched `fieldMap` to avoid re-listing fields.
+ * custom fields that exist in the account. Every synced contact is added to
+ * the `automationName` automation (when found); attended contacts also get
+ * `attendedTag`. Only non-empty values are sent, so we never blank an existing
+ * field we have no value for. Best-effort: one bad contact never aborts the
+ * rest. Pass a pre-fetched `fieldMap` to avoid re-listing fields.
  */
 export async function uploadContactsToAc(
   contacts: AcContactInput[],
   attendedTag: string,
+  automationName: string | null,
   fieldMap?: AcFieldMap,
 ): Promise<AcUploadResult> {
   const result: AcUploadResult = {
@@ -183,6 +208,8 @@ export async function uploadContactsToAc(
     requested: contacts.length,
     synced: 0,
     tagged: 0,
+    automationAdded: 0,
+    automationFound: true,
     errors: 0,
     missingFields: [],
   };
@@ -197,6 +224,20 @@ export async function uploadContactsToAc(
     tagId = await resolveTagId(attendedTag);
   } catch (e) {
     console.error("[activecampaign] tag resolve failed:", e);
+  }
+
+  let automationId: string | null = null;
+  if (automationName) {
+    try {
+      automationId = await resolveAutomationId(automationName);
+      result.automationFound = automationId !== null;
+      if (!automationId) {
+        console.warn(`[activecampaign] automation not found: "${automationName}"`);
+      }
+    } catch (e) {
+      result.automationFound = false;
+      console.error("[activecampaign] automation resolve failed:", e);
+    }
   }
 
   for (const c of contacts) {
@@ -227,12 +268,26 @@ export async function uploadContactsToAc(
         continue;
       }
       result.synced += 1;
-      if (c.attended && tagId) {
-        const body = (await res.json()) as { contact?: { id?: string } };
-        const contactId = body.contact?.id;
-        if (contactId) {
-          await applyTag(contactId, tagId);
-          result.tagged += 1;
+      const body = (await res.json()) as { contact?: { id?: string } };
+      const contactId = body.contact?.id;
+      if (contactId) {
+        if (c.attended && tagId) {
+          try {
+            await applyTag(contactId, tagId);
+            result.tagged += 1;
+          } catch (e) {
+            result.errors += 1;
+            console.error(`[activecampaign] tag failed for ${email}:`, e);
+          }
+        }
+        if (automationId) {
+          try {
+            await addContactToAutomation(contactId, automationId);
+            result.automationAdded += 1;
+          } catch (e) {
+            result.errors += 1;
+            console.error(`[activecampaign] automation add failed for ${email}:`, e);
+          }
         }
       }
     } catch (e) {
