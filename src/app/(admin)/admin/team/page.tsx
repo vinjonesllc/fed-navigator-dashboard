@@ -1,7 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { ROLE_LABELS, type AppUser, type Client } from "@/lib/supabase/types";
+import { type AppUser, type Client } from "@/lib/supabase/types";
 import { InviteForm } from "./invite-form";
+import { MembersTable } from "./members-table";
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -20,7 +21,6 @@ export default async function TeamPage() {
 
   const list = (users ?? []) as AppUser[];
   const clientList = (clients ?? []) as Pick<Client, "id" | "name" | "slug">[];
-  const clientById = new Map(clientList.map((c) => [c.id, c]));
   const grantsByUser = new Map<string, string[]>();
   for (const g of grants ?? []) {
     const arr = grantsByUser.get(g.user_id as string) ?? [];
@@ -53,48 +53,11 @@ export default async function TeamPage() {
           </h3>
           <span className={PILL}>{list.length}</span>
         </div>
-        <table className="w-full border-separate border-spacing-0 text-[13px]">
-          <thead>
-            <tr>
-              {["Email", "Role", "Advisor / Access", "Joined"].map((h) => (
-                <th
-                  key={h}
-                  className="border-b border-line-1 bg-bg-2 px-4 py-2.5 text-left font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((u) => {
-              const access =
-                u.role === "super_advisor"
-                  ? (grantsByUser.get(u.id) ?? [])
-                      .map((cid) => clientById.get(cid)?.name ?? cid.slice(0, 8))
-                      .join(", ") || "—"
-                  : u.client_id
-                    ? (clientById.get(u.client_id)?.name ?? u.client_id.slice(0, 8))
-                    : "—";
-              return (
-                <tr key={u.id} className="hover:bg-bg-2">
-                  <td className="border-b border-line-2 px-4 py-3 font-medium text-ink-1 dark:text-white">
-                    {u.email}
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3">
-                    <span className="rounded border border-line-1 bg-bg-2 px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-wide text-ink-3">
-                      {ROLE_LABELS[u.role] ?? u.role}
-                    </span>
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3 text-ink-2">{access}</td>
-                  <td className="border-b border-line-2 px-4 py-3 font-mono text-[11.5px] text-ink-4">
-                    {new Date(u.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <MembersTable
+          members={list}
+          clients={clientList}
+          grantsByUser={Object.fromEntries(grantsByUser)}
+        />
       </div>
     </div>
   );
