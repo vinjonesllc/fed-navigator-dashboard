@@ -48,9 +48,11 @@ type AvailableTimesResponse = {
  * Open Part 2 times over the next `days` (Calendly caps a single query at 7
  * days, and start_time must be in the future).
  */
-export async function getAvailableSlots(days = 4): Promise<CalendlySlot[]> {
+export async function getAvailableSlots(days = 7): Promise<CalendlySlot[]> {
   const start = new Date(Date.now() + 60 * 60 * 1000); // +1h, must be future
-  const end = new Date(start.getTime() + Math.min(days, 7) * 24 * 60 * 60 * 1000);
+  // End is measured from now (not start) so the span stays just under Calendly's
+  // 7-day max even with the +1h start offset.
+  const end = new Date(Date.now() + Math.min(days, 7) * 24 * 60 * 60 * 1000);
 
   const params = new URLSearchParams({
     event_type: eventTypeUri(),
