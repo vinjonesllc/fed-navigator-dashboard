@@ -17,7 +17,7 @@ type CalendlyPayload = {
   payload?: {
     email?: string;
     name?: string;
-    scheduled_event?: { start_time?: string; uri?: string };
+    scheduled_event?: { start_time?: string; uri?: string; event_type?: string };
     uri?: string;
   };
 };
@@ -47,6 +47,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Bad payload" }, { status: 400 });
   }
   if (body.event !== "invitee.created") return NextResponse.json({ ok: true });
+
+  // This subscription is user-scoped, so it fires for ALL of the advisor's
+  // event types. Only act on the configured Part 2 event type.
+  const expectedEventType = process.env.CALENDLY_EVENT_TYPE_URI;
+  const bookedEventType = body.payload?.scheduled_event?.event_type;
+  if (expectedEventType && bookedEventType && bookedEventType !== expectedEventType) {
+    return NextResponse.json({ ok: true, ignored: "different event type" });
+  }
 
   const email = body.payload?.email ?? null;
   const name = body.payload?.name ?? "Someone";

@@ -9,6 +9,10 @@ const PUBLIC_PATHS = [
   "/auth/bootstrap",
   "/auth/sign-out",
   "/share",
+  // External webhooks — no user session; secured by signature verification
+  // inside the route handlers, not by auth middleware.
+  "/api/calls/webhook",
+  "/api/calendly/webhook",
 ];
 
 export async function proxy(request: NextRequest) {
