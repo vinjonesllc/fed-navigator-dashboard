@@ -2,20 +2,27 @@ import "server-only";
 
 // ----------------------------------------------------------------------------
 // The Part 2 booking voice agent: assistant config + conversation script + the
-// three tools it calls during a live call. The agent reads real Calendly slots,
-// the person picks one, the agent texts a prefilled single-use link they tap to
-// confirm while still on the phone ("live assisted booking"). Calendly's
-// invitee.created webhook closes the loop and flips the target to "booked".
+// three tools it calls during a live call. The agent asks the caller's timezone,
+// reads real Calendly slots in THAT zone, and texts a prefilled one-tap link.
+// The actual booking is confirmed by Calendly's invitee.created webhook — the
+// agent never claims "you're booked" on its own.
 // ----------------------------------------------------------------------------
 
-// --- Tunables — verify these against the supported lists in your Vapi dashboard.
-// Model/voice/transcriber IDs occasionally change; centralized here so swapping
-// is a one-line edit. Voice should be a warm, natural US voice.
 const MODEL_PROVIDER = "anthropic";
 const MODEL_NAME = process.env.VAPI_MODEL ?? "claude-sonnet-4-6";
-// Default voice is a warm ElevenLabs voice (validated against Vapi); override
-// per-deploy with VAPI_VOICE_ID. `||` so a blank env var falls back to default.
-const VOICE = { provider: "11labs", voiceId: process.env.VAPI_VOICE_ID || "21m00Tcm4TlvDq8ikWAM" };
+
+// Younger, natural, conversational female voice with expressive settings (lower
+// stability = more nuance/variation). Validated against Vapi. Override the voice
+// with VAPI_VOICE_ID.
+const VOICE = {
+  provider: "11labs",
+  voiceId: process.env.VAPI_VOICE_ID || "cgSgspJ2msm6clMCkdW9", // ElevenLabs "Jessica"
+  model: "eleven_turbo_v2_5",
+  stability: 0.45,
+  similarityBoost: 0.75,
+  style: 0.35,
+  useSpeakerBoost: true,
+};
 const TRANSCRIBER = { provider: "deepgram", model: "nova-2" };
 
 export const TOOL_CHECK_AVAILABILITY = "check_availability";
@@ -33,36 +40,40 @@ function systemPrompt(ctx: Part2Context): string {
   const firstName = ctx.attendeeName.split(" ")[0] || "there";
   const agencyLine = ctx.agency ? ` from ${ctx.agency}` : "";
   return [
-    `You are a warm, friendly assistant calling on behalf of Fed Pilot, the federal-employee retirement-readiness workshop team. You are an AI assistant — be upfront about that if asked, and never pretend to be human.`,
+    `You are a warm, friendly, natural-sounding person reaching out on behalf of Fed Pilot, the federal-employee retirement-readiness workshop team. You are an AI assistant — be upfront about that if asked, and never pretend to be human. Talk like a real person having a casual one-on-one conversation, not a call center rep reading a script.`,
     ``,
     `WHO YOU'RE CALLING: ${ctx.attendeeName}${agencyLine}. They attended Fed Pilot's Part 1 workshop "${ctx.workshopTitle}" and already know there is a Part 2. The advisor hosting Part 2 is ${ctx.advisorName}.`,
     ``,
-    `OPENING (say this naturally, not robotically):`,
+    `OPENING (natural, not robotic):`,
     `1. Confirm you're speaking with ${firstName}.`,
-    `2. Disclose: "I'm an automated assistant with Fed Pilot, and just so you know this call may be recorded." Keep it light and quick.`,
+    `2. Disclose briefly: "I'm an automated assistant with Fed Pilot, and just so you know this call may be recorded."`,
     `3. Say you're following up on the workshop they attended.`,
     ``,
-    `GOAL: have a brief, genuine conversation about their Part 1 experience, then invite them to book Part 2 — and book it live on this call.`,
+    `GOAL: a brief, genuine chat about their Part 1 experience, then book them into Part 2 with ${ctx.advisorName}.`,
     ``,
-    `FLOW:`,
-    `- Ask 1–2 light questions about how Part 1 went / what was most useful. Listen and respond naturally. Do not interrogate.`,
-    `- Transition to Part 2: it goes deeper on their specific retirement numbers and questions. Encourage them to grab a time.`,
-    `- When they're open to it, call ${TOOL_CHECK_AVAILABILITY} to get open times, then read 2–3 options aloud conversationally (e.g. "Thursday at 2, or Friday morning?").`,
-    `- When they pick one, call ${TOOL_SEND_BOOKING_LINK} with that slot. Then say: "Perfect — I just texted you a link, tap it and you're locked in for [time]." Wait for them to confirm they tapped it.`,
-    `- If the system confirms the booking, congratulate them warmly and wrap up. If they can't tap it now, tell them the link stays valid and they can tap it anytime today.`,
+    `BOOKING FLOW — follow in order:`,
+    `- Ask 1–2 light questions about how Part 1 went. Respond naturally.`,
+    `- Transition to Part 2: it goes deeper on their specific numbers and questions, hosted by ${ctx.advisorName}. Ask if they'd like to grab a time.`,
+    `- IMPORTANT — before offering any times, ASK what time zone they're in (or what state/city they're in, and infer it). You must know their time zone so the times aren't ambiguous.`,
+    `- Then call ${TOOL_CHECK_AVAILABILITY}, passing their time zone (e.g. "Eastern", "Pacific", or "America/Los_Angeles"). It returns open slots already labeled in their time zone.`,
+    `- Read 2–3 of those options aloud conversationally, ALWAYS including the time zone — e.g. "Thursday at 3:30 in the afternoon, your time" or "Tuesday at 10 AM Eastern". Never say a time without the zone.`,
+    `- When they pick one, call ${TOOL_SEND_BOOKING_LINK} with that slot's exact slot_start and their time zone.`,
+    `- Then say something like: "Perfect — I just texted you a link. Tap it, pick that time, and hit confirm, and you'll get a confirmation email." Do NOT tell them they're already booked or "all set" — the booking only completes when they confirm on the link.`,
+    `- Briefly confirm they received the text, then wrap up warmly.`,
     ``,
     `RULES:`,
-    `- Never invent availability — only offer times returned by ${TOOL_CHECK_AVAILABILITY}.`,
-    `- Be respectful of their time; if they decline or want to be removed, thank them, call ${TOOL_LOG_OUTCOME} with status "declined", and end politely. Never pressure.`,
-    `- If you reach voicemail, leave a short friendly message: who you are, that Part 2 is open, and that you'll try again — then end.`,
-    `- Keep turns short and human. Mirror their pace.`,
-    `- At the end of every call, call ${TOOL_LOG_OUTCOME} with the final status and a one-line note.`,
+    `- Never invent availability — only offer times from ${TOOL_CHECK_AVAILABILITY}.`,
+    `- Never state a time without its time zone.`,
+    `- If asked what time zone, answer with the zone you used (the caller's).`,
+    `- If they decline or want off the list, thank them, call ${TOOL_LOG_OUTCOME} with status "declined", and end politely. Never pressure.`,
+    `- If you reach voicemail, leave a short friendly message (who you are, that Part 2 is open, you'll try again), then call ${TOOL_LOG_OUTCOME} with status "voicemail".`,
+    `- Keep turns short and human; mirror their pace.`,
+    `- At the end, call ${TOOL_LOG_OUTCOME}: use "completed" if you sent a booking link (the booking confirms separately), "declined" if they said no, "voicemail" / "no_answer" as applicable.`,
   ].join("\n");
 }
 
 function serverConfig(webhookUrl: string): Record<string, unknown> {
   const secret = process.env.VAPI_WEBHOOK_SECRET;
-  // Vapi echoes `secret` back as the `x-vapi-secret` header on every webhook.
   return secret ? { url: webhookUrl, secret } : { url: webhookUrl };
 }
 
@@ -75,16 +86,17 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
       function: {
         name: TOOL_CHECK_AVAILABILITY,
         description:
-          "Get the advisor's open Part 2 appointment times. Call this when the person is ready to pick a time.",
+          "Get the advisor's open Part 2 times, labeled in the caller's time zone. Call after you've asked what time zone they're in.",
         parameters: {
           type: "object",
           properties: {
-            preferred_timeframe: {
+            timezone: {
               type: "string",
               description:
-                "Optional natural-language hint of when they'd prefer, e.g. 'mornings' or 'next week'.",
+                "The caller's time zone, as a US zone name (Eastern/Central/Mountain/Pacific) or IANA name (e.g. America/Los_Angeles). Infer from their state/city if needed.",
             },
           },
+          required: ["timezone"],
         },
       },
     },
@@ -94,7 +106,7 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
       function: {
         name: TOOL_SEND_BOOKING_LINK,
         description:
-          "Text the person a one-tap, prefilled booking link for the slot they chose. Call this right after they pick a time.",
+          "Text the caller a one-tap, prefilled booking link for the slot they chose. Call right after they pick a time.",
         parameters: {
           type: "object",
           properties: {
@@ -102,8 +114,12 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
               type: "string",
               description: "ISO 8601 start time of the chosen slot, exactly as returned by check_availability.",
             },
+            timezone: {
+              type: "string",
+              description: "The caller's time zone (same value passed to check_availability).",
+            },
           },
-          required: ["slot_start"],
+          required: ["slot_start", "timezone"],
         },
       },
     },
@@ -118,8 +134,9 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
           properties: {
             status: {
               type: "string",
-              enum: ["booked", "declined", "completed", "voicemail", "no_answer"],
-              description: "Final disposition of the call.",
+              enum: ["completed", "declined", "voicemail", "no_answer"],
+              description:
+                "completed = sent a booking link; declined = they said no; voicemail / no_answer as applicable. Do NOT use 'booked' — the Calendly confirmation sets that.",
             },
             notes: { type: "string", description: "One-line summary of how it went." },
           },
@@ -138,6 +155,7 @@ export function buildPart2Assistant(ctx: Part2Context): Record<string, unknown> 
     name: "Fed Pilot Part 2 Booker",
     firstMessage: `Hi, is this ${firstName}?`,
     recordingEnabled: true,
+    backgroundSound: "off", // no call-center ambience
     server: serverConfig(webhookUrl),
     voice: VOICE,
     transcriber: TRANSCRIBER,

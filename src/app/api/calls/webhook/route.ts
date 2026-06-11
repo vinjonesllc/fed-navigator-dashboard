@@ -45,13 +45,37 @@ function parseArgs(raw: unknown): Record<string, unknown> {
   return (raw as Record<string, unknown>) ?? {};
 }
 
-function humanTime(iso: string): string {
+const DEFAULT_TZ = "America/New_York";
+const TZ_ALIASES: Record<string, string> = {
+  eastern: "America/New_York", et: "America/New_York", est: "America/New_York", edt: "America/New_York",
+  central: "America/Chicago", ct: "America/Chicago", cst: "America/Chicago", cdt: "America/Chicago",
+  mountain: "America/Denver", mt: "America/Denver", mst: "America/Denver", mdt: "America/Denver",
+  pacific: "America/Los_Angeles", pt: "America/Los_Angeles", pst: "America/Los_Angeles", pdt: "America/Los_Angeles",
+  alaska: "America/Anchorage", hawaii: "Pacific/Honolulu",
+};
+
+/** Map a caller-supplied zone ("Pacific", "PST", or an IANA name) to IANA. */
+function normalizeTz(input: unknown, fallback = DEFAULT_TZ): string {
+  if (typeof input !== "string" || !input.trim()) return fallback;
+  const key = input.trim().toLowerCase().replace(/ (time|standard|daylight).*/, "");
+  if (TZ_ALIASES[key]) return TZ_ALIASES[key];
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: input }).format(new Date());
+    return input; // valid IANA zone
+  } catch {
+    return fallback;
+  }
+}
+
+function humanTime(iso: string, tz: string): string {
   return new Date(iso).toLocaleString("en-US", {
+    timeZone: tz,
     weekday: "long",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZoneName: "short",
   });
 }
 
@@ -74,17 +98,19 @@ async function handleToolCall(
   const admin = createSupabaseAdminClient();
 
   if (name === TOOL_CHECK_AVAILABILITY) {
+    const tz = normalizeTz(args.timezone);
     const slots = await getAvailableSlots();
-    if (slots.length === 0) return "No open Part 2 times in the next few days.";
-    // Hand back ISO + a human label; the agent reads the labels and passes the
-    // ISO start back in send_booking_link.
+    if (slots.length === 0) return "No open Part 2 times in the next several days.";
+    // Labels are in the caller's time zone; the agent reads the labels and passes
+    // the ISO start back in send_booking_link.
     return JSON.stringify(
-      slots.slice(0, 6).map((s) => ({ slot_start: s.start_time, label: humanTime(s.start_time) })),
+      slots.slice(0, 6).map((s) => ({ slot_start: s.start_time, label: humanTime(s.start_time, tz) })),
     );
   }
 
   if (name === TOOL_SEND_BOOKING_LINK) {
     const slotStart = String(args.slot_start ?? "");
+    const tz = normalizeTz(args.timezone);
     const target = await loadTarget(targetId);
     if (!target?.phone) return "I couldn't find a phone number to text the link to.";
 
@@ -104,13 +130,13 @@ async function handleToolCall(
     const url = prefilledBookingUrl(slot.scheduling_url, { name: target.full_name, email });
     await sendSms({
       to: target.phone,
-      body: `Fed Pilot: tap to confirm your Part 2 session for ${humanTime(slotStart)} — ${url}`,
+      body: `Fed Pilot: tap to confirm your Part 2 session for ${humanTime(slotStart, tz)} — ${url}`,
     });
     await admin
       .from("call_targets")
       .update({ booked_event_time: slotStart, updated_at: new Date().toISOString() })
       .eq("id", target.id);
-    return `Texted the booking link for ${humanTime(slotStart)}. Ask them to tap it to confirm.`;
+    return `Texted the booking link for ${humanTime(slotStart, tz)}. Ask them to tap it and confirm.`;
   }
 
   if (name === TOOL_LOG_OUTCOME) {
