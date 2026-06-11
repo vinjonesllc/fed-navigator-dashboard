@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
   // an unknown email can't be tied to a client yet; we still alert below.)
   let registrationId: string | null = null;
   if (clientId) {
-    const { data: reg } = await admin
+    const { data: reg, error: regErr } = await admin
       .from("part2_registrations")
       .upsert(
         {
@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
       )
       .select("id")
       .maybeSingle<{ id: string }>();
+    if (regErr) console.error("[calendly webhook] part2_registrations upsert failed:", regErr.message);
     registrationId = reg?.id ?? null;
   }
 
@@ -159,8 +160,9 @@ export async function POST(request: NextRequest) {
       slotTime: startTime,
       source,
     });
-  } catch {
+  } catch (e) {
     // Don't fail the webhook if the ClickUp DM hiccups — the booking is recorded.
+    console.error("[calendly webhook] ClickUp notify failed:", e instanceof Error ? e.message : e);
   }
 
   return NextResponse.json({ ok: true });
