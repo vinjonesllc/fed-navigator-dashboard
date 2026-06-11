@@ -13,7 +13,9 @@ import "server-only";
 // is a one-line edit. Voice should be a warm, natural US voice.
 const MODEL_PROVIDER = "anthropic";
 const MODEL_NAME = process.env.VAPI_MODEL ?? "claude-sonnet-4-6";
-const VOICE = { provider: "11labs", voiceId: process.env.VAPI_VOICE_ID ?? "" };
+// Default voice is a warm ElevenLabs voice (validated against Vapi); override
+// per-deploy with VAPI_VOICE_ID. `||` so a blank env var falls back to default.
+const VOICE = { provider: "11labs", voiceId: process.env.VAPI_VOICE_ID || "21m00Tcm4TlvDq8ikWAM" };
 const TRANSCRIBER = { provider: "deepgram", model: "nova-2" };
 
 export const TOOL_CHECK_AVAILABILITY = "check_availability";
