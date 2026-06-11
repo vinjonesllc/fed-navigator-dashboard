@@ -70,6 +70,7 @@ export type Workshop = {
   scheduled_minutes: number | null;
   registered_count: number;
   attended_count: number;
+  part2_enabled: boolean;
   eval_rating_avg: number | null;
   eval_rating_responses: number | null;
   created_at: string;
@@ -177,6 +178,99 @@ export type WorkshopQA = {
   responded_at: string | null;
   dismissed: boolean;
   created_at: string;
+};
+
+// ----------------------------------------------------------------------------
+// Part 2 Booking module
+// ----------------------------------------------------------------------------
+
+export type CampaignStatus = "draft" | "running" | "paused" | "completed";
+export type CalendarProvider = "calendly" | "calcom" | "google";
+export type VoiceProvider = "vapi" | "retell";
+
+export type CallCampaign = {
+  id: string;
+  client_id: string;
+  workshop_id: string | null;
+  name: string;
+  status: CampaignStatus;
+  calendar_provider: CalendarProvider;
+  calendar_config: Record<string, unknown>;
+  voice_provider: VoiceProvider;
+  voice_config: Record<string, unknown>;
+  max_attempts: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RegistrationSource = "manual" | "ai_call" | "self_serve";
+
+export const REGISTRATION_SOURCE_LABELS: Record<RegistrationSource, string> = {
+  manual: "Marked manually",
+  ai_call: "Booked by AI call",
+  self_serve: "Self-registered",
+};
+
+export type Part2Registration = {
+  id: string;
+  client_id: string;
+  attendee_id: string | null;
+  workshop_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  agency: string | null;
+  source: RegistrationSource;
+  event_time: string | null;
+  event_ref: string | null;
+  marked_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CallTargetStatus =
+  | "queued"
+  | "calling"
+  | "no_answer"
+  | "voicemail"
+  | "completed"
+  | "booked"
+  | "declined"
+  | "failed"
+  | "skipped";
+
+export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
+  queued: "Queued",
+  calling: "Calling",
+  no_answer: "No answer",
+  voicemail: "Voicemail left",
+  completed: "Call completed",
+  booked: "Booked",
+  declined: "Declined",
+  failed: "Failed",
+  skipped: "Skipped",
+};
+
+export type CallTarget = {
+  id: string;
+  campaign_id: string;
+  attendee_id: string | null;
+  full_name: string | null;
+  phone: string | null;
+  agency: string | null;
+  status: CallTargetStatus;
+  attempts: number;
+  last_attempt_at: string | null;
+  next_attempt_at: string | null;
+  provider_call_id: string | null;
+  recording_url: string | null;
+  transcript: string | null;
+  outcome_notes: string | null;
+  booked_event_time: string | null;
+  registration_id: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type IntentType = "retiring_soon" | "cliff_notes_request";
