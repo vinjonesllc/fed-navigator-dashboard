@@ -174,6 +174,12 @@ export function UploadForm({
               { duration: 12000 },
             );
           }
+          if (result.ac.listMissing) {
+            toast.warning(
+              'AC list "Federal Employees" not found — contacts were uploaded but not subscribed.',
+              { duration: 12000 },
+            );
+          }
         }
         router.push(`/admin/clients/${clientId}/workshops/${result.workshopId}`);
         router.refresh();
