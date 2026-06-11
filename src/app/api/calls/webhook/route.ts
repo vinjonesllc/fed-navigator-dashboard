@@ -99,8 +99,10 @@ async function handleToolCall(
 
   if (name === TOOL_CHECK_AVAILABILITY) {
     const tz = normalizeTz(args.timezone);
-    const slots = await getAvailableSlots();
-    if (slots.length === 0) return "No open Part 2 times in the next several days.";
+    const after =
+      typeof args.after === "string" && args.after.trim() ? args.after.trim() : undefined;
+    const slots = await getAvailableSlots(35, after);
+    if (slots.length === 0) return "No open Part 2 times in the next several weeks.";
     // Labels are in the caller's time zone; the agent reads the labels and passes
     // the ISO start back in send_booking_link.
     return JSON.stringify(

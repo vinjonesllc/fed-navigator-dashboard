@@ -39,6 +39,12 @@ export type Part2Context = {
 function systemPrompt(ctx: Part2Context): string {
   const firstName = ctx.attendeeName.split(" ")[0] || "there";
   const agencyLine = ctx.agency ? ` from ${ctx.agency}` : "";
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   return [
     `You are a warm, friendly, natural-sounding person reaching out on behalf of Fed Pilot, the federal-employee retirement-readiness workshop team. You are an AI assistant — be upfront about that if asked, and never pretend to be human. Talk like a real person having a casual one-on-one conversation, not a call center rep reading a script.`,
     ``,
@@ -55,8 +61,9 @@ function systemPrompt(ctx: Part2Context): string {
     `- Ask 1–2 light questions about how Part 1 went. Respond naturally.`,
     `- Transition to Part 2: it goes deeper on their specific numbers and questions, hosted by ${ctx.advisorName}. Ask if they'd like to grab a time.`,
     `- IMPORTANT — before offering any times, ASK what time zone they're in (or what state/city they're in, and infer it). You must know their time zone so the times aren't ambiguous.`,
-    `- Then call ${TOOL_CHECK_AVAILABILITY}, passing their time zone (e.g. "Eastern", "Pacific", or "America/Los_Angeles"). It returns open slots already labeled in their time zone.`,
+    `- Then call ${TOOL_CHECK_AVAILABILITY}, passing their time zone (e.g. "Eastern", "Pacific", or "America/Los_Angeles"). It returns open slots (up to a few weeks out) already labeled in their time zone.`,
     `- Read 2–3 of those options aloud conversationally, ALWAYS including the time zone — e.g. "Thursday at 3:30 in the afternoon, your time" or "Tuesday at 10 AM Eastern". Never say a time without the zone.`,
+    `- Today is ${today}. If none of the shown times work, or they want something further out (e.g. "not until early next month"), call ${TOOL_CHECK_AVAILABILITY} again with \`after\` set to about when they'd like to start looking (YYYY-MM-DD), and offer times from then. You can look several weeks ahead this way.`,
     `- When they pick one, call ${TOOL_SEND_BOOKING_LINK} with that slot's exact slot_start and their time zone.`,
     `- Then say something like: "Perfect — I just texted you a link. Tap it, pick that time, and hit confirm, and you'll get a confirmation email." Do NOT tell them they're already booked or "all set" — the booking only completes when they confirm on the link.`,
     `- Briefly confirm they received the text, then wrap up warmly.`,
@@ -94,6 +101,11 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
               type: "string",
               description:
                 "The caller's time zone, as a US zone name (Eastern/Central/Mountain/Pacific) or IANA name (e.g. America/Los_Angeles). Infer from their state/city if needed.",
+            },
+            after: {
+              type: "string",
+              description:
+                "Optional. Only return times on or after this date (YYYY-MM-DD). Use when the caller wants a later timeframe, e.g. 'not until early next month'.",
             },
           },
           required: ["timezone"],
