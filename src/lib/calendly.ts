@@ -48,16 +48,11 @@ type AvailableTimesResponse = {
  * Open Part 2 times over the next `days` (Calendly caps a single query at 7
  * days, and start_time must be in the future).
  */
-export async function getAvailableSlots(days = 7): Promise<CalendlySlot[]> {
-  const start = new Date(Date.now() + 60 * 60 * 1000); // +1h, must be future
-  // End is measured from now (not start) so the span stays just under Calendly's
-  // 7-day max even with the +1h start offset.
-  const end = new Date(Date.now() + Math.min(days, 7) * 24 * 60 * 60 * 1000);
-
+async function fetchWindow(startIso: string, endIso: string): Promise<CalendlySlot[]> {
   const params = new URLSearchParams({
     event_type: eventTypeUri(),
-    start_time: start.toISOString(),
-    end_time: end.toISOString(),
+    start_time: startIso,
+    end_time: endIso,
   });
   const res = await fetch(`${CALENDLY_BASE}/event_type_available_times?${params}`, {
     headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
@@ -69,6 +64,34 @@ export async function getAvailableSlots(days = 7): Promise<CalendlySlot[]> {
   return data.collection
     .filter((s) => s.status === "available" && s.invitees_remaining > 0)
     .map((s) => ({ start_time: s.start_time, scheduling_url: s.scheduling_url }));
+}
+
+/**
+ * Open Part 2 times across up to ~5 weeks. Calendly caps each query at 7 days,
+ * so we walk consecutive weekly windows and aggregate — this lets the agent look
+ * past the first week (e.g. the advisor's next opening is in week 2, or the
+ * caller wants "early next month"). Pass `fromIso` to start the search later.
+ * Stops early once enough slots are collected, so a busy first week stays fast.
+ */
+export async function getAvailableSlots(days = 35, fromIso?: string): Promise<CalendlySlot[]> {
+  const HOUR = 3_600_000;
+  const DAY = 86_400_000;
+  const WEEK = 7 * DAY;
+  const baseMs = fromIso ? new Date(fromIso).getTime() : Date.now();
+  const base = Number.isNaN(baseMs) ? Date.now() : baseMs;
+  let cursor = Math.max(Date.now() + HOUR, base); // start_time must be in the future
+  const hardEnd = base + days * DAY;
+  const MAX_RESULTS = 12;
+  const MAX_WINDOWS = 6;
+
+  const out: CalendlySlot[] = [];
+  for (let w = 0; w < MAX_WINDOWS && cursor < hardEnd && out.length < MAX_RESULTS; w++) {
+    const end = Math.min(cursor + WEEK - 60_000, hardEnd); // keep span just under 7 days
+    if (end <= cursor) break;
+    out.push(...(await fetchWindow(new Date(cursor).toISOString(), new Date(end).toISOString())));
+    cursor = end;
+  }
+  return out.slice(0, MAX_RESULTS);
 }
 
 /** Add name/email prefill to a slot's scheduling URL so the tap is one step. */
