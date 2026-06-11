@@ -17,6 +17,7 @@ import { DeleteWorkshopButton } from "./delete-workshop-button";
 import { ReextractButton } from "./reextract-button";
 import { RefetchEvalButton } from "./refetch-eval-button";
 import { ReuploadButton } from "./reupload-button";
+import { Part2ToggleButton } from "./part2-toggle-button";
 import { ShareLinkBar } from "@/components/share-link-bar";
 
 export default async function AdminWorkshopDetailPage({
@@ -99,6 +100,16 @@ export default async function AdminWorkshopDetailPage({
       deleteAction={
         manager ? (
           <>
+            {workshop.part2_enabled ? (
+              <Link
+                href={`/admin/clients/${id}/workshops/${wid}/part2`}
+                className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+              >
+                Part 2 Booking
+              </Link>
+            ) : (
+              <Part2ToggleButton clientId={id} workshopId={wid} enabled={false} />
+            )}
             <Link
               href={`/admin/clients/${id}/workshops/${wid}/edit`}
               className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
