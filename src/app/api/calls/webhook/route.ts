@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAvailableSlots, prefilledBookingUrl } from "@/lib/calendly";
 import { sendSms } from "@/lib/sms";
 import { sendEmail } from "@/lib/email";
+import { toE164 } from "@/lib/phone";
 import {
   TOOL_CHECK_AVAILABILITY,
   TOOL_SEND_BOOKING_LINK,
@@ -198,10 +199,11 @@ async function handleToolCall(
         .maybeSingle<Pick<Attendee, "email">>();
       email = att?.email ?? null;
     }
+    const phoneE164 = toE164(target.phone);
     const url = prefilledBookingUrl(slot.scheduling_url, {
       name: target.full_name,
       email,
-      phone: target.phone,
+      phone: phoneE164 ?? target.phone,
     });
     const whenLabel = humanTime(slotStart, tz);
 
@@ -235,11 +237,11 @@ async function handleToolCall(
     }
 
     // text (default)
-    if (!target.phone) {
-      return "I don't have a phone number to text — should I email the link instead?";
+    if (!phoneE164) {
+      return "There's no usable phone number to text — offer to email the link instead, or let them know Fed Pilot will follow up.";
     }
     await sendSms({
-      to: target.phone,
+      to: phoneE164,
       body: `Fed Pilot: tap to confirm your Part 2 session for ${whenLabel} — ${url}`,
     });
     await markSent();
