@@ -169,6 +169,7 @@ export type CampaignReport = {
   voicemail: number;
   noAnswer: number;
   handoff: number; // asked for a callback / dropped early — team calls by hand
+  flaggedForReview: number; // agent flagged as off / hard to categorize
   badNumber: number; // skipped — un-callable number
   remaining: number; // still queued / in progress
 };
@@ -178,7 +179,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
   const [{ data: targetRows }, { data: answeredRows }] = await Promise.all([
     admin
       .from("call_targets")
-      .select("status, link_channel, booked_event_time")
+      .select("status, link_channel, booked_event_time, flagged_for_review")
       .eq("campaign_id", campaignId),
     admin
       .from("call_attempts")
@@ -204,6 +205,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     voicemail: 0,
     noAnswer: 0,
     handoff: 0,
+    flaggedForReview: 0,
     badNumber: 0,
     remaining: 0,
   };
@@ -216,6 +218,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     else if (s === "handoff") r.handoff += 1;
     else if (s === "skipped") r.badNumber += 1;
     else if (s === "queued" || s === "calling") r.remaining += 1;
+    if (t.flagged_for_review) r.flaggedForReview += 1;
     if (s === "completed" || s === "booked" || s === "declined") r.fullConversation += 1;
     if (t.booked_event_time) r.linksSent += 1;
     if (t.link_channel === "text") r.linkText += 1;

@@ -132,6 +132,9 @@ export default async function Part2BookingPage({
             <ReportStat label="Voicemail" value={report.voicemail} />
             <ReportStat label="No answer" value={report.noAnswer} />
             <ReportStat label="Bad numbers" value={report.badNumber} />
+            {report.flaggedForReview > 0 && (
+              <ReportStat label="Flagged for review" value={report.flaggedForReview} />
+            )}
           </div>
         </div>
       )}

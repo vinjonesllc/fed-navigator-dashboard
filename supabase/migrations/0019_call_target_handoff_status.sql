@@ -8,3 +8,7 @@ alter table call_targets add constraint call_targets_status_check
     'queued', 'calling', 'no_answer', 'voicemail',
     'completed', 'booked', 'declined', 'failed', 'skipped', 'handoff'
   ));
+
+-- Calls the agent felt were "off" or couldn't cleanly categorize — surfaced for
+-- manual review (DM'd to the calling group) so we can refine the rules.
+alter table call_targets add column if not exists flagged_for_review boolean not null default false;

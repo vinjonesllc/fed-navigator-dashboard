@@ -77,3 +77,24 @@ export async function notifyPart2Handoff(args: {
     process.env.CLICKUP_HANDOFF_CHANNEL_ID || process.env.CLICKUP_DM_CHANNEL_ID,
   );
 }
+
+/** Flag a call the agent felt was "off" or couldn't cleanly categorize, so a
+ *  human can review the transcript and we can refine the rules. */
+export async function notifyPart2Review(args: {
+  name: string | null;
+  phone: string | null;
+  agency: string | null;
+  status: string;
+  reason: string | null;
+}): Promise<void> {
+  const lines = [
+    `🔎 *Part 2 — call to review* (logged as ${args.status})`,
+    `• ${args.name || "(name unknown)"}${args.agency ? ` — ${args.agency}` : ""}`,
+    `• Phone: ${args.phone || "n/a"}`,
+    `• What felt off: ${args.reason || "(agent didn't say)"}`,
+  ];
+  await postClickUpMessage(
+    lines.join("\n"),
+    process.env.CLICKUP_HANDOFF_CHANNEL_ID || process.env.CLICKUP_DM_CHANNEL_ID,
+  );
+}

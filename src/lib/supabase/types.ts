@@ -278,6 +278,8 @@ export type CallTarget = {
   registration_id: string | null;
   /** How the booking link was sent, when one was: "text" | "email". */
   link_channel: string | null;
+  /** Agent felt the call was off / couldn't cleanly categorize it — for review. */
+  flagged_for_review: boolean;
   created_at: string;
   updated_at: string;
 };

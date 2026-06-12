@@ -335,6 +335,9 @@ export function Part2Client({
                           <span className="text-[12px] text-ink-2">
                             {CALL_TARGET_STATUS_LABELS[target.status]}
                           </span>
+                          {target.flagged_for_review && (
+                            <span title="Agent flagged this call for review">🔎</span>
+                          )}
                           {canManage && CALLABLE_STATUSES.includes(target.status) && (
                             <Button
                               type="button"

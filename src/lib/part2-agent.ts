@@ -99,7 +99,8 @@ function systemPrompt(ctx: Part2Context): string {
     `- If they ask to be called back, say it's not a good time / they're busy, or want to speak to a real person, DON'T push — say something warm like "No problem — I'll have someone from our team reach back out to you. Thanks so much!", then call ${TOOL_LOG_OUTCOME} with status "callback" and a one-line note (e.g. "asked for a callback this afternoon"). A human teammate handles it from there.`,
     `- If you reach voicemail, leave a short friendly message (who you are, that they've got a free personalized retirement report waiting from the workshop they attended, and you'll try again), then call ${TOOL_LOG_OUTCOME} with status "voicemail".`,
     `- Keep turns short and human; mirror their pace.`,
-    `- At the end, call ${TOOL_LOG_OUTCOME}: use "completed" if you sent a booking link (the booking confirms separately), "declined" if they said no, "voicemail" / "no_answer" as applicable.`,
+    `- At the end, call ${TOOL_LOG_OUTCOME}: use "completed" if you sent a booking link (the booking confirms separately), "declined" if they said no, "callback" if they asked to be called back / want a person, "voicemail" / "no_answer" as applicable.`,
+    `- If anything about the call felt OFF or you're not confident it fits cleanly (hard to understand, an unusual situation, unsure whether they're actually interested, mixed signals), still log your best-guess status but set flag_for_review=true and put what was unclear in notes — a teammate will look at it.`,
   ].join("\n");
 }
 
@@ -171,6 +172,11 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
                 "completed = sent a booking link; callback = they asked to be called back, were busy / said now's not a good time, or want to talk to a real person (a human teammate follows up); declined = they said no; voicemail / no_answer as applicable. Do NOT use 'booked' — the Calendly confirmation sets that.",
             },
             notes: { type: "string", description: "One-line summary of how it went." },
+            flag_for_review: {
+              type: "boolean",
+              description:
+                "Set true if the call felt off or you couldn't cleanly categorize it (confusing/garbled, unusual situation, unsure if they're really interested, mixed signals). Still log your best-guess status; a teammate will review it. Put what was unclear in `notes`.",
+            },
           },
           required: ["status"],
         },
