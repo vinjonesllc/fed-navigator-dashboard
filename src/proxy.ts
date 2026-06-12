@@ -13,7 +13,7 @@ const PUBLIC_PATHS = [
   // inside the route handlers, not by auth middleware.
   "/api/calls/webhook",
   "/api/calendly/webhook",
-  "/api/_debug", // TEMPORARY — secret-gated debug probe; remove with the route
+  "/api/debug-clickup", // TEMPORARY — secret-gated debug probe; remove with the route
 ];
 
 export async function proxy(request: NextRequest) {
