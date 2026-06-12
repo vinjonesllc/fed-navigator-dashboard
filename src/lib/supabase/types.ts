@@ -43,6 +43,7 @@ export type Client = {
   next_workshop_hour: number | null;
   next_workshop_tz: NextWorkshopTz | null;
   next_workshop_registrant_tab: string | null;
+  next_workshop_reg_url: string | null;
   created_at: string;
   updated_at: string;
 };

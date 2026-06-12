@@ -148,7 +148,7 @@ export async function uploadCsv(formData: FormData) {
   const { data: client } = await admin
     .from("clients")
     .select(
-      "brand, name, slug, next_workshop_date, next_workshop_hour, next_workshop_tz",
+      "brand, name, slug, next_workshop_date, next_workshop_hour, next_workshop_tz, next_workshop_reg_url",
     )
     .eq("id", parsed.clientId)
     .maybeSingle();
@@ -172,6 +172,7 @@ export async function uploadCsv(formData: FormData) {
               client.next_workshop_hour as number | null,
               client.next_workshop_tz as string | null,
             ) ?? "",
+          regUrl: ((client.next_workshop_reg_url as string | null) ?? "").trim(),
         }
       : null;
 
@@ -196,6 +197,7 @@ export async function uploadCsv(formData: FormData) {
             { title: AC_FIELD_TITLES.nextWorkshopDate, value: futureNext.date },
             { title: AC_FIELD_TITLES.nextWorkshopText, value: futureNext.text },
             { title: AC_FIELD_TITLES.nextWorkshopTime, value: futureNext.time },
+            { title: AC_FIELD_TITLES.advisorRegPageUrl, value: futureNext.regUrl },
           );
         }
         return {
