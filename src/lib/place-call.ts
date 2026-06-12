@@ -2,6 +2,7 @@ import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { placeOutboundCall } from "@/lib/vapi";
 import { buildPart2Assistant } from "@/lib/part2-agent";
+import { toE164 } from "@/lib/phone";
 import type { CallCampaign, CallTarget, Workshop } from "@/lib/supabase/types";
 
 /**
@@ -21,7 +22,8 @@ export async function placeCallForTarget(
     .eq("id", targetId)
     .maybeSingle<CallTarget>();
   if (!target) return { ok: false, error: "Target not found" };
-  if (!target.phone) return { ok: false, error: "Target has no phone number" };
+  const phone = toE164(target.phone);
+  if (!phone) return { ok: false, error: `Target has no usable phone number (${target.phone ?? "none"})` };
 
   const { data: campaign } = await admin
     .from("call_campaigns")
@@ -66,7 +68,7 @@ export async function placeCallForTarget(
   let callId: string;
   try {
     const call = await placeOutboundCall({
-      customerNumber: target.phone,
+      customerNumber: phone,
       assistant,
       metadata: {
         targetId: target.id,
