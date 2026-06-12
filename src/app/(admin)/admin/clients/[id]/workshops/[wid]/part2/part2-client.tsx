@@ -20,6 +20,7 @@ import {
   addCallableToCampaign,
   createCampaign,
   markRegistered,
+  setCampaignStatus,
   unmarkRegistered,
 } from "./actions";
 
@@ -187,25 +188,58 @@ export function Part2Client({
         )
       ) : (
         <div className={`${CARD} flex flex-wrap items-center justify-between gap-3 p-4`}>
-          <div className="text-[13px] text-ink-2">
+          <div className="flex items-center gap-2 text-[13px] text-ink-2">
             <span className="font-medium text-ink-1">Calling campaign</span> · Calendly · advisor{" "}
             <span className="font-medium text-ink-1">{advisor}</span>
+            <Badge variant={campaign.status === "running" ? "default" : "secondary"}>
+              {campaign.status}
+            </Badge>
           </div>
           {canManage && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={pending || unqueuedCallable === 0}
-              onClick={() =>
-                run(addCallableToCampaign, baseFd(), (r) => `Added ${r.added ?? 0} to call list`, "seed")
-              }
-              className="h-9 rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
-            >
-              {busyId === "seed" && pending
-                ? "Adding…"
-                : `Add ${unqueuedCallable} callable to call list`}
-            </Button>
+            <div className="flex items-center gap-2">
+              {campaign.status === "running" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() =>
+                    run(setCampaignStatus, baseFd({ status: "paused" }), () => "Calling paused", "status")
+                  }
+                  className="h-9 rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                >
+                  {busyId === "status" && pending ? "Pausing…" : "Pause calling"}
+                </Button>
+              )}
+              {campaign.status === "paused" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() =>
+                    run(setCampaignStatus, baseFd({ status: "running" }), () => "Calling resumed", "status")
+                  }
+                  className="h-9 rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                >
+                  {busyId === "status" && pending ? "Resuming…" : "Resume calling"}
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={pending || unqueuedCallable === 0}
+                onClick={() =>
+                  run(addCallableToCampaign, baseFd(), (r) => `Added ${r.added ?? 0} to call list`, "seed")
+                }
+                className="h-9 rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+              >
+                {busyId === "seed" && pending
+                  ? "Adding…"
+                  : `Add ${unqueuedCallable} callable to call list`}
+              </Button>
+            </div>
           )}
         </div>
       )}

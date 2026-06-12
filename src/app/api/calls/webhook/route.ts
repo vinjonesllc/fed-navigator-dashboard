@@ -213,7 +213,7 @@ async function handleToolCall(
 
     if (channel === "email") {
       if (!email) {
-        return "I don't have an email address on file — can I text it to the number we're on, or what's the best email?";
+        return "There's no email address on file for them — offer to TEXT the link to this number instead, or let them know Fed Pilot will follow up to get them scheduled. Do NOT ask them for an email address.";
       }
       try {
         await sendEmail({
@@ -227,7 +227,8 @@ async function handleToolCall(
           text: `Confirm your free Fed Pilot retirement report session for ${whenLabel}: ${url}`,
         });
       } catch (e) {
-        return `I had trouble emailing the link — ${e instanceof Error ? e.message : "please try texting instead"}.`;
+        console.error("[send_booking_link] email send failed:", e);
+        return "Emailing the link failed on our end — offer to TEXT it to this number instead, or let them know Fed Pilot will follow up to get them scheduled. Do NOT ask them for an email address.";
       }
       await markSent();
       return `Emailed the booking link for ${whenLabel} to their address on file. Ask them to open it and confirm.`;
