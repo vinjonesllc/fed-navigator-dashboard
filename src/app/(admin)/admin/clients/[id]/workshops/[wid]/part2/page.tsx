@@ -87,6 +87,7 @@ export default async function Part2BookingPage({
         canManage={canManage}
         campaign={campaignView.campaign}
         targetsByAttendee={campaignView.targetsByAttendee}
+        defaultAdvisorName={client.name}
       />
     </div>
   );

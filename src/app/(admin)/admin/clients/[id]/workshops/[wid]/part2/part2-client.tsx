@@ -44,6 +44,7 @@ export function Part2Client({
   canManage,
   campaign,
   targetsByAttendee,
+  defaultAdvisorName,
 }: {
   clientId: string;
   workshopId: string;
@@ -51,12 +52,15 @@ export function Part2Client({
   canManage: boolean;
   campaign: CallCampaign | null;
   targetsByAttendee: Record<string, CallTarget>;
+  /** Advisor name to pre-fill the campaign setup with — the client/advisor the
+   *  workshop belongs to. Editable in case the client name needs trimming. */
+  defaultAdvisorName: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("callable");
-  const [advisorName, setAdvisorName] = useState("");
+  const [advisorName, setAdvisorName] = useState(defaultAdvisorName);
   const [schedulingUrl, setSchedulingUrl] = useState("");
 
   const shown = useMemo(() => {
