@@ -8,6 +8,7 @@ import { toE164 } from "@/lib/phone";
 import {
   TOOL_CHECK_AVAILABILITY,
   TOOL_SEND_BOOKING_LINK,
+  TOOL_SEND_WORKSHOP_LINK,
   TOOL_LOG_OUTCOME,
 } from "@/lib/part2-agent";
 import { timingSafeEqualStr } from "@/lib/webhook-verify";
@@ -166,6 +167,7 @@ async function handleToolCall(
   args: Record<string, unknown>,
   targetId: string | undefined,
   tz: string,
+  nextWorkshopRegUrl: string | undefined,
 ): Promise<string> {
   const admin = createSupabaseAdminClient();
 
@@ -249,6 +251,50 @@ async function handleToolCall(
     return `Texted the booking link for ${whenLabel}. Ask them to tap it and confirm.`;
   }
 
+  if (name === TOOL_SEND_WORKSHOP_LINK) {
+    if (!nextWorkshopRegUrl) {
+      return "I don't have the next workshop link handy — let them know a teammate will follow up with the details.";
+    }
+    const channel = String(args.channel ?? "text").toLowerCase() === "email" ? "email" : "text";
+    const target = await loadTarget(targetId);
+    if (!target) return "I couldn't find the contact to send it to.";
+
+    if (channel === "email") {
+      let email: string | null = null;
+      if (target.attendee_id) {
+        const { data: att } = await admin
+          .from("attendees")
+          .select("email")
+          .eq("id", target.attendee_id)
+          .maybeSingle<Pick<Attendee, "email">>();
+        email = att?.email ?? null;
+      }
+      if (!email) return "No email on file — offer to text the link to this number instead.";
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Fed Pilot — register for our next workshop",
+          html:
+            `<p>Here's the link to register for our next Fed Pilot workshop:</p>` +
+            `<p><a href="${nextWorkshopRegUrl}">Register here</a></p>`,
+          text: `Register for our next Fed Pilot workshop: ${nextWorkshopRegUrl}`,
+        });
+      } catch (e) {
+        console.error("[send_workshop_link] email failed:", e);
+        return "Emailing the workshop link failed — offer to text it instead.";
+      }
+      return "Emailed the next-workshop registration link to the address on file.";
+    }
+
+    const phoneE164 = toE164(target.phone);
+    if (!phoneE164) return "No usable phone to text — offer to email the workshop link instead.";
+    await sendSms({
+      to: phoneE164,
+      body: `Fed Pilot: register for our next workshop here — ${nextWorkshopRegUrl}`,
+    });
+    return "Texted the next-workshop registration link.";
+  }
+
   if (name === TOOL_LOG_OUTCOME) {
     const raw = String(args.status ?? "completed");
     const isHandoff = raw === "callback" || raw === "handoff";
@@ -330,6 +376,10 @@ export async function POST(request: NextRequest) {
     typeof message.call?.metadata?.clientId === "string"
       ? message.call.metadata.clientId
       : undefined;
+  const nextWorkshopRegUrl =
+    typeof message.call?.metadata?.nextWorkshopRegUrl === "string"
+      ? message.call.metadata.nextWorkshopRegUrl
+      : undefined;
 
   // 1) Tool calls — respond synchronously with results.
   if (message.type === "tool-calls" || message.type === "function-call") {
@@ -339,7 +389,13 @@ export async function POST(request: NextRequest) {
         const id = c.toolCallId ?? c.id ?? "";
         const name = c.function?.name ?? "";
         try {
-          const result = await handleToolCall(name, parseArgs(c.function?.arguments), targetId, tz);
+          const result = await handleToolCall(
+            name,
+            parseArgs(c.function?.arguments),
+            targetId,
+            tz,
+            nextWorkshopRegUrl,
+          );
           return { toolCallId: id, result };
         } catch (e) {
           return { toolCallId: id, result: e instanceof Error ? e.message : "Tool failed" };

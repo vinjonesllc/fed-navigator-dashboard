@@ -31,6 +31,7 @@ const TRANSCRIBER = { provider: "deepgram", model: "nova-2" };
 
 export const TOOL_CHECK_AVAILABILITY = "check_availability";
 export const TOOL_SEND_BOOKING_LINK = "send_booking_link";
+export const TOOL_SEND_WORKSHOP_LINK = "send_next_workshop_link";
 export const TOOL_LOG_OUTCOME = "log_outcome";
 
 export type Part2Context = {
@@ -42,6 +43,9 @@ export type Part2Context = {
   /** Friendly zone all times are stated in (the client's next-workshop tz),
    *  e.g. "Central". The agent states times in this zone and never asks. */
   timezone: string | null;
+  /** The advisor's next public workshop — only used if the caller specifically
+   *  asks when the next workshop is. Null when none is set / it's in the past. */
+  nextWorkshop: { whenLabel: string; regUrl: string } | null;
 };
 
 /** Natural phrasing for when they attended: "yesterday", "last Monday", or a
@@ -97,6 +101,11 @@ function systemPrompt(ctx: Part2Context): string {
     `- NEVER ask the caller for their email address (or to repeat their phone) — the link always goes to the contact info already on file. If a send fails or there's no email on file, offer the other channel (text vs email), or tell them Fed Pilot will follow up to get them scheduled. Don't collect contact info by voice.`,
     `- If they decline or want off the list, thank them, call ${TOOL_LOG_OUTCOME} with status "declined", and end politely. Never pressure.`,
     `- If they ask to be called back, say it's not a good time / they're busy, or want to speak to a real person, DON'T push — say something warm like "No problem — I'll have someone from our team reach back out to you. Thanks so much!", then call ${TOOL_LOG_OUTCOME} with status "callback" and a one-line note (e.g. "asked for a callback this afternoon"). A human teammate handles it from there.`,
+    ...(ctx.nextWorkshop
+      ? [
+          `- NEXT WORKSHOP: ONLY if they specifically ask when the next workshop is, tell them it's ${ctx.nextWorkshop.whenLabel}, and offer to send them the registration link. If they'd like it, ask "text or email?" and call ${TOOL_SEND_WORKSHOP_LINK} with that channel. Do NOT bring up the next workshop otherwise — your job is the free Part 2 report.`,
+        ]
+      : []),
     `- If you reach voicemail, leave a short friendly message (who you are, that they've got a free personalized retirement report waiting from the workshop they attended, and you'll try again), then call ${TOOL_LOG_OUTCOME} with status "voicemail".`,
     `- Keep turns short and human; mirror their pace.`,
     `- At the end, call ${TOOL_LOG_OUTCOME}: use "completed" if you sent a booking link (the booking confirms separately), "declined" if they said no, "callback" if they asked to be called back / want a person, "voicemail" / "no_answer" as applicable.`,
@@ -153,6 +162,27 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
             },
           },
           required: ["slot_start", "channel"],
+        },
+      },
+    },
+    {
+      type: "function",
+      server,
+      function: {
+        name: TOOL_SEND_WORKSHOP_LINK,
+        description:
+          "Send the caller the registration link for the advisor's NEXT public workshop, by text or email. Use ONLY when the caller specifically asks about the next workshop and wants the link.",
+        parameters: {
+          type: "object",
+          properties: {
+            channel: {
+              type: "string",
+              enum: ["text", "email"],
+              description:
+                "How to send it: 'text' to SMS the number we called, 'email' to email the address on file.",
+            },
+          },
+          required: ["channel"],
         },
       },
     },
