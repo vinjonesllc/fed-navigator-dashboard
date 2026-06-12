@@ -243,7 +243,8 @@ export type CallTargetStatus =
   | "booked"
   | "declined"
   | "failed"
-  | "skipped";
+  | "skipped"
+  | "handoff";
 
 export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
   queued: "Queued",
@@ -255,6 +256,7 @@ export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
   declined: "Declined",
   failed: "Failed",
   skipped: "Skipped",
+  handoff: "Handoff to team",
 };
 
 export type CallTarget = {
@@ -276,6 +278,8 @@ export type CallTarget = {
   registration_id: string | null;
   /** How the booking link was sent, when one was: "text" | "email". */
   link_channel: string | null;
+  /** Agent felt the call was off / couldn't cleanly categorize it — for review. */
+  flagged_for_review: boolean;
   created_at: string;
   updated_at: string;
 };

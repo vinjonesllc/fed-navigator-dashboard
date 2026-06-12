@@ -12,18 +12,18 @@ import "server-only";
 
 const CLICKUP_BASE = "https://api.clickup.com/api/v3";
 
-export async function postClickUpMessage(content: string): Promise<void> {
+export async function postClickUpMessage(content: string, channelId?: string): Promise<void> {
   const token = process.env.CLICKUP_API_TOKEN;
   const workspaceId = process.env.CLICKUP_WORKSPACE_ID;
-  const channelId = process.env.CLICKUP_DM_CHANNEL_ID;
-  if (!token || !workspaceId || !channelId) {
+  const chan = channelId || process.env.CLICKUP_DM_CHANNEL_ID;
+  if (!token || !workspaceId || !chan) {
     throw new Error(
       "ClickUp env not set (CLICKUP_API_TOKEN / CLICKUP_WORKSPACE_ID / CLICKUP_DM_CHANNEL_ID)",
     );
   }
 
   const res = await fetch(
-    `${CLICKUP_BASE}/workspaces/${workspaceId}/chat/channels/${channelId}/messages`,
+    `${CLICKUP_BASE}/workspaces/${workspaceId}/chat/channels/${chan}/messages`,
     {
       method: "POST",
       headers: { Authorization: token, "Content-Type": "application/json" },
@@ -55,4 +55,46 @@ export async function notifyPart2Booking(args: {
     `• Time: ${when}`,
   ];
   await postClickUpMessage(lines.join("\n"));
+}
+
+/** Alert the Part 2 calling group that someone needs a human callback — they
+ *  asked to be called back / were busy / wanted a person, or the call dropped
+ *  early. Posts to CLICKUP_HANDOFF_CHANNEL_ID (falls back to the booking channel). */
+export async function notifyPart2Handoff(args: {
+  name: string | null;
+  phone: string | null;
+  agency: string | null;
+  reason: string;
+}): Promise<void> {
+  const lines = [
+    `📞 *Part 2 — needs a human callback*`,
+    `• ${args.name || "(name unknown)"}${args.agency ? ` — ${args.agency}` : ""}`,
+    `• Phone: ${args.phone || "n/a"}`,
+    `• Why: ${args.reason}`,
+  ];
+  await postClickUpMessage(
+    lines.join("\n"),
+    process.env.CLICKUP_HANDOFF_CHANNEL_ID || process.env.CLICKUP_DM_CHANNEL_ID,
+  );
+}
+
+/** Flag a call the agent felt was "off" or couldn't cleanly categorize, so a
+ *  human can review the transcript and we can refine the rules. */
+export async function notifyPart2Review(args: {
+  name: string | null;
+  phone: string | null;
+  agency: string | null;
+  status: string;
+  reason: string | null;
+}): Promise<void> {
+  const lines = [
+    `🔎 *Part 2 — call to review* (logged as ${args.status})`,
+    `• ${args.name || "(name unknown)"}${args.agency ? ` — ${args.agency}` : ""}`,
+    `• Phone: ${args.phone || "n/a"}`,
+    `• What felt off: ${args.reason || "(agent didn't say)"}`,
+  ];
+  await postClickUpMessage(
+    lines.join("\n"),
+    process.env.CLICKUP_HANDOFF_CHANNEL_ID || process.env.CLICKUP_DM_CHANNEL_ID,
+  );
 }

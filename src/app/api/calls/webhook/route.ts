@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAvailableSlots, prefilledBookingUrl } from "@/lib/calendly";
 import { sendSms } from "@/lib/sms";
 import { sendEmail } from "@/lib/email";
+import { notifyPart2Handoff, notifyPart2Review } from "@/lib/clickup";
 import { toE164 } from "@/lib/phone";
 import {
   TOOL_CHECK_AVAILABILITY,
@@ -249,15 +250,56 @@ async function handleToolCall(
   }
 
   if (name === TOOL_LOG_OUTCOME) {
-    const status = String(args.status ?? "completed") as CallTargetStatus;
+    const raw = String(args.status ?? "completed");
+    const isHandoff = raw === "callback" || raw === "handoff";
+    const status = (isHandoff ? "handoff" : raw) as CallTargetStatus;
     const notes = args.notes ? String(args.notes) : null;
+    const flagReview = args.flag_for_review === true || String(args.flag_for_review) === "true";
     if (targetId) {
       await admin
         .from("call_targets")
-        .update({ status, outcome_notes: notes, updated_at: new Date().toISOString() })
+        .update({
+          status,
+          outcome_notes: notes,
+          flagged_for_review: flagReview,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", targetId);
+      if (isHandoff || flagReview) {
+        const t = await loadTarget(targetId);
+        const phone = toE164(t?.phone) ?? t?.phone ?? null;
+        if (isHandoff) {
+          try {
+            await notifyPart2Handoff({
+              name: t?.full_name ?? null,
+              phone,
+              agency: t?.agency ?? null,
+              reason: notes || "Asked for a callback / wants a real person.",
+            });
+          } catch (e) {
+            console.error("[log_outcome] handoff ClickUp notify failed:", e);
+          }
+        }
+        if (flagReview) {
+          try {
+            await notifyPart2Review({
+              name: t?.full_name ?? null,
+              phone,
+              agency: t?.agency ?? null,
+              status,
+              reason: notes,
+            });
+          } catch (e) {
+            console.error("[log_outcome] review ClickUp notify failed:", e);
+          }
+        }
+      }
     }
-    return "Outcome recorded.";
+    return isHandoff
+      ? "Logged as a handoff — a teammate will be alerted to call them back."
+      : flagReview
+        ? "Outcome recorded and flagged for review."
+        : "Outcome recorded.";
   }
 
   return "Unknown tool.";
@@ -316,9 +358,14 @@ export async function POST(request: NextRequest) {
 
     const { data: target } = await admin
       .from("call_targets")
-      .select("status, attempts, campaign_id")
+      .select("status, attempts, campaign_id, booked_event_time, full_name, phone, agency")
       .eq("id", targetId)
-      .maybeSingle<Pick<CallTarget, "status" | "attempts" | "campaign_id">>();
+      .maybeSingle<
+        Pick<
+          CallTarget,
+          "status" | "attempts" | "campaign_id" | "booked_event_time" | "full_name" | "phone" | "agency"
+        >
+      >();
 
     // The agent's own disposition (set via log_outcome during the call) is
     // AUTHORITATIVE — it knows whether it reached a person, a voicemail, or no
@@ -329,8 +376,14 @@ export async function POST(request: NextRequest) {
     const heuristic = classifyOutcome(message.endedReason, !!transcript);
     const statusToOutcome = (s: string): CallOutcome =>
       s === "voicemail" ? "voicemail" : s === "no_answer" ? "no_answer" : s === "failed" ? "failed" : "answered";
-    const finalStatus = agentDisposition ?? (heuristic === "answered" ? "completed" : heuristic);
-    const outcome = agentDisposition ? statusToOutcome(agentDisposition) : heuristic;
+    // No agent disposition + an answered call = the call connected but ended
+    // before the agent could finish. If a link already went out, count it
+    // completed; otherwise hand it to the team (don't bury it as "completed").
+    let finalStatus: string;
+    if (agentDisposition) finalStatus = agentDisposition;
+    else if (heuristic === "answered") finalStatus = target?.booked_event_time ? "completed" : "handoff";
+    else finalStatus = heuristic;
+    const outcome = statusToOutcome(finalStatus);
 
     // Timing log for best-time learning (best-effort).
     await admin.from("call_attempts").insert({
@@ -371,6 +424,21 @@ export async function POST(request: NextRequest) {
     }
 
     await admin.from("call_targets").update(update).eq("id", targetId);
+
+    // Dropped/early-ended live call with no link sent → alert the team to call
+    // them back by hand (the agent never logged an outcome).
+    if (target && target.status === "calling" && finalStatus === "handoff") {
+      try {
+        await notifyPart2Handoff({
+          name: target.full_name ?? null,
+          phone: toE164(target.phone) ?? target.phone ?? null,
+          agency: target.agency ?? null,
+          reason: "Call connected but dropped before finishing — no booking link sent.",
+        });
+      } catch (e) {
+        console.error("[end-of-call] handoff ClickUp notify failed:", e);
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });
