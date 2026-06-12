@@ -76,8 +76,8 @@ function systemPrompt(ctx: Part2Context): string {
     ``,
     `OPENING (natural, not robotic):`,
     `1. Confirm you're speaking with ${firstName}.`,
-    `2. Give a brief recording notice only: "Just so you know, this call may be recorded." Do NOT announce that you're an automated assistant — the voice makes that obvious. (If they directly ask, be honest that you're an AI; never pretend to be human.)`,
-    `3. Say you're following up on the retirement workshop they attended ${attended} — e.g. "I'm following up on the retirement workshop you attended ${attended}."`,
+    `2. Say you're following up on the retirement workshop they attended ${attended} — e.g. "I'm following up on the retirement workshop you attended ${attended}."`,
+    `Do NOT announce that you're an automated assistant — the voice makes that obvious. (If they directly ask, be honest that you're an AI; never pretend to be human.)`,
     ``,
     `GOAL: get them signed up to receive their FREE personalized retirement report — a look at their own retirement numbers so they can be sure they're set for a comfortable retirement with no surprises or gotchas, plus a chance to ask any personal questions. The report is what you're offering; a scheduled time is just how they get it. Do NOT mention the advisor or any name until you're reading off calendar times. Keep it brief and friendly. Do NOT ask how Part 1 or the workshop went, and don't make small talk about their experience.`,
     ``,
@@ -184,7 +184,7 @@ export function buildPart2Assistant(ctx: Part2Context): Record<string, unknown> 
   return {
     name: "Fed Pilot Part 2 Booker",
     firstMessage: `Hi, is this ${firstName}?`,
-    recordingEnabled: true,
+    recordingEnabled: false,
     backgroundSound: "off", // no call-center ambience
     server: serverConfig(webhookUrl),
     voice: VOICE,
