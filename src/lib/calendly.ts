@@ -95,14 +95,15 @@ export async function getAvailableSlots(days = 35, fromIso?: string): Promise<Ca
 }
 
 // Calendly prefills custom invitee questions by POSITION (a1, a2, …), not name.
-// "What is the best contact number for you?" is the 1st custom question on the
-// Part 2 form (name/email/location aren't custom questions), so the phone goes
-// in a1. Override with CALENDLY_PHONE_PARAM if the form's question order changes.
-const PHONE_PARAM = process.env.CALENDLY_PHONE_PARAM || "a1";
-// The Part 2 event lets the invitee pick a location; default it to Zoom. Set
-// CALENDLY_PREFILL_LOCATION to "" to disable, or to the exact option label if
-// it isn't literally "Zoom".
-const PREFILL_LOCATION = process.env.CALENDLY_PREFILL_LOCATION ?? "Zoom";
+// On the Part 2 form the custom questions are: a1 = "share anything to prepare",
+// a2 = "best contact number?" (name/email/location aren't custom questions), so
+// the phone goes in a2. Override with CALENDLY_PHONE_PARAM if the order changes.
+const PHONE_PARAM = process.env.CALENDLY_PHONE_PARAM || "a2";
+// Location prefill is OFF by default: this event has no Zoom/phone option to
+// select, so a `location` param has nothing to populate. To make every booking
+// a Zoom meeting, set the event type's location to Zoom in Calendly (no URL
+// param needed). CALENDLY_PREFILL_LOCATION can re-enable it if that changes.
+const PREFILL_LOCATION = process.env.CALENDLY_PREFILL_LOCATION ?? "";
 
 /** Add name/email/phone + location prefill to a slot's scheduling URL so the
  *  tap is one step. */
