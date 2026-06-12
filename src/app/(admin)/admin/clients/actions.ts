@@ -18,6 +18,7 @@ const ClientInput = z.object({
   next_workshop_hour: z.string().optional(),
   next_workshop_tz: z.string().optional(),
   next_workshop_registrant_tab: z.string().optional(),
+  next_workshop_reg_url: z.string().optional(),
 });
 
 type ClientParsed = z.infer<typeof ClientInput>;
@@ -33,6 +34,7 @@ function nextWorkshopFields(parsed: ClientParsed) {
     next_workshop_hour: hour !== null && Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : null,
     next_workshop_tz: tz && (NEXT_WORKSHOP_TIMEZONES as readonly string[]).includes(tz) ? tz : null,
     next_workshop_registrant_tab: parsed.next_workshop_registrant_tab?.trim() || null,
+    next_workshop_reg_url: parsed.next_workshop_reg_url?.trim() || null,
   };
 }
 
@@ -63,6 +65,7 @@ function readClientForm(formData: FormData) {
     next_workshop_hour: formData.get("next_workshop_hour") ?? undefined,
     next_workshop_tz: formData.get("next_workshop_tz") ?? undefined,
     next_workshop_registrant_tab: formData.get("next_workshop_registrant_tab") ?? undefined,
+    next_workshop_reg_url: formData.get("next_workshop_reg_url") ?? undefined,
   });
 }
 

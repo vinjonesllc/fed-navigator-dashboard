@@ -110,6 +110,7 @@ export const AC_FIELD_TITLES = {
   nextWorkshopText: "Next Workshop (text)",
   nextWorkshopTime: "Next Workshop Time",
   advInfoUrl: "ADV Info URL",
+  advisorRegPageUrl: "Advisor Reg Page URL",
   textUpdates2: "Text Updates 2",
 } as const;
 

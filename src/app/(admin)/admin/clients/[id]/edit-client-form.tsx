@@ -46,6 +46,7 @@ export function EditClientForm({
   const [nextTab, setNextTab] = useState<string>(
     client.next_workshop_registrant_tab ?? NONE,
   );
+  const [nextRegUrl, setNextRegUrl] = useState<string>(client.next_workshop_reg_url ?? "");
 
   // Always offer the currently-saved tab even if tab listing is unavailable.
   const tabOptions = Array.from(
@@ -232,6 +233,20 @@ export function EditClientForm({
             {sheetTabs.length > 0
               ? "Tabs from this advisor's evaluations sheet. We count its data rows as the current registrant total."
               : "Add an evaluations sheet URL above (and a GOOGLE_API_KEY) to list tabs. The registrant count reads from the selected tab."}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Registration page URL</Label>
+          <Input
+            name="next_workshop_reg_url"
+            value={nextRegUrl}
+            onChange={(e) => setNextRegUrl(e.target.value)}
+            placeholder="https://…"
+          />
+          <p className="text-xs text-muted-foreground">
+            The advisor&apos;s next-workshop registration page. Synced to ActiveCampaign as
+            &ldquo;Advisor Reg Page URL&rdquo; (%ADVISOR_REG_PAGE_URL%) when attendees are uploaded.
           </p>
         </div>
       </div>
