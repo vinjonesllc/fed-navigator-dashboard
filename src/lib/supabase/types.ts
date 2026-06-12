@@ -274,6 +274,8 @@ export type CallTarget = {
   outcome_notes: string | null;
   booked_event_time: string | null;
   registration_id: string | null;
+  /** How the booking link was sent, when one was: "text" | "email". */
+  link_channel: string | null;
   created_at: string;
   updated_at: string;
 };

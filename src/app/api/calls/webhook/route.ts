@@ -207,10 +207,10 @@ async function handleToolCall(
     });
     const whenLabel = humanTime(slotStart, tz);
 
-    const markSent = () =>
+    const markSent = (via: "text" | "email") =>
       admin
         .from("call_targets")
-        .update({ booked_event_time: slotStart, updated_at: new Date().toISOString() })
+        .update({ booked_event_time: slotStart, link_channel: via, updated_at: new Date().toISOString() })
         .eq("id", target.id);
 
     if (channel === "email") {
@@ -232,7 +232,7 @@ async function handleToolCall(
         console.error("[send_booking_link] email send failed:", e);
         return "Emailing the link failed on our end — offer to TEXT it to this number instead, or let them know Fed Pilot will follow up to get them scheduled. Do NOT ask them for an email address.";
       }
-      await markSent();
+      await markSent("email");
       return `Emailed the booking link for ${whenLabel} to their address on file. Ask them to open it and confirm.`;
     }
 
@@ -244,7 +244,7 @@ async function handleToolCall(
       to: phoneE164,
       body: `Fed Pilot: tap to confirm your Part 2 session for ${whenLabel} — ${url}`,
     });
-    await markSent();
+    await markSent("text");
     return `Texted the booking link for ${whenLabel}. Ask them to tap it and confirm.`;
   }
 
