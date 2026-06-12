@@ -12,7 +12,8 @@ const MODEL_PROVIDER = "anthropic";
 // Haiku for low time-to-first-token — the think-time after the caller speaks is
 // model generation, and this script is simple enough that Haiku handles it well.
 // Override with VAPI_MODEL (e.g. "claude-sonnet-4-6") if it ever feels less natural.
-const MODEL_NAME = process.env.VAPI_MODEL ?? "claude-haiku-4-5";
+// Vapi requires the dated model id.
+const MODEL_NAME = process.env.VAPI_MODEL ?? "claude-haiku-4-5-20251001";
 
 // Younger, natural, conversational female voice with expressive settings (lower
 // stability = more nuance/variation). Validated against Vapi. Override the voice
