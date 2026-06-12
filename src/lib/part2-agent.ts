@@ -9,7 +9,10 @@ import "server-only";
 // ----------------------------------------------------------------------------
 
 const MODEL_PROVIDER = "anthropic";
-const MODEL_NAME = process.env.VAPI_MODEL ?? "claude-sonnet-4-6";
+// Haiku for low time-to-first-token — the think-time after the caller speaks is
+// model generation, and this script is simple enough that Haiku handles it well.
+// Override with VAPI_MODEL (e.g. "claude-sonnet-4-6") if it ever feels less natural.
+const MODEL_NAME = process.env.VAPI_MODEL ?? "claude-haiku-4-5";
 
 // Younger, natural, conversational female voice with expressive settings (lower
 // stability = more nuance/variation). Validated against Vapi. Override the voice
@@ -178,12 +181,6 @@ export function buildPart2Assistant(ctx: Part2Context): Record<string, unknown> 
     server: serverConfig(webhookUrl),
     voice: VOICE,
     transcriber: TRANSCRIBER,
-    // Respond fast: smart endpointing detects a complete utterance (e.g. a quick
-    // "yes") and lets the model start instead of waiting out a fixed pause.
-    startSpeakingPlan: {
-      waitSeconds: 0.3,
-      smartEndpointingPlan: { provider: "livekit" },
-    },
     model: {
       provider: MODEL_PROVIDER,
       model: MODEL_NAME,
