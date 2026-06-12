@@ -37,13 +37,17 @@ export async function POST(request: NextRequest) {
   }
 
   let workshopTitle = "your Fed Pilot workshop";
+  let workshopDate: string | null = null;
   if (campaign.workshop_id) {
     const { data: ws } = await admin
       .from("workshops")
       .select("*")
       .eq("id", campaign.workshop_id)
       .maybeSingle<Workshop>();
-    if (ws) workshopTitle = ws.title;
+    if (ws) {
+      workshopTitle = ws.title;
+      workshopDate = ws.workshop_date;
+    }
   }
   const cfg = campaign.calendar_config as { advisor_name?: string };
   const advisorName = cfg.advisor_name ?? "your Fed Pilot advisor";
@@ -52,6 +56,7 @@ export async function POST(request: NextRequest) {
     attendeeName: target.full_name ?? "there",
     agency: target.agency,
     workshopTitle,
+    workshopDate,
     advisorName,
   });
 

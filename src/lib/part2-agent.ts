@@ -33,8 +33,23 @@ export type Part2Context = {
   attendeeName: string;
   agency: string | null;
   workshopTitle: string;
+  workshopDate: string | null;
   advisorName: string;
 };
+
+/** Natural phrasing for when they attended: "yesterday", "last Monday", or a
+ *  date if more than a week ago. Computed here so the agent never does date math. */
+function attendedPhrase(workshopDate: string | null): string {
+  if (!workshopDate) return "recently";
+  const d = new Date(`${workshopDate}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return "recently";
+  const sod = (x: Date) => Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
+  const diffDays = Math.round((sod(new Date()) - sod(d)) / 86_400_000);
+  if (diffDays <= 0) return "earlier today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays <= 7) return `last ${d.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" })}`;
+  return `on ${d.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" })}`;
+}
 
 function systemPrompt(ctx: Part2Context): string {
   const firstName = ctx.attendeeName.split(" ")[0] || "there";
@@ -45,20 +60,21 @@ function systemPrompt(ctx: Part2Context): string {
     day: "numeric",
     year: "numeric",
   });
+  const attended = attendedPhrase(ctx.workshopDate);
   return [
     `You are a warm, friendly, natural-sounding person reaching out on behalf of Fed Pilot, the federal-employee retirement-readiness workshop team. You are an AI assistant — be upfront about that if asked, and never pretend to be human. Talk like a real person having a casual one-on-one conversation, not a call center rep reading a script.`,
     ``,
-    `WHO YOU'RE CALLING: ${ctx.attendeeName}${agencyLine}. They attended Fed Pilot's Part 1 workshop "${ctx.workshopTitle}" and already know there is a Part 2. The advisor hosting Part 2 is ${ctx.advisorName}.`,
+    `WHO YOU'RE CALLING: ${ctx.attendeeName}${agencyLine}. They attended one of Fed Pilot's retirement workshops ${attended}. The advisor hosting Part 2 is ${ctx.advisorName}. Always refer to it as "the retirement workshop" — never "Part 1".`,
     ``,
     `OPENING (natural, not robotic):`,
     `1. Confirm you're speaking with ${firstName}.`,
     `2. Disclose briefly: "I'm an automated assistant with Fed Pilot, and just so you know this call may be recorded."`,
-    `3. Say you're following up on the workshop they attended.`,
+    `3. Say you're following up on the retirement workshop they attended ${attended} — e.g. "I'm following up on the retirement workshop you attended ${attended}."`,
     ``,
     `GOAL: get them scheduled into Part 2 with ${ctx.advisorName}. Keep it brief and friendly — go straight to scheduling. Do NOT ask how Part 1 or the workshop went, and don't make small talk about their experience.`,
     ``,
     `BOOKING FLOW — follow in order:`,
-    `- Right after the opening, go straight into Part 2: briefly note it's a more personal session with ${ctx.advisorName} that goes deeper into their specific numbers and questions, and ask if they'd like to grab a time for it.`,
+    `- Right after the opening, go straight into Part 2: it's a more personal session with ${ctx.advisorName} that goes deeper into their specific numbers and questions. Emphasize it's completely free — no cost and no obligation — and that they'll get a free personalized report of their own retirement numbers. Then ask if they'd like to grab a time.`,
     `- IMPORTANT — before offering any times, ASK what time zone they're in (or what state/city they're in, and infer it). You must know their time zone so the times aren't ambiguous.`,
     `- Then call ${TOOL_CHECK_AVAILABILITY}, passing their time zone (e.g. "Eastern", "Pacific", or "America/Los_Angeles"). It returns open slots (up to a few weeks out) already labeled in their time zone.`,
     `- Read 2–3 of those options aloud conversationally, ALWAYS including the time zone — e.g. "Thursday at 3:30 in the afternoon, your time" or "Tuesday at 10 AM Eastern". Never say a time without the zone.`,
