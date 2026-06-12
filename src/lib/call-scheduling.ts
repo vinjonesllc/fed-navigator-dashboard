@@ -7,8 +7,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 // All "hours" are wall-clock hours in the workshop's timezone.
 // ----------------------------------------------------------------------------
 
-export const CALL_WINDOW_START_HOUR = 9; // 9am
-export const CALL_WINDOW_END_HOUR = 19; // 7pm (exclusive)
+export const CALL_WINDOW_START_HOUR = 11; // 11am
+export const CALL_WINDOW_END_HOUR = 17; // 5pm (exclusive — last calls start in the 4pm hour)
 
 const FRIENDLY_TZ_TO_IANA: Record<string, string> = {
   eastern: "America/New_York",
