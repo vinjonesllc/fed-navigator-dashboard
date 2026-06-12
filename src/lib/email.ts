@@ -28,7 +28,7 @@ const SMTP_HOST = process.env.SMTP_HOST || "smtp.office365.com";
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 const SMTP_USER = process.env.SMTP_USER || undefined;
 const SMTP_PASS = process.env.SMTP_PASS || undefined;
-const EMAIL_FROM = process.env.EMAIL_FROM || SMTP_USER;
+const EMAIL_FROM = process.env.EMAIL_FROM || "Fed Pilot <info@fedpilot.com>";
 
 export function isEmailConfigured(): boolean {
   return Boolean(SMTP_USER && SMTP_PASS);
