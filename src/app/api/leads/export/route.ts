@@ -73,6 +73,9 @@ export async function GET(request: NextRequest) {
       agency: r.agency ?? "",
       state: r.state_province ?? "",
       age: r.age ?? "",
+      // Engagement score only applies to people who actually attended (Live);
+      // blank for everyone else.
+      engagement_score: r.participation === "Live" ? r.engagement_score ?? "" : "",
       registration_question: r.registration_question ?? "",
     };
     return includeAttended
