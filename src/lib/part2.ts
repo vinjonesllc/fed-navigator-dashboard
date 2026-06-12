@@ -155,3 +155,68 @@ export async function getCampaignForWorkshop(workshopId: string): Promise<Campai
   }
   return { campaign, targetsByAttendee };
 }
+
+/** Per-campaign outcome report for the Part 2 page. */
+export type CampaignReport = {
+  total: number; // people on the call list
+  pickedUp: number; // distinct people who answered (a live pickup)
+  fullConversation: number; // reached a real conclusion (talked it through)
+  linksSent: number; // booking links delivered
+  linkText: number; // …by text
+  linkEmail: number; // …by email
+  booked: number; // confirmed a Part 2 time
+  declined: number;
+  voicemail: number;
+  noAnswer: number;
+  badNumber: number; // skipped — un-callable number
+  remaining: number; // still queued / in progress
+};
+
+export async function getCampaignReport(campaignId: string): Promise<CampaignReport> {
+  const admin = createSupabaseAdminClient();
+  const [{ data: targetRows }, { data: answeredRows }] = await Promise.all([
+    admin
+      .from("call_targets")
+      .select("status, link_channel, booked_event_time")
+      .eq("campaign_id", campaignId),
+    admin
+      .from("call_attempts")
+      .select("target_id")
+      .eq("campaign_id", campaignId)
+      .eq("outcome", "answered"),
+  ]);
+
+  const targets = targetRows ?? [];
+  const pickedUp = new Set(
+    (answeredRows ?? []).map((a) => a.target_id as string | null).filter(Boolean),
+  ).size;
+
+  const r: CampaignReport = {
+    total: targets.length,
+    pickedUp,
+    fullConversation: 0,
+    linksSent: 0,
+    linkText: 0,
+    linkEmail: 0,
+    booked: 0,
+    declined: 0,
+    voicemail: 0,
+    noAnswer: 0,
+    badNumber: 0,
+    remaining: 0,
+  };
+  for (const t of targets) {
+    const s = t.status as string;
+    if (s === "booked") r.booked += 1;
+    else if (s === "declined") r.declined += 1;
+    else if (s === "voicemail") r.voicemail += 1;
+    else if (s === "no_answer") r.noAnswer += 1;
+    else if (s === "skipped") r.badNumber += 1;
+    else if (s === "queued" || s === "calling") r.remaining += 1;
+    if (s === "completed" || s === "booked" || s === "declined") r.fullConversation += 1;
+    if (t.booked_event_time) r.linksSent += 1;
+    if (t.link_channel === "text") r.linkText += 1;
+    else if (t.link_channel === "email") r.linkEmail += 1;
+  }
+  return r;
+}

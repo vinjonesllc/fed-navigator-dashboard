@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isContentManager, requireConsoleAccess, userCanAccessClient } from "@/lib/auth";
-import { getCallList, getCampaignForWorkshop } from "@/lib/part2";
+import { getCallList, getCampaignForWorkshop, getCampaignReport } from "@/lib/part2";
 import { formatWorkshopDate } from "@/lib/format-date";
 import type { Client } from "@/lib/supabase/types";
 import { Part2Client } from "./part2-client";
@@ -19,6 +19,32 @@ function StatCard({ label, value, hint }: { label: string; value: number; hint?:
         {value}
       </div>
       {hint && <div className="mt-1.5 text-[12px] text-ink-3">{hint}</div>}
+    </div>
+  );
+}
+
+function ReportStat({
+  label,
+  value,
+  hint,
+  emphasize,
+}: {
+  label: string;
+  value: number;
+  hint?: string;
+  emphasize?: boolean;
+}) {
+  return (
+    <div>
+      <div
+        className={`font-display text-[24px] font-semibold leading-none tabular-nums ${
+          emphasize ? "text-lime" : "text-ink-1"
+        }`}
+      >
+        {value}
+      </div>
+      <div className="mt-1 text-[11px] uppercase tracking-[0.04em] text-ink-4">{label}</div>
+      {hint && <div className="mt-0.5 text-[11px] text-ink-3">{hint}</div>}
     </div>
   );
 }
@@ -48,6 +74,9 @@ export default async function Part2BookingPage({
 
   const { workshop, entries, summary } = result;
   const canManage = isContentManager(session.appUser?.role);
+  const report = campaignView.campaign
+    ? await getCampaignReport(campaignView.campaign.id)
+    : null;
 
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-6">
@@ -79,6 +108,32 @@ export default async function Part2BookingPage({
         <StatCard label="With phone" value={summary.with_phone} hint="Live attendees reachable" />
         <StatCard label="No phone" value={summary.no_phone} hint="Live, but no number on file" />
       </div>
+
+      {report && report.total > 0 && (
+        <div className={`${CARD} mb-5 p-4`}>
+          <div className="mb-3 flex items-baseline justify-between">
+            <span className="text-[13px] font-medium text-ink-1">Call results</span>
+            <span className="text-[12px] text-ink-3">
+              {report.total} on the list
+              {report.remaining > 0 ? ` · ${report.remaining} still to call` : " · complete"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+            <ReportStat label="Picked up" value={report.pickedUp} />
+            <ReportStat label="Full conversations" value={report.fullConversation} />
+            <ReportStat
+              label="Links sent"
+              value={report.linksSent}
+              hint={`${report.linkText} text · ${report.linkEmail} email`}
+            />
+            <ReportStat label="Booked" value={report.booked} emphasize />
+            <ReportStat label="Declined" value={report.declined} />
+            <ReportStat label="Voicemail" value={report.voicemail} />
+            <ReportStat label="No answer" value={report.noAnswer} />
+            <ReportStat label="Bad numbers" value={report.badNumber} />
+          </div>
+        </div>
+      )}
 
       <Part2Client
         clientId={id}
