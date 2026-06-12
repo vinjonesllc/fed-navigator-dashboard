@@ -10,7 +10,7 @@ for (const l of readFileSync(new URL("../.env.local", import.meta.url), "utf8").
 }
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const key = env.SUPABASE_SERVICE_ROLE_KEY;
-const h = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+const auth = { apikey: key, Authorization: `Bearer ${key}` };
 
 // Mirror of src/lib/phone.ts parsePhone.
 function parsePhone(raw) {
@@ -25,32 +25,36 @@ function parsePhone(raw) {
   return { e164, extension: e164 ? extension : null };
 }
 
+async function mapLimit(items, limit, fn) {
+  let i = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (i < items.length) { const idx = i++; await fn(items[idx]); }
+    }),
+  );
+}
+
 const PAGE = 1000;
-let from = 0, total = 0, valid = 0, invalid = 0, ext = 0;
+let from = 0, total = 0, valid = 0, invalid = 0, ext = 0, errors = 0;
 
 for (;;) {
-  const res = await fetch(`${url}/rest/v1/attendees?select=id,phone&phone=not.is.null&order=id&offset=${from}&limit=${PAGE}`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-  });
+  const res = await fetch(
+    `${url}/rest/v1/attendees?select=id,phone&phone=not.is.null&order=id&offset=${from}&limit=${PAGE}`,
+    { headers: auth },
+  );
   const rows = await res.json();
   if (!Array.isArray(rows) || rows.length === 0) break;
 
-  const updates = rows.map((r) => {
+  await mapLimit(rows, 25, async (r) => {
     const p = parsePhone(r.phone);
     if (p.e164) { valid++; if (p.extension) ext++; } else invalid++;
-    return { id: r.id, phone_e164: p.e164, phone_extension: p.extension };
-  });
-
-  // Bulk upsert (merge on id) in chunks.
-  for (let i = 0; i < updates.length; i += 500) {
-    const chunk = updates.slice(i, i + 500);
-    const up = await fetch(`${url}/rest/v1/attendees?on_conflict=id`, {
-      method: "POST",
-      headers: { ...h, Prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify(chunk),
+    const up = await fetch(`${url}/rest/v1/attendees?id=eq.${r.id}`, {
+      method: "PATCH",
+      headers: { ...auth, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ phone_e164: p.e164, phone_extension: p.extension }),
     });
-    if (!up.ok) { console.error("upsert failed:", up.status, await up.text()); process.exit(1); }
-  }
+    if (!up.ok) { errors++; if (errors <= 5) console.error("PATCH failed", r.id, up.status, await up.text()); }
+  });
 
   total += rows.length;
   from += rows.length;
@@ -58,4 +62,4 @@ for (;;) {
   if (rows.length < PAGE) break;
 }
 
-console.log(`\nDone. ${total} attendees with a phone → valid ${valid} (ext ${ext}), invalid/do-not-call ${invalid}.`);
+console.log(`\nDone. ${total} attendees with a phone → valid ${valid} (ext ${ext}), invalid/do-not-call ${invalid}, errors ${errors}.`);
