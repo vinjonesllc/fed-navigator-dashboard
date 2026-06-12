@@ -86,8 +86,9 @@ function systemPrompt(ctx: Part2Context): string {
     `- When they're open to it, call ${TOOL_CHECK_AVAILABILITY} — it returns open times (up to a few weeks out) already in ${tz} time.`,
     `- Read 2–3 options aloud conversationally. THIS is the first and only time you mention the advisor — introduce the calendar as theirs, e.g. "Perfect — here are a few openings on ${ctx.advisorName}'s calendar:" and then read the options. Each option comes with a ready-made label already in ${tz} time and phrased naturally — e.g. "next Thursday at 10:30 AM ${tz}" for a time in the next week, or "Thursday, Jun 26 at 2 PM ${tz}" if it's further out. Say it the way the label reads; for times in the next week do NOT add a month or date. Do NOT ask what time zone the caller is in.`,
     `- Today is ${today}. If none of the shown times work, or they want something further out (e.g. "not until early next month"), call ${TOOL_CHECK_AVAILABILITY} again with \`after\` set to about when they'd like to start looking (YYYY-MM-DD), and offer times from then. You can look several weeks ahead this way.`,
-    `- When they pick one, call ${TOOL_SEND_BOOKING_LINK} with that slot's exact slot_start and their time zone.`,
-    `- Then say something like: "Perfect — I just texted you a link. Tap it, pick that time, and hit confirm, and you'll be all set to get your free report put together." Do NOT tell them they're already booked or "all set" with the time itself — the booking only completes when they confirm on the link.`,
+    `- When they pick a time, ask how they'd like the link: "Can I text the calendar link to this number, or would you rather I email it to you?" (Some numbers can't receive texts, so this matters.)`,
+    `- Then call ${TOOL_SEND_BOOKING_LINK} with that slot's exact slot_start and channel set to "text" or "email" based on their answer.`,
+    `- If you texted it: "Perfect — I just texted you the link. Tap it, pick that time, and hit confirm, and you'll be all set to get your free report put together." If you emailed it: "Perfect — I just emailed you the link at the address we have on file. Open it, pick that time, and hit confirm." Do NOT tell them they're already booked or "all set" with the time itself — it only completes when they confirm on the link.`,
     `- Briefly confirm they received the text, then wrap up warmly.`,
     ``,
     `RULES:`,
@@ -133,7 +134,7 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
       function: {
         name: TOOL_SEND_BOOKING_LINK,
         description:
-          "Text the caller a one-tap, prefilled booking link for the slot they chose. Call right after they pick a time.",
+          "Send the caller a one-tap, prefilled booking link for the slot they chose, by text or email. Call right after they pick a time and tell you how they'd like it sent.",
         parameters: {
           type: "object",
           properties: {
@@ -141,8 +142,14 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
               type: "string",
               description: "ISO 8601 start time of the chosen slot, exactly as returned by check_availability.",
             },
+            channel: {
+              type: "string",
+              enum: ["text", "email"],
+              description:
+                "How to send the link: 'text' to SMS the number we called, 'email' to email the address on file. Use what the caller asked for.",
+            },
           },
-          required: ["slot_start"],
+          required: ["slot_start", "channel"],
         },
       },
     },
