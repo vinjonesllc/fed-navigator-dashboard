@@ -243,7 +243,8 @@ export type CallTargetStatus =
   | "booked"
   | "declined"
   | "failed"
-  | "skipped";
+  | "skipped"
+  | "handoff";
 
 export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
   queued: "Queued",
@@ -255,6 +256,7 @@ export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
   declined: "Declined",
   failed: "Failed",
   skipped: "Skipped",
+  handoff: "Handoff to team",
 };
 
 export type CallTarget = {
