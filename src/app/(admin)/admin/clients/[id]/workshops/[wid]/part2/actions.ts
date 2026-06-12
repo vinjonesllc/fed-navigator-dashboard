@@ -105,6 +105,35 @@ export async function createCampaign(formData: FormData) {
   return { ok: true, campaignId: created?.id };
 }
 
+const StatusSchema = z.object({
+  clientId: z.string().uuid(),
+  workshopId: z.string().uuid(),
+  status: z.enum(["running", "paused"]),
+});
+
+/** Pause or resume a campaign. The cron dialer only calls RUNNING campaigns, so
+ *  "paused" stops new calls immediately; "running" resumes dialing due targets. */
+export async function setCampaignStatus(formData: FormData) {
+  const session = await requireContentManager();
+  const { clientId, workshopId, status } = StatusSchema.parse({
+    clientId: formData.get("clientId"),
+    workshopId: formData.get("workshopId"),
+    status: formData.get("status"),
+  });
+  if (!userCanAccessClient(session, clientId)) return { error: "Forbidden" };
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("call_campaigns")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("workshop_id", workshopId)
+    .eq("client_id", clientId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/admin/clients/${clientId}/workshops/${workshopId}/part2`);
+  return { ok: true };
+}
+
 const SeedSchema = z.object({
   clientId: z.string().uuid(),
   workshopId: z.string().uuid(),
