@@ -94,13 +94,26 @@ export async function getAvailableSlots(days = 35, fromIso?: string): Promise<Ca
   return out.slice(0, MAX_RESULTS);
 }
 
-/** Add name/email prefill to a slot's scheduling URL so the tap is one step. */
+// Calendly prefills custom invitee questions by POSITION (a1, a2, …), not name.
+// "What is the best contact number for you?" is the 1st custom question on the
+// Part 2 form (name/email/location aren't custom questions), so the phone goes
+// in a1. Override with CALENDLY_PHONE_PARAM if the form's question order changes.
+const PHONE_PARAM = process.env.CALENDLY_PHONE_PARAM || "a1";
+// The Part 2 event lets the invitee pick a location; default it to Zoom. Set
+// CALENDLY_PREFILL_LOCATION to "" to disable, or to the exact option label if
+// it isn't literally "Zoom".
+const PREFILL_LOCATION = process.env.CALENDLY_PREFILL_LOCATION ?? "Zoom";
+
+/** Add name/email/phone + location prefill to a slot's scheduling URL so the
+ *  tap is one step. */
 export function prefilledBookingUrl(
   schedulingUrl: string,
-  invitee: { name?: string | null; email?: string | null },
+  invitee: { name?: string | null; email?: string | null; phone?: string | null },
 ): string {
   const url = new URL(schedulingUrl);
   if (invitee.name) url.searchParams.set("name", invitee.name);
   if (invitee.email) url.searchParams.set("email", invitee.email);
+  if (invitee.phone) url.searchParams.set(PHONE_PARAM, invitee.phone);
+  if (PREFILL_LOCATION) url.searchParams.set("location", PREFILL_LOCATION);
   return url.toString();
 }

@@ -99,18 +99,52 @@ function normalizeTz(input: unknown, fallback = DEFAULT_TZ): string {
   }
 }
 
-/** Format an ISO time in a friendly US zone ("Central") and append that label,
- *  e.g. "Thursday, Jun 18, 10:30 AM Central". */
+/** YYYY-MM-DD for an instant as seen in a given IANA zone. */
+function ymdInTz(d: Date, iana: string): string {
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: iana,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const get = (t: string) => p.find((x) => x.type === t)?.value ?? "01";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/** Whole-day difference (b − a) between two YYYY-MM-DD strings. */
+function dayDiff(aYmd: string, bYmd: string): number {
+  const [ay, am, ad] = aYmd.split("-").map(Number);
+  const [by, bm, bd] = bYmd.split("-").map(Number);
+  return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86_400_000);
+}
+
+/**
+ * Format a slot time for speaking + texting, in a friendly US zone. Times in the
+ * next week use the weekday only ("this Thursday at 10:30 AM Eastern" / "next
+ * Tuesday at 2 PM Eastern"); anything further out includes the date ("Thursday,
+ * Jun 26 at 2 PM Eastern"). Keeps near-term options from sounding robotic.
+ */
 function humanTime(iso: string, friendlyTz: string): string {
-  const t = new Date(iso).toLocaleString("en-US", {
-    timeZone: normalizeTz(friendlyTz),
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  return `${t} ${friendlyTz}`;
+  const iana = normalizeTz(friendlyTz);
+  const d = new Date(iso);
+  const time = d.toLocaleString("en-US", { timeZone: iana, hour: "numeric", minute: "2-digit" });
+  const weekday = d.toLocaleString("en-US", { timeZone: iana, weekday: "long" });
+
+  const todayYmd = ymdInTz(new Date(), iana);
+  const slotYmd = ymdInTz(d, iana);
+  const diff = dayDiff(todayYmd, slotYmd);
+  const todayDow = new Date(`${todayYmd}T00:00:00Z`).getUTCDay(); // 0 = Sunday
+  const daysLeftThisWeek = 6 - todayDow; // days until Saturday (end of this week)
+
+  let dayPhrase: string;
+  if (diff <= 0) dayPhrase = "today";
+  else if (diff === 1) dayPhrase = "tomorrow";
+  else if (diff <= 7) dayPhrase = `${diff <= daysLeftThisWeek ? "this" : "next"} ${weekday}`;
+  else {
+    const md = d.toLocaleString("en-US", { timeZone: iana, month: "short", day: "numeric" });
+    dayPhrase = `${weekday}, ${md}`;
+  }
+  return `${dayPhrase} at ${time} ${friendlyTz}`;
 }
 
 async function loadTarget(targetId: string | undefined) {
@@ -162,7 +196,11 @@ async function handleToolCall(
         .maybeSingle<Pick<Attendee, "email">>();
       email = att?.email ?? null;
     }
-    const url = prefilledBookingUrl(slot.scheduling_url, { name: target.full_name, email });
+    const url = prefilledBookingUrl(slot.scheduling_url, {
+      name: target.full_name,
+      email,
+      phone: target.phone,
+    });
     await sendSms({
       to: target.phone,
       body: `Fed Pilot: tap to confirm your Part 2 session for ${humanTime(slotStart, tz)} — ${url}`,
