@@ -41,14 +41,23 @@ export async function POST(request: NextRequest) {
     (campaigns ?? []).map((c) => [c.id as string, c as { status: string; max_attempts: number }]),
   );
 
-  let dialed = 0;
-  for (const t of targets) {
+  const eligible = targets.filter((t) => {
     const c = byId.get(t.campaign_id);
-    if (!c || c.status !== "running") continue;
-    if (t.attempts >= c.max_attempts) continue;
-    const r = await placeCallForTarget(t.id);
-    if (r.ok) dialed += 1;
-  }
+    return c && c.status === "running" && t.attempts < c.max_attempts;
+  });
 
-  return NextResponse.json({ ok: true, considered: targets.length, dialed });
+  // Dial the batch CONCURRENTLY so the route returns in ~a second or two. The
+  // caller is Supabase pg_net, which times out at 5s — slow sequential dialing
+  // of a full batch was exceeding it (and risked Vercel cutting the function off
+  // mid-batch). Vapi's own concurrency cap limits how many actually connect; any
+  // that don't place stay queued and retry on the next tick.
+  const results = await Promise.allSettled(eligible.map((t) => placeCallForTarget(t.id)));
+  const dialed = results.filter((r) => r.status === "fulfilled" && r.value.ok).length;
+
+  return NextResponse.json({
+    ok: true,
+    considered: targets.length,
+    eligible: eligible.length,
+    dialed,
+  });
 }
