@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import Papa from "papaparse";
 import { requireUser, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { engagementIndex } from "@/lib/workshop-stats";
 import type { Attendee, Workshop } from "@/lib/supabase/types";
 
 type Preset = "hot" | "engaged" | "live" | "noshow" | "all";
@@ -73,9 +74,10 @@ export async function GET(request: NextRequest) {
       agency: r.agency ?? "",
       state: r.state_province ?? "",
       age: r.age ?? "",
-      // Engagement score only applies to people who actually attended (Live);
-      // blank for everyone else.
-      engagement_score: r.participation === "Live" ? r.engagement_score ?? "" : "",
+      // The Engagement Index (0–10) shown per attendee in the dashboard — only
+      // meaningful for those who attended (Live); blank for everyone else.
+      engagement_score:
+        r.participation === "Live" ? engagementIndex(r, workshop.scheduled_minutes) ?? "" : "",
       registration_question: r.registration_question ?? "",
     };
     return includeAttended
