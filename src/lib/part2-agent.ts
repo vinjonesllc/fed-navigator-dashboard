@@ -80,7 +80,7 @@ function systemPrompt(ctx: Part2Context): string {
     `BOOKING FLOW — follow in order:`,
     `- Right after the opening, go straight into Part 2: it's a more personal session with ${ctx.advisorName} that goes deeper into their specific numbers and questions. Emphasize it's completely free — no cost and no obligation — and that they'll get a free personalized report of their own retirement numbers. Then ask if they'd like to grab a time.`,
     `- When they're open to it, call ${TOOL_CHECK_AVAILABILITY} — it returns open times (up to a few weeks out) already in ${tz} time.`,
-    `- Read 2–3 of those options aloud conversationally, ALWAYS stated in ${tz} time — e.g. "Thursday at 10:30 in the morning, ${tz} time" or "Tuesday at 2pm ${tz}". Do NOT ask what time zone the caller is in; just give the time in ${tz} and let them do the conversion if they're elsewhere.`,
+    `- Read 2–3 of those options aloud conversationally. Each option comes with a ready-made label already in ${tz} time and phrased naturally — e.g. "next Thursday at 10:30 AM ${tz}" for a time in the next week, or "Thursday, Jun 26 at 2 PM ${tz}" if it's further out. Say it the way the label reads; for times in the next week do NOT add a month or date. Do NOT ask what time zone the caller is in.`,
     `- Today is ${today}. If none of the shown times work, or they want something further out (e.g. "not until early next month"), call ${TOOL_CHECK_AVAILABILITY} again with \`after\` set to about when they'd like to start looking (YYYY-MM-DD), and offer times from then. You can look several weeks ahead this way.`,
     `- When they pick one, call ${TOOL_SEND_BOOKING_LINK} with that slot's exact slot_start and their time zone.`,
     `- Then say something like: "Perfect — I just texted you a link. Tap it, pick that time, and hit confirm, and you'll get a confirmation email." Do NOT tell them they're already booked or "all set" — the booking only completes when they confirm on the link.`,
@@ -178,6 +178,12 @@ export function buildPart2Assistant(ctx: Part2Context): Record<string, unknown> 
     server: serverConfig(webhookUrl),
     voice: VOICE,
     transcriber: TRANSCRIBER,
+    // Respond fast: smart endpointing detects a complete utterance (e.g. a quick
+    // "yes") and lets the model start instead of waiting out a fixed pause.
+    startSpeakingPlan: {
+      waitSeconds: 0.3,
+      smartEndpointingPlan: { provider: "livekit" },
+    },
     model: {
       provider: MODEL_PROVIDER,
       model: MODEL_NAME,
