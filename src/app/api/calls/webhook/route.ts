@@ -8,7 +8,39 @@ import {
   TOOL_LOG_OUTCOME,
 } from "@/lib/part2-agent";
 import { timingSafeEqualStr } from "@/lib/webhook-verify";
+import { bestHoursForClient, nextRetryAt } from "@/lib/call-scheduling";
 import type { Attendee, CallTarget, CallTargetStatus } from "@/lib/supabase/types";
+
+type CallOutcome = "answered" | "voicemail" | "no_answer" | "failed";
+
+/** Classify a Vapi end-of-call report into an outcome for the timing log. */
+function classifyOutcome(endedReason: string | undefined, hasTranscript: boolean): CallOutcome {
+  const r = (endedReason ?? "").toLowerCase();
+  if (r.includes("voicemail")) return "voicemail";
+  if (
+    r.includes("no-answer") ||
+    r.includes("did-not-answer") ||
+    r.includes("busy") ||
+    r.includes("failed-to-connect") ||
+    r.includes("no-microphone")
+  )
+    return "no_answer";
+  if (r.includes("error") || r.includes("pipeline") || r.includes("failed")) return "failed";
+  return hasTranscript ? "answered" : "no_answer";
+}
+
+/** Current local hour (0-23) and weekday (0=Sun) in the given friendly/IANA zone. */
+function localHourWeekday(tz: string): { hour: number; weekday: number } {
+  const iana = normalizeTz(tz);
+  const now = new Date();
+  const hour = Number(now.toLocaleString("en-US", { timeZone: iana, hour: "2-digit", hour12: false })) % 24;
+  const wd = now.toLocaleString("en-US", { timeZone: iana, weekday: "short" });
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
+  return { hour: Number.isFinite(hour) ? hour : 0, weekday };
+}
+
+// Retry-eligible (non-terminal) statuses — a terminal disposition is preserved.
+const RETRYABLE: CallTargetStatus[] = ["calling", "no_answer", "voicemail"];
 
 // Vapi posts every call event here: tool-calls during the call, status updates,
 // and the end-of-call report (transcript + recording). Tool-calls must return
@@ -178,6 +210,10 @@ export async function POST(request: NextRequest) {
     typeof message.call?.metadata?.timezone === "string"
       ? message.call.metadata.timezone
       : "Eastern";
+  const clientId =
+    typeof message.call?.metadata?.clientId === "string"
+      ? message.call.metadata.clientId
+      : undefined;
 
   // 1) Tool calls — respond synchronously with results.
   if (message.type === "tool-calls" || message.type === "function-call") {
@@ -197,17 +233,60 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ results });
   }
 
-  // 2) End-of-call report — persist transcript + recording.
+  // 2) End-of-call report — persist transcript + recording, log the attempt
+  //    outcome for best-time learning, and reschedule a retry if appropriate.
   if (message.type === "end-of-call-report" && targetId) {
     const admin = createSupabaseAdminClient();
-    await admin
+    const transcript = message.artifact?.transcript ?? null;
+    const outcome = classifyOutcome(message.endedReason, !!transcript);
+    const { hour, weekday } = localHourWeekday(tz);
+
+    const { data: target } = await admin
       .from("call_targets")
-      .update({
-        recording_url: message.artifact?.recordingUrl ?? null,
-        transcript: message.artifact?.transcript ?? null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", targetId);
+      .select("status, attempts, campaign_id")
+      .eq("id", targetId)
+      .maybeSingle<Pick<CallTarget, "status" | "attempts" | "campaign_id">>();
+
+    // Timing log for best-time learning (best-effort).
+    await admin.from("call_attempts").insert({
+      target_id: targetId,
+      campaign_id: target?.campaign_id ?? null,
+      client_id: clientId ?? null,
+      local_hour: hour,
+      local_weekday: weekday,
+      outcome,
+      provider_call_id: message.call?.id ?? null,
+    });
+
+    const update: Record<string, unknown> = {
+      recording_url: message.artifact?.recordingUrl ?? null,
+      transcript,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Disposition / retry — only when not already terminal (declined / booked /
+    // completed are preserved).
+    if (target && RETRYABLE.includes(target.status)) {
+      if (outcome === "answered") {
+        update.status = "completed";
+      } else {
+        const { data: campaign } = await admin
+          .from("call_campaigns")
+          .select("max_attempts")
+          .eq("id", target.campaign_id)
+          .maybeSingle<{ max_attempts: number }>();
+        const maxAttempts = campaign?.max_attempts ?? 3;
+        update.status = outcome; // 'voicemail' | 'no_answer' | 'failed'
+        if (outcome !== "failed" && target.attempts < maxAttempts) {
+          const hours = clientId ? await bestHoursForClient(clientId) : [];
+          update.next_attempt_at = nextRetryAt(tz, hours, target.attempts).toISOString();
+        } else {
+          update.next_attempt_at = null; // out of attempts → stop
+        }
+      }
+    }
+
+    await admin.from("call_targets").update(update).eq("id", targetId);
   }
 
   return NextResponse.json({ ok: true });

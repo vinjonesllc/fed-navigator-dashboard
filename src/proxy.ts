@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   // inside the route handlers, not by auth middleware.
   "/api/calls/webhook",
   "/api/calendly/webhook",
+  "/api/calls/cron", // secret-gated scheduler entrypoint (pinged by pg_cron)
 ];
 
 export async function proxy(request: NextRequest) {

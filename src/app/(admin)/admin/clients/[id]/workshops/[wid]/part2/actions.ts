@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireContentManager, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCallList } from "@/lib/part2";
+import { bestHoursForClient, firstAttemptAt } from "@/lib/call-scheduling";
 import type { Attendee, CallCampaign, Workshop } from "@/lib/supabase/types";
 
 const MarkSchema = z.object({
@@ -131,21 +132,38 @@ export async function addCallableToCampaign(formData: FormData) {
     .eq("campaign_id", campaign.id);
   const already = new Set((existingTargets ?? []).map((t) => t.attendee_id as string));
 
-  const toInsert = list.entries
-    .filter((e) => e.callable && !already.has(e.attendee_id))
-    .map((e) => ({
-      campaign_id: campaign.id,
-      attendee_id: e.attendee_id,
-      full_name: e.full_name,
-      phone: e.phone,
-      agency: e.agency,
-      status: "queued" as const,
-    }));
+  // Schedule each new target the day AFTER the workshop, spread across the
+  // calling window and biased toward hours people answer (learned over time).
+  const { data: clientRow } = await admin
+    .from("clients")
+    .select("next_workshop_tz")
+    .eq("id", clientId)
+    .maybeSingle<{ next_workshop_tz: string | null }>();
+  const zone = clientRow?.next_workshop_tz ?? "Eastern";
+  const orderedHours = await bestHoursForClient(clientId);
+  const workshopDate = list.workshop.workshop_date;
+
+  const callable = list.entries.filter((e) => e.callable && !already.has(e.attendee_id));
+  const toInsert = callable.map((e, i) => ({
+    campaign_id: campaign.id,
+    attendee_id: e.attendee_id,
+    full_name: e.full_name,
+    phone: e.phone,
+    agency: e.agency,
+    status: "queued" as const,
+    next_attempt_at: firstAttemptAt(workshopDate, zone, i, orderedHours).toISOString(),
+  }));
 
   if (toInsert.length === 0) return { ok: true, added: 0 };
 
   const { error } = await admin.from("call_targets").insert(toInsert);
   if (error) return { error: error.message };
+
+  // Arm the campaign so the scheduler will dial these when they come due.
+  await admin
+    .from("call_campaigns")
+    .update({ status: "running", updated_at: new Date().toISOString() })
+    .eq("id", campaign.id);
 
   revalidatePath(`/admin/clients/${clientId}/workshops/${workshopId}/part2`);
   return { ok: true, added: toInsert.length };
