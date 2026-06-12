@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAvailableSlots, prefilledBookingUrl } from "@/lib/calendly";
 import { sendSms } from "@/lib/sms";
+import { sendEmail } from "@/lib/email";
 import {
   TOOL_CHECK_AVAILABILITY,
   TOOL_SEND_BOOKING_LINK,
@@ -180,8 +181,9 @@ async function handleToolCall(
 
   if (name === TOOL_SEND_BOOKING_LINK) {
     const slotStart = String(args.slot_start ?? "");
+    const channel = String(args.channel ?? "text").toLowerCase() === "email" ? "email" : "text";
     const target = await loadTarget(targetId);
-    if (!target?.phone) return "I couldn't find a phone number to text the link to.";
+    if (!target) return "I couldn't find the contact to send the link to.";
 
     const slots = await getAvailableSlots();
     const slot = slots.find((s) => s.start_time === slotStart);
@@ -201,15 +203,46 @@ async function handleToolCall(
       email,
       phone: target.phone,
     });
+    const whenLabel = humanTime(slotStart, tz);
+
+    const markSent = () =>
+      admin
+        .from("call_targets")
+        .update({ booked_event_time: slotStart, updated_at: new Date().toISOString() })
+        .eq("id", target.id);
+
+    if (channel === "email") {
+      if (!email) {
+        return "I don't have an email address on file — can I text it to the number we're on, or what's the best email?";
+      }
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Your Fed Pilot retirement report — confirm your time",
+          html:
+            `<p>Hi ${target.full_name ?? "there"},</p>` +
+            `<p>Here's your one-tap link to lock in your free personalized retirement report session for <strong>${whenLabel}</strong>:</p>` +
+            `<p><a href="${url}">Confirm my time</a></p>` +
+            `<p>Just tap the link, pick that time, and hit confirm. Talk soon!</p>`,
+          text: `Confirm your free Fed Pilot retirement report session for ${whenLabel}: ${url}`,
+        });
+      } catch (e) {
+        return `I had trouble emailing the link — ${e instanceof Error ? e.message : "please try texting instead"}.`;
+      }
+      await markSent();
+      return `Emailed the booking link for ${whenLabel} to their address on file. Ask them to open it and confirm.`;
+    }
+
+    // text (default)
+    if (!target.phone) {
+      return "I don't have a phone number to text — should I email the link instead?";
+    }
     await sendSms({
       to: target.phone,
-      body: `Fed Pilot: tap to confirm your Part 2 session for ${humanTime(slotStart, tz)} — ${url}`,
+      body: `Fed Pilot: tap to confirm your Part 2 session for ${whenLabel} — ${url}`,
     });
-    await admin
-      .from("call_targets")
-      .update({ booked_event_time: slotStart, updated_at: new Date().toISOString() })
-      .eq("id", target.id);
-    return `Texted the booking link for ${humanTime(slotStart, tz)}. Ask them to tap it and confirm.`;
+    await markSent();
+    return `Texted the booking link for ${whenLabel}. Ask them to tap it and confirm.`;
   }
 
   if (name === TOOL_LOG_OUTCOME) {
