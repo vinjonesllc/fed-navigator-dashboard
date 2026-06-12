@@ -99,12 +99,12 @@ export async function getAvailableSlots(days = 35, fromIso?: string): Promise<Ca
 // a2 = "best contact number?" (name/email/location aren't custom questions), so
 // the phone goes in a2. Override with CALENDLY_PHONE_PARAM if the order changes.
 const PHONE_PARAM = process.env.CALENDLY_PHONE_PARAM || "a2";
-// Location prefill: the Part 2 event offers Zoom + Phone and leaves the choice
-// unselected (Calendly has no "default option" setting — reordering only changes
-// display order, not the selection). We pre-select Zoom on the booking link via
-// the `location` param. The value must match the option's label in Calendly
-// EXACTLY (e.g. "Zoom" vs "Zoom Meeting"); override via CALENDLY_PREFILL_LOCATION.
-const PREFILL_LOCATION = process.env.CALENDLY_PREFILL_LOCATION ?? "Zoom";
+// Location prefill OFF: a live link test confirmed Calendly does NOT pre-select
+// a location when the event offers a "choose from multiple" radio (Zoom/Phone) —
+// neither a setting nor the `location` URL param works — so we don't append a
+// dead param; the invitee picks the location themselves. CALENDLY_PREFILL_LOCATION
+// can re-enable it if the event ever becomes a single, prefillable location type.
+const PREFILL_LOCATION = process.env.CALENDLY_PREFILL_LOCATION ?? "";
 
 /** Add name/email/phone + location prefill to a slot's scheduling URL so the
  *  tap is one step. */
