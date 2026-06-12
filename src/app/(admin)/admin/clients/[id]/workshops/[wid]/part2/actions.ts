@@ -1,12 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireContentManager, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCallList } from "@/lib/part2";
 import { bestHoursForClient, firstAttemptAt } from "@/lib/call-scheduling";
+import { enrollContactsInAutomation } from "@/lib/activecampaign";
 import type { Attendee, CallCampaign, Workshop } from "@/lib/supabase/types";
+
+// Everyone added to the Part 2 call list is also enrolled in this AC automation.
+const AC_PART2_AUTOMATION = "PART2 Post-Event Contacting";
 
 const MarkSchema = z.object({
   clientId: z.string().uuid(),
@@ -164,6 +169,26 @@ export async function addCallableToCampaign(formData: FormData) {
     .from("call_campaigns")
     .update({ status: "running", updated_at: new Date().toISOString() })
     .eq("id", campaign.id);
+
+  // Enroll the newly-added people in the Part 2 AC automation. They were synced
+  // to AC at upload, so this only enrolls existing contacts. Runs after the
+  // response so AC's throttled per-contact calls never block the button.
+  const emails = callable.map((e) => e.email).filter((e): e is string => !!e);
+  if (emails.length > 0) {
+    after(async () => {
+      try {
+        const r = await enrollContactsInAutomation(emails, AC_PART2_AUTOMATION);
+        if (r.configured) {
+          console.log(
+            `[part2] AC automation "${AC_PART2_AUTOMATION}": enrolled ${r.enrolled}/${r.requested}, ` +
+              `${r.notInAc} not in AC, found=${r.automationFound}, ${r.errors} errors.`,
+          );
+        }
+      } catch (e) {
+        console.error("[part2] AC automation enroll failed:", e);
+      }
+    });
+  }
 
   revalidatePath(`/admin/clients/${clientId}/workshops/${workshopId}/part2`);
   return { ok: true, added: toInsert.length };

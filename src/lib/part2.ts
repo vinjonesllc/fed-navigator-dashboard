@@ -12,6 +12,7 @@ import type {
 export type CallListEntry = {
   attendee_id: string;
   full_name: string;
+  email: string | null;
   phone: string;
   agency: string | null;
   /** total_time_minutes / scheduled_minutes, 0–100, null if scheduled unknown. */
@@ -87,6 +88,7 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
     return {
       attendee_id: a.id,
       full_name: fullName(a) || a.email || "(no name)",
+      email: a.email ?? null,
       phone: a.phone ?? "",
       agency: a.agency,
       attendance_pct:
