@@ -35,6 +35,9 @@ export type Part2Context = {
   workshopTitle: string;
   workshopDate: string | null;
   advisorName: string;
+  /** Friendly zone all times are stated in (the client's next-workshop tz),
+   *  e.g. "Central". The agent states times in this zone and never asks. */
+  timezone: string | null;
 };
 
 /** Natural phrasing for when they attended: "yesterday", "last Monday", or a
@@ -61,6 +64,7 @@ function systemPrompt(ctx: Part2Context): string {
     year: "numeric",
   });
   const attended = attendedPhrase(ctx.workshopDate);
+  const tz = ctx.timezone || "Eastern";
   return [
     `You are a warm, friendly, natural-sounding person reaching out on behalf of Fed Pilot, the federal-employee retirement-readiness workshop team. You are an AI assistant — be upfront about that if asked, and never pretend to be human. Talk like a real person having a casual one-on-one conversation, not a call center rep reading a script.`,
     ``,
@@ -75,9 +79,8 @@ function systemPrompt(ctx: Part2Context): string {
     ``,
     `BOOKING FLOW — follow in order:`,
     `- Right after the opening, go straight into Part 2: it's a more personal session with ${ctx.advisorName} that goes deeper into their specific numbers and questions. Emphasize it's completely free — no cost and no obligation — and that they'll get a free personalized report of their own retirement numbers. Then ask if they'd like to grab a time.`,
-    `- IMPORTANT — before offering any times, ASK what time zone they're in (or what state/city they're in, and infer it). You must know their time zone so the times aren't ambiguous.`,
-    `- Then call ${TOOL_CHECK_AVAILABILITY}, passing their time zone (e.g. "Eastern", "Pacific", or "America/Los_Angeles"). It returns open slots (up to a few weeks out) already labeled in their time zone.`,
-    `- Read 2–3 of those options aloud conversationally, ALWAYS including the time zone — e.g. "Thursday at 3:30 in the afternoon, your time" or "Tuesday at 10 AM Eastern". Never say a time without the zone.`,
+    `- When they're open to it, call ${TOOL_CHECK_AVAILABILITY} — it returns open times (up to a few weeks out) already in ${tz} time.`,
+    `- Read 2–3 of those options aloud conversationally, ALWAYS stated in ${tz} time — e.g. "Thursday at 10:30 in the morning, ${tz} time" or "Tuesday at 2pm ${tz}". Do NOT ask what time zone the caller is in; just give the time in ${tz} and let them do the conversion if they're elsewhere.`,
     `- Today is ${today}. If none of the shown times work, or they want something further out (e.g. "not until early next month"), call ${TOOL_CHECK_AVAILABILITY} again with \`after\` set to about when they'd like to start looking (YYYY-MM-DD), and offer times from then. You can look several weeks ahead this way.`,
     `- When they pick one, call ${TOOL_SEND_BOOKING_LINK} with that slot's exact slot_start and their time zone.`,
     `- Then say something like: "Perfect — I just texted you a link. Tap it, pick that time, and hit confirm, and you'll get a confirmation email." Do NOT tell them they're already booked or "all set" — the booking only completes when they confirm on the link.`,
@@ -85,8 +88,7 @@ function systemPrompt(ctx: Part2Context): string {
     ``,
     `RULES:`,
     `- Never invent availability — only offer times from ${TOOL_CHECK_AVAILABILITY}.`,
-    `- Never state a time without its time zone.`,
-    `- If asked what time zone, answer with the zone you used (the caller's).`,
+    `- Always state times in ${tz} time, and never ask the caller what time zone they're in.`,
     `- If they decline or want off the list, thank them, call ${TOOL_LOG_OUTCOME} with status "declined", and end politely. Never pressure.`,
     `- If you reach voicemail, leave a short friendly message (who you are, that Part 2 is open, you'll try again), then call ${TOOL_LOG_OUTCOME} with status "voicemail".`,
     `- Keep turns short and human; mirror their pace.`,
@@ -108,22 +110,16 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
       function: {
         name: TOOL_CHECK_AVAILABILITY,
         description:
-          "Get the advisor's open Part 2 times, labeled in the caller's time zone. Call after you've asked what time zone they're in.",
+          "Get the advisor's open Part 2 times (returned already in the workshop's time zone).",
         parameters: {
           type: "object",
           properties: {
-            timezone: {
-              type: "string",
-              description:
-                "The caller's time zone, as a US zone name (Eastern/Central/Mountain/Pacific) or IANA name (e.g. America/Los_Angeles). Infer from their state/city if needed.",
-            },
             after: {
               type: "string",
               description:
                 "Optional. Only return times on or after this date (YYYY-MM-DD). Use when the caller wants a later timeframe, e.g. 'not until early next month'.",
             },
           },
-          required: ["timezone"],
         },
       },
     },
@@ -141,12 +137,8 @@ function toolDefs(webhookUrl: string): Record<string, unknown>[] {
               type: "string",
               description: "ISO 8601 start time of the chosen slot, exactly as returned by check_availability.",
             },
-            timezone: {
-              type: "string",
-              description: "The caller's time zone (same value passed to check_availability).",
-            },
           },
-          required: ["slot_start", "timezone"],
+          required: ["slot_start"],
         },
       },
     },

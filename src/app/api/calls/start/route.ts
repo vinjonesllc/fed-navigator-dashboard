@@ -52,12 +52,21 @@ export async function POST(request: NextRequest) {
   const cfg = campaign.calendar_config as { advisor_name?: string };
   const advisorName = cfg.advisor_name ?? "your Fed Pilot advisor";
 
+  // All appointment times are stated in the client's next-workshop timezone.
+  const { data: clientRow } = await admin
+    .from("clients")
+    .select("next_workshop_tz")
+    .eq("id", campaign.client_id)
+    .maybeSingle<{ next_workshop_tz: string | null }>();
+  const timezone = clientRow?.next_workshop_tz ?? "Eastern";
+
   const assistant = buildPart2Assistant({
     attendeeName: target.full_name ?? "there",
     agency: target.agency,
     workshopTitle,
     workshopDate,
     advisorName,
+    timezone,
   });
 
   let callId: string;
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
     const call = await placeOutboundCall({
       customerNumber: target.phone,
       assistant,
-      metadata: { targetId: target.id, campaignId: campaign.id },
+      metadata: { targetId: target.id, campaignId: campaign.id, timezone },
     });
     callId = call.id;
   } catch (e) {

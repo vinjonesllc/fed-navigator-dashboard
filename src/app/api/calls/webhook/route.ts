@@ -67,16 +67,18 @@ function normalizeTz(input: unknown, fallback = DEFAULT_TZ): string {
   }
 }
 
-function humanTime(iso: string, tz: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    timeZone: tz,
+/** Format an ISO time in a friendly US zone ("Central") and append that label,
+ *  e.g. "Thursday, Jun 18, 10:30 AM Central". */
+function humanTime(iso: string, friendlyTz: string): string {
+  const t = new Date(iso).toLocaleString("en-US", {
+    timeZone: normalizeTz(friendlyTz),
     weekday: "long",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    timeZoneName: "short",
   });
+  return `${t} ${friendlyTz}`;
 }
 
 async function loadTarget(targetId: string | undefined) {
@@ -94,11 +96,11 @@ async function handleToolCall(
   name: string,
   args: Record<string, unknown>,
   targetId: string | undefined,
+  tz: string,
 ): Promise<string> {
   const admin = createSupabaseAdminClient();
 
   if (name === TOOL_CHECK_AVAILABILITY) {
-    const tz = normalizeTz(args.timezone);
     const after =
       typeof args.after === "string" && args.after.trim() ? args.after.trim() : undefined;
     const slots = await getAvailableSlots(35, after);
@@ -112,7 +114,6 @@ async function handleToolCall(
 
   if (name === TOOL_SEND_BOOKING_LINK) {
     const slotStart = String(args.slot_start ?? "");
-    const tz = normalizeTz(args.timezone);
     const target = await loadTarget(targetId);
     if (!target?.phone) return "I couldn't find a phone number to text the link to.";
 
@@ -173,6 +174,10 @@ export async function POST(request: NextRequest) {
     typeof message.call?.metadata?.targetId === "string"
       ? message.call.metadata.targetId
       : undefined;
+  const tz =
+    typeof message.call?.metadata?.timezone === "string"
+      ? message.call.metadata.timezone
+      : "Eastern";
 
   // 1) Tool calls — respond synchronously with results.
   if (message.type === "tool-calls" || message.type === "function-call") {
@@ -182,7 +187,7 @@ export async function POST(request: NextRequest) {
         const id = c.toolCallId ?? c.id ?? "";
         const name = c.function?.name ?? "";
         try {
-          const result = await handleToolCall(name, parseArgs(c.function?.arguments), targetId);
+          const result = await handleToolCall(name, parseArgs(c.function?.arguments), targetId, tz);
           return { toolCallId: id, result };
         } catch (e) {
           return { toolCallId: id, result: e instanceof Error ? e.message : "Tool failed" };
