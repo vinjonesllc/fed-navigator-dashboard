@@ -312,7 +312,6 @@ export async function POST(request: NextRequest) {
   if (message.type === "end-of-call-report" && targetId) {
     const admin = createSupabaseAdminClient();
     const transcript = message.artifact?.transcript ?? null;
-    const outcome = classifyOutcome(message.endedReason, !!transcript);
     const { hour, weekday } = localHourWeekday(tz);
 
     const { data: target } = await admin
@@ -320,6 +319,18 @@ export async function POST(request: NextRequest) {
       .select("status, attempts, campaign_id")
       .eq("id", targetId)
       .maybeSingle<Pick<CallTarget, "status" | "attempts" | "campaign_id">>();
+
+    // The agent's own disposition (set via log_outcome during the call) is
+    // AUTHORITATIVE — it knows whether it reached a person, a voicemail, or no
+    // one. A voicemail leaves a transcript too, so the endedReason heuristic
+    // can't tell it apart; only fall back to the heuristic when the agent never
+    // logged an outcome (status still "calling", e.g. the call dropped early).
+    const agentDisposition = target && target.status !== "calling" ? target.status : null;
+    const heuristic = classifyOutcome(message.endedReason, !!transcript);
+    const statusToOutcome = (s: string): CallOutcome =>
+      s === "voicemail" ? "voicemail" : s === "no_answer" ? "no_answer" : s === "failed" ? "failed" : "answered";
+    const finalStatus = agentDisposition ?? (heuristic === "answered" ? "completed" : heuristic);
+    const outcome = agentDisposition ? statusToOutcome(agentDisposition) : heuristic;
 
     // Timing log for best-time learning (best-effort).
     await admin.from("call_attempts").insert({
@@ -338,20 +349,19 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Disposition / retry — only when not already terminal (declined / booked /
-    // completed are preserved).
-    if (target && RETRYABLE.includes(target.status)) {
-      if (outcome === "answered") {
-        update.status = "completed";
-      } else {
+    // Never override the agent's explicit disposition; only set status when the
+    // agent didn't log one (status was still "calling"). Schedule a retry for
+    // voicemail / no-answer in either case.
+    if (target && (target.status === "calling" || RETRYABLE.includes(target.status))) {
+      if (target.status === "calling") update.status = finalStatus;
+      if (finalStatus === "voicemail" || finalStatus === "no_answer") {
         const { data: campaign } = await admin
           .from("call_campaigns")
           .select("max_attempts")
           .eq("id", target.campaign_id)
           .maybeSingle<{ max_attempts: number }>();
         const maxAttempts = campaign?.max_attempts ?? 3;
-        update.status = outcome; // 'voicemail' | 'no_answer' | 'failed'
-        if (outcome !== "failed" && target.attempts < maxAttempts) {
+        if (target.attempts < maxAttempts) {
           const hours = clientId ? await bestHoursForClient(clientId) : [];
           update.next_attempt_at = nextRetryAt(tz, hours, target.attempts).toISOString();
         } else {
