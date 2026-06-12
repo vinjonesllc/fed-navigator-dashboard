@@ -1,6 +1,7 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseZoomCsv, type ParsedAttendee } from "@/lib/csv/parse-zoom";
+import { parsePhone } from "@/lib/phone";
 
 const FED_PUBLIC_TLDS = [".gov", ".mil", ".fed.us"];
 
@@ -125,6 +126,8 @@ export async function ingestZoomCsv(opts: {
     email_domain: r.email_domain,
     agency: r.email_domain ? agencyMap.get(r.email_domain) ?? null : null,
     phone: r.phone,
+    phone_e164: parsePhone(r.phone).e164,
+    phone_extension: parsePhone(r.phone).extension,
     authentication_status: r.authentication_status,
     engagement_score: r.engagement_score,
     participation: r.participation,

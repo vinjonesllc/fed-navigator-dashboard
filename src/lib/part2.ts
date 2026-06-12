@@ -13,7 +13,13 @@ export type CallListEntry = {
   attendee_id: string;
   full_name: string;
   email: string | null;
+  /** Display phone: the normalized E.164 if callable, else the raw value. */
   phone: string;
+  /** Normalized, dialable number (E.164). Null = uncallable (bad/foreign). */
+  phone_e164: string | null;
+  phone_extension: string | null;
+  /** True when there's a raw phone but it couldn't be normalized — "do not call". */
+  phone_invalid: boolean;
   agency: string | null;
   /** total_time_minutes / scheduled_minutes, 0–100, null if scheduled unknown. */
   attendance_pct: number | null;
@@ -84,12 +90,17 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
 
   const entries: CallListEntry[] = attendees.map((a) => {
     const registration = regByAttendee.get(a.id) ?? null;
-    const phoneOk = hasPhone(a.phone);
+    const e164 = a.phone_e164 ?? null;
+    // A raw phone that didn't normalize is an invalid/uncallable number.
+    const phoneInvalid = !e164 && hasPhone(a.phone);
     return {
       attendee_id: a.id,
       full_name: fullName(a) || a.email || "(no name)",
       email: a.email ?? null,
-      phone: a.phone ?? "",
+      phone: e164 ?? a.phone ?? "",
+      phone_e164: e164,
+      phone_extension: a.phone_extension ?? null,
+      phone_invalid: phoneInvalid,
       agency: a.agency,
       attendance_pct:
         scheduled && scheduled > 0
@@ -97,19 +108,19 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
           : null,
       text_opt_in: !!a.text_opt_in,
       registration,
-      callable: phoneOk && !registration,
+      callable: !!e164 && !registration,
     };
   });
 
-  const withPhone = entries.filter((e) => hasPhone(e.phone));
   return {
     workshop,
     entries,
     summary: {
-      with_phone: withPhone.length,
+      with_phone: entries.filter((e) => e.phone_e164).length,
       registered: entries.filter((e) => e.registration).length,
       callable: entries.filter((e) => e.callable).length,
-      no_phone: entries.length - withPhone.length,
+      // Live attendees we can't call: no number at all, or an invalid one.
+      no_phone: entries.filter((e) => !e.phone_e164).length,
     },
   };
 }

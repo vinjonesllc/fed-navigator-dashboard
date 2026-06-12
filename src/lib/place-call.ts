@@ -23,7 +23,19 @@ export async function placeCallForTarget(
     .maybeSingle<CallTarget>();
   if (!target) return { ok: false, error: "Target not found" };
   const phone = toE164(target.phone);
-  if (!phone) return { ok: false, error: `Target has no usable phone number (${target.phone ?? "none"})` };
+  if (!phone) {
+    // Unusable number (too short/long/foreign) — mark it skipped so it leaves the
+    // dialable queue and is never attempted again.
+    await admin
+      .from("call_targets")
+      .update({
+        status: "skipped",
+        outcome_notes: `Unusable phone number: ${target.phone ?? "none"}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", target.id);
+    return { ok: false, error: `Skipped — unusable phone number (${target.phone ?? "none"})` };
+  }
 
   const { data: campaign } = await admin
     .from("call_campaigns")

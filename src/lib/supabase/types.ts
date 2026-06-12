@@ -85,6 +85,8 @@ export type AttendanceBucket =
   | "full"
   | "full_engaged";
 
+// NOTE: phone_e164 / phone_extension are normalized at upload (see lib/phone
+// parsePhone). phone_e164 null = uncallable number (too short/long/foreign).
 export type Attendee = {
   id: string;
   workshop_id: string;
@@ -94,6 +96,8 @@ export type Attendee = {
   email_domain: string | null;
   agency: string | null;
   phone: string | null;
+  phone_e164: string | null;
+  phone_extension: string | null;
   authentication_status: string | null;
   engagement_score: number | null;
   participation: string | null;
