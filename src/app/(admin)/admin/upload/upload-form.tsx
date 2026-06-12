@@ -24,6 +24,7 @@ type ClientOption = {
   slug: string;
   brand?: string | null;
   next_workshop_date?: string | null;
+  next_workshop_reg_url?: string | null;
 };
 
 const PRESENTERS = ["Dionne Belk", "Kevin Jones"];
@@ -62,6 +63,10 @@ export function UploadForm({
   const selectedClient = clients.find((c) => c.id === clientId) ?? null;
   const isFedPilot = selectedClient?.brand === AC_BRAND;
   const hasFutureNext = isFutureDate(selectedClient?.next_workshop_date);
+  const hasRegUrl = !!(selectedClient?.next_workshop_reg_url ?? "").trim();
+  // The advisor's NEXT workshop is "set up" only with a future date AND a
+  // registration link (the link is what calls/AC hand out).
+  const nextWorkshopReady = hasFutureNext && hasRegUrl;
 
   const attendeeFile = detected.attendees ?? null;
   const qaFile = detected.qa ?? null;
@@ -218,6 +223,36 @@ export function UploadForm({
         </div>
       </div>
 
+      {selectedClient && isFedPilot && !nextWorkshopReady && (
+        <div className="rounded-lg border-2 border-rose bg-rose-soft px-4 py-3">
+          <div className="flex items-start gap-2.5 text-rose">
+            <span className="text-xl leading-none">⚠️</span>
+            <div>
+              <div className="text-sm font-semibold">
+                Next workshop isn&apos;t set up for {selectedClient.name}
+              </div>
+              <div className="mt-1 text-[13px]">
+                {!hasFutureNext && (
+                  <>
+                    • No <b>future next-workshop date</b> is set (missing or in the past).
+                    <br />
+                  </>
+                )}
+                {hasFutureNext && !hasRegUrl && (
+                  <>
+                    • The <b>registration link</b> is missing.
+                    <br />
+                  </>
+                )}
+                Set it on the advisor&apos;s <b>Settings</b> page — otherwise the
+                ActiveCampaign Next-Workshop fields stay blank and the AI can&apos;t share the
+                next workshop on calls.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
@@ -357,13 +392,6 @@ export function UploadForm({
             </span>
           </label>
 
-          {uploadToAc && !hasFutureNext && (
-            <p className="rounded border border-amber-bord bg-amber-soft px-3 py-2 text-[13px] text-amber">
-              ⚠ This advisor has no <b>future</b> next-workshop date set (it&apos;s missing or set
-              to today). The <b>Next Workshop</b> fields will be left blank in ActiveCampaign. Set a
-              future date on the advisor&apos;s Settings page to include them.
-            </p>
-          )}
         </div>
       )}
 

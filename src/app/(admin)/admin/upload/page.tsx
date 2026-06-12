@@ -18,11 +18,11 @@ export default async function UploadPage({
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from("clients")
-    .select("id, name, slug, brand, next_workshop_date")
+    .select("id, name, slug, brand, next_workshop_date, next_workshop_reg_url")
     .order("name");
   const clients = (data ?? []) as Pick<
     Client,
-    "id" | "name" | "slug" | "brand" | "next_workshop_date"
+    "id" | "name" | "slug" | "brand" | "next_workshop_date" | "next_workshop_reg_url"
   >[];
 
   return (
