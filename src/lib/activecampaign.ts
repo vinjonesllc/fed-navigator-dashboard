@@ -350,6 +350,75 @@ export async function uploadContactsToAc(
   return result;
 }
 
+export type AutomationEnrollResult = {
+  configured: boolean;
+  requested: number;
+  enrolled: number;
+  /** Emails not found as contacts in AC (skipped — never created here). */
+  notInAc: number;
+  /** false when the named automation couldn't be found in the account. */
+  automationFound: boolean;
+  errors: number;
+};
+
+/**
+ * Enroll already-existing AC contacts (matched by email) into a named
+ * automation. Contacts are never created here — emails not found in AC are
+ * skipped — because by the time someone is on the call list they were already
+ * synced to AC at workshop upload. Idempotent (422 = already enrolled). One bad
+ * contact never aborts the rest.
+ */
+export async function enrollContactsInAutomation(
+  emails: string[],
+  automationName: string,
+): Promise<AutomationEnrollResult> {
+  const result: AutomationEnrollResult = {
+    configured: isActiveCampaignConfigured(),
+    requested: emails.length,
+    enrolled: 0,
+    notInAc: 0,
+    automationFound: true,
+    errors: 0,
+  };
+  if (!result.configured || emails.length === 0) return result;
+
+  let automationId: string | null = null;
+  try {
+    automationId = await resolveAutomationId(automationName);
+  } catch (e) {
+    result.automationFound = false;
+    console.error("[activecampaign] automation resolve failed:", e);
+    return result;
+  }
+  if (!automationId) {
+    result.automationFound = false;
+    console.warn(`[activecampaign] automation not found: "${automationName}"`);
+    return result;
+  }
+
+  // De-dupe + normalize so we never enroll the same contact twice.
+  const unique = Array.from(
+    new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
+  );
+
+  for (const email of unique) {
+    try {
+      const contactId = await findContactIdByEmail(email);
+      if (!contactId) {
+        result.notInAc += 1;
+        continue;
+      }
+      await addContactToAutomation(contactId, automationId);
+      result.enrolled += 1;
+    } catch (e) {
+      result.errors += 1;
+      console.error(`[activecampaign] failed to enroll ${email}:`, e);
+    }
+  }
+
+  return result;
+}
+
 export type TagResult = {
   configured: boolean;
   requested: number;
