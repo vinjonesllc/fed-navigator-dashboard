@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { timingSafeEqualStr } from "@/lib/webhook-verify";
 import { placeCallForTarget } from "@/lib/place-call";
+import { canDialNow } from "@/lib/call-scheduling";
 import type { CallTarget } from "@/lib/supabase/types";
 
 // Scheduler entrypoint — pinged on a cadence by Supabase pg_cron (via pg_net).
@@ -31,19 +32,34 @@ export async function POST(request: NextRequest) {
   const targets = (due ?? []) as Pick<CallTarget, "id" | "attempts" | "campaign_id">[];
   if (targets.length === 0) return NextResponse.json({ ok: true, dialed: 0 });
 
-  // Only dial running campaigns, and respect each campaign's max_attempts.
+  // Only dial running campaigns, respect each campaign's max_attempts, and only
+  // on US workdays inside the calling window (using the workshop's timezone).
   const campaignIds = Array.from(new Set(targets.map((t) => t.campaign_id)));
   const { data: campaigns } = await admin
     .from("call_campaigns")
-    .select("id, status, max_attempts")
+    .select("id, status, max_attempts, client_id")
     .in("id", campaignIds);
   const byId = new Map(
-    (campaigns ?? []).map((c) => [c.id as string, c as { status: string; max_attempts: number }]),
+    (campaigns ?? []).map((c) => [
+      c.id as string,
+      c as { status: string; max_attempts: number; client_id: string },
+    ]),
   );
 
+  const clientIds = Array.from(new Set((campaigns ?? []).map((c) => c.client_id as string)));
+  const { data: clients } = await admin
+    .from("clients")
+    .select("id, next_workshop_tz")
+    .in("id", clientIds);
+  const tzByClient = new Map(
+    (clients ?? []).map((c) => [c.id as string, (c.next_workshop_tz as string | null) ?? "Eastern"]),
+  );
+
+  const now = new Date();
   const eligible = targets.filter((t) => {
     const c = byId.get(t.campaign_id);
-    return c && c.status === "running" && t.attempts < c.max_attempts;
+    if (!c || c.status !== "running" || t.attempts >= c.max_attempts) return false;
+    return canDialNow(tzByClient.get(c.client_id) ?? "Eastern", now);
   });
 
   // Dial the batch CONCURRENTLY so the route returns in ~a second or two. The
