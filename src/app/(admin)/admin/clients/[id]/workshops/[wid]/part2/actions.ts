@@ -182,7 +182,7 @@ export async function addCallableToCampaign(formData: FormData) {
     campaign_id: campaign.id,
     attendee_id: e.attendee_id,
     full_name: e.full_name,
-    phone: e.phone,
+    phone: e.phone_e164 ?? e.phone, // callable ⇒ phone_e164 is set (clean E.164)
     agency: e.agency,
     status: "queued" as const,
     next_attempt_at: firstAttemptAt(workshopDate, zone, i, orderedHours).toISOString(),

@@ -304,7 +304,20 @@ export function Part2Client({
                     {e.attendance_pct == null ? "—" : `${e.attendance_pct}%`}
                   </td>
                   <td className="px-4 py-2.5 font-mono text-[12px] text-ink-2">
-                    {e.phone ? e.phone : <span className="text-rose">no phone</span>}
+                    {e.phone_e164 ? (
+                      <>
+                        {e.phone_e164}
+                        {e.phone_extension && (
+                          <span className="text-ink-4"> x{e.phone_extension}</span>
+                        )}
+                      </>
+                    ) : e.phone_invalid ? (
+                      <span className="text-rose" title={`Won't dial: ${e.phone}`}>
+                        bad number — won&apos;t call
+                      </span>
+                    ) : (
+                      <span className="text-rose">no phone</span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5">
                     {e.registration ? (
