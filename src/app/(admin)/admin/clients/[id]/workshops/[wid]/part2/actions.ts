@@ -7,12 +7,10 @@ import { requireContentManager, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCallList } from "@/lib/part2";
 import { bestHoursForClient, firstAttemptAt } from "@/lib/call-scheduling";
-import { enrollContactsInAutomation } from "@/lib/activecampaign";
+import { enrollContactsInAutomation, PART2_AUTOMATION_NAME } from "@/lib/activecampaign";
 import { recordCallActivity, listAttendeeActivities } from "@/lib/call-activity";
 import { HUMAN_CALL_ACTIONS, type Attendee, type CallCampaign, type Workshop } from "@/lib/supabase/types";
 
-// Everyone added to the Part 2 call list is also enrolled in this AC automation.
-const AC_PART2_AUTOMATION = "PART2 Post-Event Contacting";
 
 const MarkSchema = z.object({
   clientId: z.string().uuid(),
@@ -207,10 +205,10 @@ export async function addCallableToCampaign(formData: FormData) {
   if (emails.length > 0) {
     after(async () => {
       try {
-        const r = await enrollContactsInAutomation(emails, AC_PART2_AUTOMATION);
+        const r = await enrollContactsInAutomation(emails, PART2_AUTOMATION_NAME);
         if (r.configured) {
           console.log(
-            `[part2] AC automation "${AC_PART2_AUTOMATION}": enrolled ${r.enrolled}/${r.requested}, ` +
+            `[part2] AC automation "${PART2_AUTOMATION_NAME}": enrolled ${r.enrolled}/${r.requested}, ` +
               `${r.notInAc} not in AC, found=${r.automationFound}, ${r.errors} errors.`,
           );
         }
