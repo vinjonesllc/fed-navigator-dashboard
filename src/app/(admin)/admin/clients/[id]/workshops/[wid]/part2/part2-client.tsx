@@ -13,7 +13,6 @@ import {
   type CallCampaign,
   type CallTarget,
   type CallTargetStatus,
-  type RegistrationSource,
 } from "@/lib/supabase/types";
 import type { CallListEntry } from "@/lib/part2";
 import {
@@ -29,12 +28,6 @@ const CARD =
 
 // Statuses where a (re)call is still worth placing.
 const CALLABLE_STATUSES: CallTargetStatus[] = ["queued", "no_answer", "voicemail"];
-
-function SourceBadge({ source }: { source: RegistrationSource }) {
-  const variant =
-    source === "ai_call" ? "default" : source === "self_serve" ? "secondary" : "outline";
-  return <Badge variant={variant}>{REGISTRATION_SOURCE_LABELS[source]}</Badge>;
-}
 
 type Filter = "callable" | "registered" | "all";
 
@@ -63,7 +56,12 @@ export function Part2Client({
   const [filter, setFilter] = useState<Filter>("callable");
   const [advisorName, setAdvisorName] = useState(defaultAdvisorName);
   const [schedulingUrl, setSchedulingUrl] = useState("");
-  const [activityFor, setActivityFor] = useState<{ id: string; name: string } | null>(null);
+  const [activityFor, setActivityFor] = useState<{
+    id: string;
+    name: string;
+    attendancePct: number | null;
+    statusLabel: string;
+  } | null>(null);
 
   const shown = useMemo(() => {
     if (filter === "callable") return entries.filter((e) => e.callable);
@@ -268,18 +266,17 @@ export function Part2Client({
             <tr className="border-b border-line-1 text-left text-[11px] uppercase tracking-[0.04em] text-ink-4">
               <th className="px-4 py-2.5 font-medium">Name</th>
               <th className="px-4 py-2.5 font-medium">Agency</th>
-              <th className="px-4 py-2.5 font-medium text-right">Attended</th>
               <th className="px-4 py-2.5 font-medium">Phone</th>
-              <th className="px-4 py-2.5 font-medium">Status</th>
               {campaign && <th className="px-4 py-2.5 font-medium">Call</th>}
               {canManage && <th className="px-4 py-2.5 font-medium text-right">Action</th>}
+              <th className="px-4 py-2.5 font-medium text-right">Last action</th>
             </tr>
           </thead>
           <tbody>
             {shown.length === 0 && (
               <tr>
                 <td
-                  colSpan={5 + (campaign ? 1 : 0) + (canManage ? 1 : 0)}
+                  colSpan={4 + (campaign ? 1 : 0) + (canManage ? 1 : 0)}
                   className="px-4 py-8 text-center text-ink-3"
                 >
                   No one here yet.
@@ -290,10 +287,22 @@ export function Part2Client({
               const isBusy = busyId === e.attendee_id && pending;
               const target = targetsByAttendee[e.attendee_id];
               const targetBusy = target ? busyId === target.id && pending : false;
+              const statusLabel = e.registration
+                ? `Registered — ${REGISTRATION_SOURCE_LABELS[e.registration.source]}`
+                : e.callable
+                  ? "Callable"
+                  : "Not callable";
+              const openActivity = () =>
+                setActivityFor({
+                  id: e.attendee_id,
+                  name: e.full_name,
+                  attendancePct: e.attendance_pct,
+                  statusLabel,
+                });
               return (
                 <tr
                   key={e.attendee_id}
-                  onClick={() => setActivityFor({ id: e.attendee_id, name: e.full_name })}
+                  onClick={openActivity}
                   className="cursor-pointer border-b border-line-1 last:border-0 hover:bg-bg-2"
                 >
                   <td className="px-4 py-2.5 text-ink-1">
@@ -305,9 +314,6 @@ export function Part2Client({
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-ink-2">{e.agency ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-2">
-                    {e.attendance_pct == null ? "—" : `${e.attendance_pct}%`}
-                  </td>
                   <td className="px-4 py-2.5 font-mono text-[12px] text-ink-2">
                     {e.phone_e164 ? (
                       <>
@@ -322,15 +328,6 @@ export function Part2Client({
                       </span>
                     ) : (
                       <span className="text-rose">no phone</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {e.registration ? (
-                      <SourceBadge source={e.registration.source} />
-                    ) : e.callable ? (
-                      <Badge variant="outline">Callable</Badge>
-                    ) : (
-                      <Badge variant="ghost">Not callable</Badge>
                     )}
                   </td>
                   {campaign && (
@@ -375,7 +372,7 @@ export function Part2Client({
                           size="sm"
                           onClick={(ev) => {
                             ev.stopPropagation();
-                            setActivityFor({ id: e.attendee_id, name: e.full_name });
+                            openActivity();
                           }}
                           className="rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
                         >
@@ -405,6 +402,14 @@ export function Part2Client({
                       </div>
                     </td>
                   )}
+                  <td className="px-4 py-2.5 text-right text-[12px] text-ink-3 tabular-nums">
+                    {e.last_activity_at
+                      ? new Date(e.last_activity_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "—"}
+                  </td>
                 </tr>
               );
             })}
@@ -423,6 +428,8 @@ export function Part2Client({
           workshopId={workshopId}
           attendeeId={activityFor.id}
           attendeeName={activityFor.name}
+          attendancePct={activityFor.attendancePct}
+          statusLabel={activityFor.statusLabel}
           onRecorded={() => router.refresh()}
         />
       )}
