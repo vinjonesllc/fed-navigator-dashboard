@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { notifyPart2Booking } from "@/lib/clickup";
+import { recordCallActivity } from "@/lib/call-activity";
 import { verifyCalendlySignature } from "@/lib/webhook-verify";
 import type { Attendee, CallTarget } from "@/lib/supabase/types";
 
@@ -148,6 +149,22 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", target.id);
+  }
+
+  // Log the booking on the person's activity history.
+  if (clientId && attendee?.id) {
+    try {
+      await recordCallActivity({
+        clientId,
+        attendeeId: attendee.id,
+        workshopId: attendee.workshop_id ?? null,
+        action: "booked",
+        notes: startTime ? `Booked for ${new Date(startTime).toLocaleString("en-US")}` : null,
+        actorName: source === "ai_call" ? "AI" : "Self",
+      });
+    } catch (e) {
+      console.error("[calendly webhook] activity log failed:", e instanceof Error ? e.message : e);
+    }
   }
 
   try {

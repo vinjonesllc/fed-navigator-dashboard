@@ -19,10 +19,10 @@ import type { CallListEntry } from "@/lib/part2";
 import {
   addCallableToCampaign,
   createCampaign,
-  markRegistered,
   setCampaignStatus,
   unmarkRegistered,
 } from "./actions";
+import { CallActivityDialog } from "./call-activity-dialog";
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -63,6 +63,7 @@ export function Part2Client({
   const [filter, setFilter] = useState<Filter>("callable");
   const [advisorName, setAdvisorName] = useState(defaultAdvisorName);
   const [schedulingUrl, setSchedulingUrl] = useState("");
+  const [activityFor, setActivityFor] = useState<{ id: string; name: string } | null>(null);
 
   const shown = useMemo(() => {
     if (filter === "callable") return entries.filter((e) => e.callable);
@@ -290,7 +291,11 @@ export function Part2Client({
               const target = targetsByAttendee[e.attendee_id];
               const targetBusy = target ? busyId === target.id && pending : false;
               return (
-                <tr key={e.attendee_id} className="border-b border-line-1 last:border-0">
+                <tr
+                  key={e.attendee_id}
+                  onClick={() => setActivityFor({ id: e.attendee_id, name: e.full_name })}
+                  className="cursor-pointer border-b border-line-1 last:border-0 hover:bg-bg-2"
+                >
                   <td className="px-4 py-2.5 text-ink-1">
                     {e.full_name}
                     {e.text_opt_in && (
@@ -344,7 +349,10 @@ export function Part2Client({
                               size="sm"
                               variant="outline"
                               disabled={targetBusy}
-                              onClick={() => callNow(target.id)}
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                callNow(target.id);
+                              }}
                               className="h-7 rounded-[8px] border-line-1 bg-surface px-2 text-[12px] text-ink-2 hover:bg-bg-2 hover:text-ink-1"
                             >
                               {targetBusy ? "…" : target.attempts > 0 ? "Re-call" : "Call"}
@@ -360,47 +368,41 @@ export function Part2Client({
                   )}
                   {canManage && (
                     <td className="px-4 py-2.5 text-right">
-                      {e.registration ? (
-                        e.registration.source === "manual" ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setActivityFor({ id: e.attendee_id, name: e.full_name });
+                          }}
+                          className="rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                        >
+                          Record action
+                        </Button>
+                        {e.registration?.source === "manual" && (
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             disabled={isBusy}
-                            onClick={() =>
+                            onClick={(ev) => {
+                              ev.stopPropagation();
                               run(
                                 unmarkRegistered,
                                 baseFd({ attendeeId: e.attendee_id }),
                                 () => "Registration removed",
                                 e.attendee_id,
-                              )
-                            }
-                            className="rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                              );
+                            }}
+                            className="rounded-[9px] text-ink-3 hover:text-ink-1"
+                            title="Remove the manual registration"
                           >
                             {isBusy ? "…" : "Undo"}
                           </Button>
-                        ) : (
-                          <span className="text-[12px] text-ink-4">—</span>
-                        )
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isBusy || !e.phone}
-                          onClick={() =>
-                            run(
-                              markRegistered,
-                              baseFd({ attendeeId: e.attendee_id }),
-                              () => "Marked as registered",
-                              e.attendee_id,
-                            )
-                          }
-                          className="rounded-[9px] border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1"
-                        >
-                          {isBusy ? "…" : "Mark registered"}
-                        </Button>
-                      )}
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -409,6 +411,21 @@ export function Part2Client({
           </tbody>
         </table>
       </div>
+
+      {activityFor && (
+        <CallActivityDialog
+          key={activityFor.id}
+          open={!!activityFor}
+          onOpenChange={(o) => {
+            if (!o) setActivityFor(null);
+          }}
+          clientId={clientId}
+          workshopId={workshopId}
+          attendeeId={activityFor.id}
+          attendeeName={activityFor.name}
+          onRecorded={() => router.refresh()}
+        />
+      )}
     </div>
   );
 }

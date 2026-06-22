@@ -8,7 +8,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCallList } from "@/lib/part2";
 import { bestHoursForClient, firstAttemptAt } from "@/lib/call-scheduling";
 import { enrollContactsInAutomation } from "@/lib/activecampaign";
-import type { Attendee, CallCampaign, Workshop } from "@/lib/supabase/types";
+import { recordCallActivity, listAttendeeActivities } from "@/lib/call-activity";
+import { HUMAN_CALL_ACTIONS, type Attendee, type CallCampaign, type Workshop } from "@/lib/supabase/types";
 
 // Everyone added to the Part 2 call list is also enrolled in this AC automation.
 const AC_PART2_AUTOMATION = "PART2 Post-Event Contacting";
@@ -319,4 +320,90 @@ export async function unmarkRegistered(formData: FormData) {
 
   revalidatePath(`/admin/clients/${clientId}/workshops/${workshopId}/part2`);
   return { ok: true };
+}
+
+const RecordActivitySchema = z.object({
+  clientId: z.string().uuid(),
+  workshopId: z.string().uuid(),
+  attendeeId: z.string().uuid(),
+  action: z.enum(HUMAN_CALL_ACTIONS),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+});
+
+/** Log a human caller's action on an attendee (Registered / Voicemail / No
+ *  answer / Declined / Call later) with optional notes. "Registered" also marks
+ *  them registered (suppresses future calls), mirroring markRegistered. */
+export async function recordActivity(formData: FormData) {
+  const session = await requireContentManager();
+  const { clientId, workshopId, attendeeId, action, notes } = RecordActivitySchema.parse({
+    clientId: formData.get("clientId"),
+    workshopId: formData.get("workshopId"),
+    attendeeId: formData.get("attendeeId"),
+    action: formData.get("action"),
+    notes: formData.get("notes") ?? "",
+  });
+  if (!userCanAccessClient(session, clientId)) return { error: "Forbidden" };
+
+  const admin = createSupabaseAdminClient();
+  const { data: attendee } = await admin
+    .from("attendees")
+    .select("*")
+    .eq("id", attendeeId)
+    .eq("workshop_id", workshopId)
+    .maybeSingle<Attendee>();
+  if (!attendee) return { error: "Attendee not found" };
+
+  const actorName = session.appUser?.full_name?.trim() || session.email || "Team";
+  await recordCallActivity({
+    clientId,
+    attendeeId,
+    workshopId,
+    action,
+    notes: notes || null,
+    actorName,
+    actorUserId: session.authUserId,
+  });
+
+  // "Registered" also writes the suppression-list row so they drop off call lists.
+  if (action === "registered") {
+    const fullName =
+      [attendee.first_name, attendee.last_name].filter(Boolean).join(" ").trim() ||
+      attendee.email ||
+      null;
+    await admin.from("part2_registrations").upsert(
+      {
+        client_id: clientId,
+        attendee_id: attendeeId,
+        workshop_id: workshopId,
+        full_name: fullName,
+        email: attendee.email,
+        phone: attendee.phone,
+        agency: attendee.agency,
+        source: "manual",
+        marked_by: session.authUserId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "attendee_id" },
+    );
+  }
+
+  revalidatePath(`/admin/clients/${clientId}/workshops/${workshopId}/part2`);
+  return { ok: true };
+}
+
+const ActivitiesSchema = z.object({
+  clientId: z.string().uuid(),
+  attendeeId: z.string().uuid(),
+});
+
+/** Fetch an attendee's full activity history for the popup. */
+export async function getAttendeeActivities(formData: FormData) {
+  const session = await requireContentManager();
+  const { clientId, attendeeId } = ActivitiesSchema.parse({
+    clientId: formData.get("clientId"),
+    attendeeId: formData.get("attendeeId"),
+  });
+  if (!userCanAccessClient(session, clientId)) return { error: "Forbidden", activities: [] };
+  const activities = await listAttendeeActivities(attendeeId);
+  return { ok: true, activities };
 }
