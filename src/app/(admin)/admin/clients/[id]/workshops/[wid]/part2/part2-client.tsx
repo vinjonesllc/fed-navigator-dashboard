@@ -29,7 +29,7 @@ const CARD =
 // Statuses where a (re)call is still worth placing.
 const CALLABLE_STATUSES: CallTargetStatus[] = ["queued", "no_answer", "voicemail"];
 
-type Filter = "callable" | "registered" | "all";
+type Filter = "callable" | "link_not_booked" | "registered" | "all";
 
 export function Part2Client({
   clientId,
@@ -63,11 +63,19 @@ export function Part2Client({
     statusLabel: string;
   } | null>(null);
 
+  const linkSentNoBooking = (attendeeId: string) => {
+    const t = targetsByAttendee[attendeeId];
+    return !!t?.booked_event_time && t.status !== "booked";
+  };
+
   const shown = useMemo(() => {
     if (filter === "callable") return entries.filter((e) => e.callable);
     if (filter === "registered") return entries.filter((e) => e.registration);
+    if (filter === "link_not_booked")
+      return entries.filter((e) => linkSentNoBooking(e.attendee_id));
     return entries;
-  }, [entries, filter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, filter, targetsByAttendee]);
 
   // Callable people not yet on the call list — what "Add to call list" will add.
   const unqueuedCallable = useMemo(
@@ -127,6 +135,7 @@ export function Part2Client({
 
   const tabs: { key: Filter; label: string }[] = [
     { key: "callable", label: "Call list" },
+    { key: "link_not_booked", label: "Link sent, no booking" },
     { key: "registered", label: "Registered" },
     { key: "all", label: "All live attendees" },
   ];
@@ -310,6 +319,11 @@ export function Part2Client({
                     {e.text_opt_in && (
                       <span className="ml-2 align-middle font-mono text-[10px] text-lime">
                         opted-in
+                      </span>
+                    )}
+                    {target?.booked_event_time && target.status !== "booked" && (
+                      <span className="ml-2 align-middle" title="Link sent — not booked yet">
+                        🔗
                       </span>
                     )}
                   </td>
