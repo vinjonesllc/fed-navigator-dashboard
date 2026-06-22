@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { notifyPart2Booking } from "@/lib/clickup";
 import { recordCallActivity } from "@/lib/call-activity";
+import { removeContactFromAutomation, PART2_AUTOMATION_NAME } from "@/lib/activecampaign";
 import { verifyCalendlySignature } from "@/lib/webhook-verify";
 import type { Attendee, CallTarget } from "@/lib/supabase/types";
 
@@ -164,6 +165,18 @@ export async function POST(request: NextRequest) {
       });
     } catch (e) {
       console.error("[calendly webhook] activity log failed:", e instanceof Error ? e.message : e);
+    }
+  }
+
+  // They've booked — pull them out of the Part 2 post-event nurture automation.
+  if (email) {
+    try {
+      await removeContactFromAutomation(email, PART2_AUTOMATION_NAME);
+    } catch (e) {
+      console.error(
+        "[calendly webhook] AC automation removal failed:",
+        e instanceof Error ? e.message : e,
+      );
     }
   }
 

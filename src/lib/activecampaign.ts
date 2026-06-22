@@ -419,6 +419,41 @@ export async function enrollContactsInAutomation(
   return result;
 }
 
+/** The Part 2 post-event nurture automation. People are enrolled when added to a
+ *  call list and removed once they confirm a Part 2 booking. */
+export const PART2_AUTOMATION_NAME = "PART2 Post-Event Contacting";
+
+/**
+ * Remove an existing AC contact (by email) from a named automation — e.g. once
+ * they've booked Part 2 they shouldn't keep getting the post-event sequence.
+ * Best-effort and idempotent: no-ops if AC isn't configured, the automation or
+ * contact isn't found, or they're not in it.
+ */
+export async function removeContactFromAutomation(
+  email: string,
+  automationName: string,
+): Promise<{ configured: boolean; removed: boolean; reason?: string }> {
+  if (!isActiveCampaignConfigured()) return { configured: false, removed: false };
+  const automationId = await resolveAutomationId(automationName);
+  if (!automationId) return { configured: true, removed: false, reason: "automation not found" };
+  const contactId = await findContactIdByEmail(email);
+  if (!contactId) return { configured: true, removed: false, reason: "contact not in AC" };
+
+  const res = await acFetch(`/contacts/${contactId}/contactAutomations`);
+  if (!res.ok) throw new Error(`contactAutomations lookup failed (${res.status})`);
+  const body = (await res.json()) as { contactAutomations?: { id: string; automation: string }[] };
+  const rows = (body.contactAutomations ?? []).filter((ca) => ca.automation === automationId);
+  if (rows.length === 0) return { configured: true, removed: false, reason: "not in automation" };
+
+  for (const ca of rows) {
+    const del = await acFetch(`/contactAutomations/${ca.id}`, { method: "DELETE" });
+    if (!del.ok && del.status !== 404) {
+      throw new Error(`contactAutomation delete failed (${del.status})`);
+    }
+  }
+  return { configured: true, removed: true };
+}
+
 export type TagResult = {
   configured: boolean;
   requested: number;
