@@ -37,6 +37,8 @@ export function CallActivityDialog({
   workshopId,
   attendeeId,
   attendeeName,
+  attendancePct,
+  statusLabel,
   onRecorded,
 }: {
   open: boolean;
@@ -45,6 +47,8 @@ export function CallActivityDialog({
   workshopId: string;
   attendeeId: string | null;
   attendeeName: string;
+  attendancePct: number | null;
+  statusLabel: string;
   onRecorded: () => void;
 }) {
   const [pending, startTransition] = useTransition();
@@ -102,6 +106,18 @@ export function CallActivityDialog({
           <DialogTitle>{attendeeName}</DialogTitle>
           <DialogDescription>Record a call action, and see the full history below.</DialogDescription>
         </DialogHeader>
+
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-ink-3">
+          <span>
+            Attended:{" "}
+            <span className="text-ink-1">
+              {attendancePct == null ? "—" : `${attendancePct}%`}
+            </span>
+          </span>
+          <span>
+            Status: <span className="text-ink-1">{statusLabel}</span>
+          </span>
+        </div>
 
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-[160px_1fr] sm:items-start">

@@ -28,6 +28,8 @@ export type CallListEntry = {
   registration: Part2Registration | null;
   /** Eligible to be called: live + has phone + not already registered. */
   callable: boolean;
+  /** ISO timestamp of the most recent logged activity (AI or human), or null. */
+  last_activity_at: string | null;
 };
 
 export type CallListResult = {
@@ -88,6 +90,24 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
 
   const scheduled = workshop.scheduled_minutes ?? null;
 
+  // Latest activity timestamp per attendee (newest-first, chunked to keep URLs
+  // small). Covers AI + human entries.
+  const attendeeIds = attendees.map((a) => a.id);
+  const lastActivity = new Map<string, string>();
+  for (let i = 0; i < attendeeIds.length; i += 100) {
+    const chunk = attendeeIds.slice(i, i + 100);
+    if (chunk.length === 0) break;
+    const { data: acts } = await admin
+      .from("call_activities")
+      .select("attendee_id, created_at")
+      .in("attendee_id", chunk)
+      .order("created_at", { ascending: false });
+    for (const r of acts ?? []) {
+      const aid = r.attendee_id as string | null;
+      if (aid && !lastActivity.has(aid)) lastActivity.set(aid, r.created_at as string);
+    }
+  }
+
   const entries: CallListEntry[] = attendees.map((a) => {
     const registration = regByAttendee.get(a.id) ?? null;
     const e164 = a.phone_e164 ?? null;
@@ -109,6 +129,7 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
       text_opt_in: !!a.text_opt_in,
       registration,
       callable: !!e164 && !registration,
+      last_activity_at: lastActivity.get(a.id) ?? null,
     };
   });
 
