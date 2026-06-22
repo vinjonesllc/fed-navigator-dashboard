@@ -88,6 +88,18 @@ export function isFutureWorkshopDate(date: string | null | undefined): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso > todayIsoLocal();
 }
 
+/** True when `date` is missing, malformed, or already in the past (before today). */
+export function isExpiredWorkshopDate(date: string | null | undefined): boolean {
+  if (!date) return true;
+  const iso = date.slice(0, 10);
+  return !/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < todayIsoLocal();
+}
+
+/** Drop workshops whose date has passed (keeps today + future). */
+export function pruneExpiredWorkshops(entries: NextWorkshopEntry[]): NextWorkshopEntry[] {
+  return entries.filter((e) => !isExpiredWorkshopDate(e.date));
+}
+
 export type NextWorkshopCard = {
   /** Index into the client's stored `next_workshops` array (for the export href). */
   index: number;
@@ -139,8 +151,10 @@ export async function getNextWorkshops(
   client: Pick<Client, "next_workshops" | "eval_sheet_url">,
 ): Promise<NextWorkshopCard[]> {
   const entries = parseNextWorkshops(client.next_workshops)
-    // keep the original stored index so the export href is stable, then sort
+    // keep the original stored index so the export href is stable...
     .map((entry, index) => ({ entry, index }))
+    // ...drop past workshops, then sort soonest-first
+    .filter(({ entry }) => !isExpiredWorkshopDate(entry.date))
     .sort((a, b) => a.entry.date.localeCompare(b.entry.date));
 
   return Promise.all(

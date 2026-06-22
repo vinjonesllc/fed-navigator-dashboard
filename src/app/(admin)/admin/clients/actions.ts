@@ -6,7 +6,11 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireContentManager } from "@/lib/auth";
 import { slugify } from "@/lib/utils-slug";
 import { CLIENT_BRANDS } from "@/lib/supabase/types";
-import { parseNextWorkshops, soonestFutureWorkshop } from "@/lib/next-workshop";
+import {
+  parseNextWorkshops,
+  pruneExpiredWorkshops,
+  soonestFutureWorkshop,
+} from "@/lib/next-workshop";
 
 const ClientInput = z.object({
   name: z.string().min(2).max(120),
@@ -33,6 +37,8 @@ function nextWorkshopFields(parsed: ClientParsed) {
       entries = [];
     }
   }
+  // Past workshops are no longer needed — drop them on every save.
+  entries = pruneExpiredWorkshops(entries);
   const soonest = soonestFutureWorkshop(entries);
   return {
     next_workshops: entries,

@@ -23,10 +23,11 @@ import {
 } from "@/lib/supabase/types";
 
 const NONE = "__none";
-const HOURS = Array.from({ length: 24 }, (_, h) => ({
-  value: String(h),
-  label: `${h % 12 || 12}${h < 12 ? "am" : "pm"}`,
-}));
+// Workshop times are limited to 8am–6pm (hours 8 through 18 inclusive).
+const HOURS = Array.from({ length: 11 }, (_, i) => {
+  const h = i + 8;
+  return { value: String(h), label: `${h % 12 || 12}${h < 12 ? "am" : "pm"}` };
+});
 
 // A next-workshop row in local form state. `_key` is a stable React key only
 // (stripped before saving).
