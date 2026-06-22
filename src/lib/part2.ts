@@ -185,6 +185,7 @@ export type CampaignReport = {
   linksSent: number; // booking links delivered
   linkText: number; // …by text
   linkEmail: number; // …by email
+  linkSentNotBooked: number; // got a link but hasn't confirmed — warm follow-up
   booked: number; // confirmed a Part 2 time
   declined: number;
   voicemail: number;
@@ -221,6 +222,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     linksSent: 0,
     linkText: 0,
     linkEmail: 0,
+    linkSentNotBooked: 0,
     booked: 0,
     declined: 0,
     voicemail: 0,
@@ -242,6 +244,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     if (t.flagged_for_review) r.flaggedForReview += 1;
     if (s === "completed" || s === "booked" || s === "declined") r.fullConversation += 1;
     if (t.booked_event_time) r.linksSent += 1;
+    if (t.booked_event_time && s !== "booked") r.linkSentNotBooked += 1;
     if (t.link_channel === "text") r.linkText += 1;
     else if (t.link_channel === "email") r.linkEmail += 1;
   }

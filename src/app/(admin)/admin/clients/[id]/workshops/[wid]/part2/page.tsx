@@ -126,6 +126,11 @@ export default async function Part2BookingPage({
               value={report.linksSent}
               hint={`${report.linkText} text · ${report.linkEmail} email`}
             />
+            <ReportStat
+              label="Link sent · no booking"
+              value={report.linkSentNotBooked}
+              hint="warm follow-up"
+            />
             <ReportStat label="Booked" value={report.booked} emphasize />
             <ReportStat label="Handoff to team" value={report.handoff} />
             <ReportStat label="Declined" value={report.declined} />
