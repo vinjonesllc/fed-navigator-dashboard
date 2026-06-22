@@ -5,7 +5,8 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireContentManager } from "@/lib/auth";
 import { slugify } from "@/lib/utils-slug";
-import { CLIENT_BRANDS, NEXT_WORKSHOP_TIMEZONES } from "@/lib/supabase/types";
+import { CLIENT_BRANDS } from "@/lib/supabase/types";
+import { parseNextWorkshops, soonestFutureWorkshop } from "@/lib/next-workshop";
 
 const ClientInput = z.object({
   name: z.string().min(2).max(120),
@@ -14,27 +15,32 @@ const ClientInput = z.object({
   accent_color: z.string().optional(),
   eval_sheet_url: z.string().url().optional().or(z.literal("")),
   brand: z.enum(CLIENT_BRANDS).default("Fed Pilot"),
-  next_workshop_date: z.string().optional(),
-  next_workshop_hour: z.string().optional(),
-  next_workshop_tz: z.string().optional(),
-  next_workshop_registrant_tab: z.string().optional(),
-  next_workshop_reg_url: z.string().optional(),
+  // JSON array of { date, hour, tz, registrant_tab, reg_url } from the form.
+  next_workshops: z.string().optional(),
 });
 
 type ClientParsed = z.infer<typeof ClientInput>;
 
-// Normalize the optional "next workshop" form fields into DB-ready values:
-// blanks -> null, hour validated 0-23, timezone validated against the enum.
+// Normalize the "next workshops" form field into DB-ready values: the validated
+// jsonb array, plus a mirror of the SOONEST FUTURE entry into the singular
+// next_workshop_* columns (consumed by AC, the AI calls, the cron, and Part 2).
 function nextWorkshopFields(parsed: ClientParsed) {
-  const hourRaw = parsed.next_workshop_hour?.trim();
-  const hour = hourRaw ? Number(hourRaw) : null;
-  const tz = parsed.next_workshop_tz?.trim() || null;
+  let entries: ReturnType<typeof parseNextWorkshops> = [];
+  if (parsed.next_workshops) {
+    try {
+      entries = parseNextWorkshops(JSON.parse(parsed.next_workshops));
+    } catch {
+      entries = [];
+    }
+  }
+  const soonest = soonestFutureWorkshop(entries);
   return {
-    next_workshop_date: parsed.next_workshop_date?.trim() || null,
-    next_workshop_hour: hour !== null && Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : null,
-    next_workshop_tz: tz && (NEXT_WORKSHOP_TIMEZONES as readonly string[]).includes(tz) ? tz : null,
-    next_workshop_registrant_tab: parsed.next_workshop_registrant_tab?.trim() || null,
-    next_workshop_reg_url: parsed.next_workshop_reg_url?.trim() || null,
+    next_workshops: entries,
+    next_workshop_date: soonest?.date ?? null,
+    next_workshop_hour: soonest?.hour ?? null,
+    next_workshop_tz: soonest?.tz ?? null,
+    next_workshop_registrant_tab: soonest?.registrant_tab ?? null,
+    next_workshop_reg_url: soonest?.reg_url ?? null,
   };
 }
 
@@ -61,11 +67,7 @@ function readClientForm(formData: FormData) {
     accent_color: formData.get("accent_color") ?? "",
     eval_sheet_url: formData.get("eval_sheet_url") ?? "",
     brand: formData.get("brand") ?? undefined,
-    next_workshop_date: formData.get("next_workshop_date") ?? undefined,
-    next_workshop_hour: formData.get("next_workshop_hour") ?? undefined,
-    next_workshop_tz: formData.get("next_workshop_tz") ?? undefined,
-    next_workshop_registrant_tab: formData.get("next_workshop_registrant_tab") ?? undefined,
-    next_workshop_reg_url: formData.get("next_workshop_reg_url") ?? undefined,
+    next_workshops: formData.get("next_workshops") ?? undefined,
   });
 }
 

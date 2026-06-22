@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireUser, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { fetchTabCsvForExport } from "@/lib/google-sheets";
+import { parseNextWorkshops } from "@/lib/next-workshop";
 import type { Client } from "@/lib/supabase/types";
 
 // Downloads the full registration sheet (all columns + rows) for a client's
@@ -17,33 +18,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Which workshop in the client's next_workshops list (defaults to the first).
+  const w = Number(request.nextUrl.searchParams.get("w") ?? "0");
+  const index = Number.isInteger(w) && w >= 0 ? w : 0;
+
   const admin = createSupabaseAdminClient();
   const { data: client } = await admin
     .from("clients")
-    .select("name, eval_sheet_url, next_workshop_date, next_workshop_registrant_tab")
+    .select("name, eval_sheet_url, next_workshops")
     .eq("id", clientId)
-    .maybeSingle<
-      Pick<
-        Client,
-        "name" | "eval_sheet_url" | "next_workshop_date" | "next_workshop_registrant_tab"
-      >
-    >();
+    .maybeSingle<Pick<Client, "name" | "eval_sheet_url" | "next_workshops">>();
 
   if (!client) {
     return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
   // The tab comes from the saved client config, never from the query string.
-  if (!client.eval_sheet_url || !client.next_workshop_registrant_tab) {
+  const entry = parseNextWorkshops(client.next_workshops)[index];
+  if (!client.eval_sheet_url || !entry?.registrant_tab) {
     return NextResponse.json(
-      { error: "No registration sheet is configured for this client." },
+      { error: "No registration sheet is configured for this workshop." },
       { status: 404 },
     );
   }
 
-  const csv = await fetchTabCsvForExport(
-    client.eval_sheet_url,
-    client.next_workshop_registrant_tab,
-  );
+  const csv = await fetchTabCsvForExport(client.eval_sheet_url, entry.registrant_tab);
   if (csv === null) {
     return NextResponse.json(
       { error: "Could not read the registration sheet. Check that it's shared as link-viewable." },
@@ -52,7 +50,7 @@ export async function GET(request: NextRequest) {
   }
 
   const safeName = (client.name || "client").replace(/[^a-z0-9]+/gi, "_").slice(0, 40);
-  const dateTag = client.next_workshop_date ?? "upcoming";
+  const dateTag = entry.date ?? "upcoming";
   const filename = `registrations_${safeName}_${dateTag}.csv`;
 
   return new NextResponse(csv, {

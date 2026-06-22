@@ -30,6 +30,15 @@ export type ClientBrand = (typeof CLIENT_BRANDS)[number];
 export const NEXT_WORKSHOP_TIMEZONES = ["Eastern", "Central", "Mountain", "Pacific"] as const;
 export type NextWorkshopTz = (typeof NEXT_WORKSHOP_TIMEZONES)[number];
 
+/** One upcoming workshop in a client's `next_workshops` jsonb array. */
+export type NextWorkshopEntry = {
+  date: string; // YYYY-MM-DD
+  hour: number | null; // 0-23
+  tz: NextWorkshopTz | null;
+  registrant_tab: string | null;
+  reg_url: string | null;
+};
+
 export type Client = {
   id: string;
   slug: string;
@@ -39,6 +48,11 @@ export type Client = {
   accent_color: string | null;
   eval_sheet_url: string | null;
   brand: ClientBrand;
+  /** All upcoming workshops. Drives the multi-tile overview display. */
+  next_workshops: NextWorkshopEntry[];
+  // Singular mirror of the SOONEST FUTURE entry of next_workshops, refreshed on
+  // every client save. Consumed by the AI-call module, call cron, Part 2, the
+  // upload warnings, and the ActiveCampaign sync (each wants a single workshop).
   next_workshop_date: string | null;
   next_workshop_hour: number | null;
   next_workshop_tz: NextWorkshopTz | null;

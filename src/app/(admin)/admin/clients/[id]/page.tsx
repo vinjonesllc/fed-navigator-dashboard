@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Client } from "@/lib/supabase/types";
 import { getClientWorkshops } from "@/lib/queries";
 import { listSheetTabs } from "@/lib/google-sheets";
-import { getNextWorkshop } from "@/lib/next-workshop";
+import { getNextWorkshops } from "@/lib/next-workshop";
 import { ClientOverview } from "@/components/client-overview";
 import { EditClientForm } from "./edit-client-form";
 import { LogoUpload } from "./logo-upload";
@@ -32,9 +32,9 @@ export default async function ClientDetailPage({
   if (!client) notFound();
 
   const workshops = await getClientWorkshops(id);
-  const [sheetTabs, nextWorkshop] = await Promise.all([
+  const [sheetTabs, nextWorkshops] = await Promise.all([
     listSheetTabs(client.eval_sheet_url),
-    getNextWorkshop(client),
+    getNextWorkshops(client),
   ]);
   const manager = isContentManager(session.appUser?.role);
   const role = session.appUser?.role;
@@ -86,10 +86,10 @@ export default async function ClientDetailPage({
             workshops={workshops}
             workshopHref={(wid) => `/admin/clients/${id}/workshops/${wid}`}
             editHref={manager ? (wid) => `/admin/clients/${id}/workshops/${wid}/edit` : undefined}
-            nextWorkshop={nextWorkshop}
-            registrationsExportHref={
-              client.eval_sheet_url && client.next_workshop_registrant_tab
-                ? `/api/registrations/export?clientId=${id}`
+            nextWorkshops={nextWorkshops}
+            registrationsExportFor={
+              client.eval_sheet_url
+                ? (w) => `/api/registrations/export?clientId=${id}&w=${w}`
                 : undefined
             }
             accentColor={client.accent_color}

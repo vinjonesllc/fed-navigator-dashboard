@@ -5,7 +5,7 @@ import { formatWorkshopDate } from "@/lib/format-date";
 import { buildFunnel, buildRetention, engagementTotals, isLive } from "@/lib/workshop-stats";
 import { RetentionChart } from "@/components/charts/retention-chart";
 import { NextWorkshop } from "@/components/next-workshop-card";
-import { getNextWorkshop } from "@/lib/next-workshop";
+import { getNextWorkshops } from "@/lib/next-workshop";
 import type {
   Attendee,
   Client,
@@ -138,27 +138,15 @@ export default async function PublicWorkshopPage({
         .eq("dismissed", false),
       admin
         .from("clients")
-        .select(
-          "accent_color, eval_sheet_url, next_workshop_date, next_workshop_hour, next_workshop_tz, next_workshop_registrant_tab",
-        )
+        .select("accent_color, eval_sheet_url, next_workshops")
         .eq("id", workshop.client_id)
-        .maybeSingle<
-          Pick<
-            Client,
-            | "accent_color"
-            | "eval_sheet_url"
-            | "next_workshop_date"
-            | "next_workshop_hour"
-            | "next_workshop_tz"
-            | "next_workshop_registrant_tab"
-          >
-        >(),
+        .maybeSingle<Pick<Client, "accent_color" | "eval_sheet_url" | "next_workshops">>(),
     ]);
 
   const rows = (attendees ?? []) as Attendee[];
   const liveRows = rows.filter(isLive);
   const evals = (evalComments ?? []) as WorkshopEvalComment[];
-  const nextWorkshop = client ? await getNextWorkshop(client) : null;
+  const nextWorkshops = client ? await getNextWorkshops(client) : [];
 
   const funnel = buildFunnel(rows);
   const totals = engagementTotals(liveRows, qaCount ?? 0);
@@ -296,7 +284,7 @@ export default async function PublicWorkshopPage({
       </div>
 
       {/* Next workshop */}
-      <NextWorkshop data={nextWorkshop} accent={client?.accent_color ?? null} />
+      <NextWorkshop items={nextWorkshops} accent={client?.accent_color ?? null} />
 
       {/* Footer CTA */}
       <div className="flex items-center justify-center gap-4 border-t border-line-2 pt-8">

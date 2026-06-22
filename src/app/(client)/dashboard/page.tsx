@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getClientWorkshops } from "@/lib/queries";
-import { getNextWorkshop } from "@/lib/next-workshop";
+import { getNextWorkshops } from "@/lib/next-workshop";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ClientOverview } from "@/components/client-overview";
 
@@ -13,15 +13,13 @@ export default async function OverviewPage() {
   const admin = createSupabaseAdminClient();
   const { data: client } = await admin
     .from("clients")
-    .select(
-      "accent_color, eval_sheet_url, next_workshop_date, next_workshop_hour, next_workshop_tz, next_workshop_registrant_tab",
-    )
+    .select("accent_color, eval_sheet_url, next_workshops")
     .eq("id", clientId)
     .maybeSingle();
 
-  const [workshops, nextWorkshop] = await Promise.all([
+  const [workshops, nextWorkshops] = await Promise.all([
     getClientWorkshops(clientId),
-    client ? getNextWorkshop(client) : Promise.resolve(null),
+    client ? getNextWorkshops(client) : Promise.resolve([]),
   ]);
 
   return (
@@ -33,10 +31,10 @@ export default async function OverviewPage() {
       <ClientOverview
         workshops={workshops}
         workshopHref={(id) => `/dashboard/workshops/${id}`}
-        nextWorkshop={nextWorkshop}
-        registrationsExportHref={
-          client?.eval_sheet_url && client?.next_workshop_registrant_tab
-            ? `/api/registrations/export?clientId=${clientId}`
+        nextWorkshops={nextWorkshops}
+        registrationsExportFor={
+          client?.eval_sheet_url
+            ? (w) => `/api/registrations/export?clientId=${clientId}&w=${w}`
             : undefined
         }
         accentColor={client?.accent_color ?? null}

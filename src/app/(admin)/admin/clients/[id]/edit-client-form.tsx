@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   NEXT_WORKSHOP_TIMEZONES,
   type Client,
   type ClientBrand,
+  type NextWorkshopEntry,
 } from "@/lib/supabase/types";
 
 const NONE = "__none";
@@ -26,6 +27,21 @@ const HOURS = Array.from({ length: 24 }, (_, h) => ({
   value: String(h),
   label: `${h % 12 || 12}${h < 12 ? "am" : "pm"}`,
 }));
+
+// A next-workshop row in local form state. `_key` is a stable React key only
+// (stripped before saving).
+type Row = NextWorkshopEntry & { _key: number };
+
+function toRow(e: Partial<NextWorkshopEntry>, key: number): Row {
+  return {
+    _key: key,
+    date: e.date ?? "",
+    hour: e.hour ?? null,
+    tz: e.tz ?? null,
+    registrant_tab: e.registrant_tab ?? null,
+    reg_url: e.reg_url ?? null,
+  };
+}
 
 export function EditClientForm({
   client,
@@ -36,23 +52,35 @@ export function EditClientForm({
 }) {
   const [pending, startTransition] = useTransition();
   const [brand, setBrand] = useState<ClientBrand>(client.brand ?? "Fed Pilot");
-  const [nextDate, setNextDate] = useState<string>(client.next_workshop_date ?? "");
-  const [nextHour, setNextHour] = useState<string>(
-    client.next_workshop_hour !== null && client.next_workshop_hour !== undefined
-      ? String(client.next_workshop_hour)
-      : NONE,
-  );
-  const [nextTz, setNextTz] = useState<string>(client.next_workshop_tz ?? NONE);
-  const [nextTab, setNextTab] = useState<string>(
-    client.next_workshop_registrant_tab ?? NONE,
-  );
-  const [nextRegUrl, setNextRegUrl] = useState<string>(client.next_workshop_reg_url ?? "");
 
-  // Always offer the currently-saved tab even if tab listing is unavailable.
+  // Initial rows keyed by position; the ref hands out fresh keys for added rows.
+  const initial = client.next_workshops ?? [];
+  const keyRef = useRef(initial.length);
+  const [rows, setRows] = useState<Row[]>(() => initial.map((e, i) => toRow(e, i)));
+
+  const updateRow = (key: number, patch: Partial<NextWorkshopEntry>) =>
+    setRows((rs) => rs.map((r) => (r._key === key ? { ...r, ...patch } : r)));
+  const addRow = () => setRows((rs) => [...rs, toRow({}, keyRef.current++)]);
+  const removeRow = (key: number) => setRows((rs) => rs.filter((r) => r._key !== key));
+
+  // Only rows with a date are saved; strip the local-only _key.
+  const serialized = JSON.stringify(
+    rows
+      .filter((r) => r.date)
+      .map((r) => ({
+        date: r.date,
+        hour: r.hour,
+        tz: r.tz,
+        registrant_tab: r.registrant_tab,
+        reg_url: r.reg_url,
+      })),
+  );
+
+  // Always offer any currently-saved tabs even if live tab listing is unavailable.
   const tabOptions = Array.from(
     new Set([
       ...sheetTabs,
-      ...(client.next_workshop_registrant_tab ? [client.next_workshop_registrant_tab] : []),
+      ...rows.map((r) => r.registrant_tab).filter((t): t is string => !!t),
     ]),
   );
 
@@ -135,120 +163,144 @@ export function EditClientForm({
           pull top attendee comments dated to the workshop and feature them on the report.
         </p>
       </div>
+
       <div className="space-y-4 rounded-lg border border-line-1 bg-muted/30 p-4">
-        <div>
-          <p className="text-sm font-medium">Next workshop</p>
-          <p className="text-xs text-muted-foreground">
-            Shown on the advisor&apos;s overview. Leave the date blank to hide it.
-          </p>
-        </div>
-
-        <input type="hidden" name="next_workshop_date" value={nextDate} />
-        <input
-          type="hidden"
-          name="next_workshop_hour"
-          value={nextHour === NONE ? "" : nextHour}
-        />
-        <input
-          type="hidden"
-          name="next_workshop_tz"
-          value={nextTz === NONE ? "" : nextTz}
-        />
-        <input
-          type="hidden"
-          name="next_workshop_registrant_tab"
-          value={nextTab === NONE ? "" : nextTab}
-        />
-
-        <div className="space-y-2">
-          <Label>Date</Label>
-          <DatePicker
-            value={nextDate}
-            onChange={setNextDate}
-            onClear={() => setNextDate("")}
-            placeholder="No next workshop date"
-          />
-          {nextDate && (
-            <button
-              type="button"
-              onClick={() => setNextDate("")}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-            >
-              Clear date
-            </button>
-          )}
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Time</Label>
-            <Select value={nextHour} onValueChange={setNextHour}>
-              <SelectTrigger>
-                <SelectValue placeholder="Hour" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>—</SelectItem>
-                {HOURS.map((h) => (
-                  <SelectItem key={h.value} value={h.value}>
-                    {h.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Next workshops</p>
+            <p className="text-xs text-muted-foreground">
+              Shown on the advisor&apos;s overview, one tile each. The soonest future one
+              also feeds ActiveCampaign and the AI calls.
+            </p>
           </div>
-          <div className="space-y-2">
-            <Label>Time zone</Label>
-            <Select value={nextTz} onValueChange={setNextTz}>
-              <SelectTrigger>
-                <SelectValue placeholder="Time zone" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>—</SelectItem>
-                {NEXT_WORKSHOP_TIMEZONES.map((tz) => (
-                  <SelectItem key={tz} value={tz}>
-                    {tz}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Button type="button" variant="outline" size="sm" onClick={addRow}>
+            + Add workshop
+          </Button>
+        </div>
+
+        <input type="hidden" name="next_workshops" value={serialized} />
+
+        {rows.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            No upcoming workshops. Click “Add workshop” to schedule one.
+          </p>
+        )}
+
+        {rows.map((row, i) => (
+          <div
+            key={row._key}
+            className="space-y-3 rounded-md border border-line-1 bg-surface p-3"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">
+                Workshop {i + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeRow(row._key)}
+                className="text-xs text-muted-foreground underline-offset-2 hover:text-destructive hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+
+            {/* Row 1: date · time · time zone */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date</Label>
+                <DatePicker
+                  value={row.date}
+                  onChange={(d) => updateRow(row._key, { date: d })}
+                  onClear={() => updateRow(row._key, { date: "" })}
+                  placeholder="Pick a date"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Time</Label>
+                <Select
+                  value={row.hour !== null ? String(row.hour) : NONE}
+                  onValueChange={(v) =>
+                    updateRow(row._key, { hour: v === NONE ? null : Number(v) })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Hour" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>—</SelectItem>
+                    {HOURS.map((h) => (
+                      <SelectItem key={h.value} value={h.value}>
+                        {h.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Time zone</Label>
+                <Select
+                  value={row.tz ?? NONE}
+                  onValueChange={(v) =>
+                    updateRow(row._key, {
+                      tz: v === NONE ? null : (v as NextWorkshopEntry["tz"]),
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Time zone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>—</SelectItem>
+                    {NEXT_WORKSHOP_TIMEZONES.map((tz) => (
+                      <SelectItem key={tz} value={tz}>
+                        {tz}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Row 2: registrations tab · registration page URL */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Registrations tab</Label>
+                <Select
+                  value={row.registrant_tab ?? NONE}
+                  onValueChange={(v) =>
+                    updateRow(row._key, { registrant_tab: v === NONE ? null : v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a tab" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>—</SelectItem>
+                    {tabOptions.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Registration page URL</Label>
+                <Input
+                  value={row.reg_url ?? ""}
+                  onChange={(e) => updateRow(row._key, { reg_url: e.target.value })}
+                  placeholder="https://…"
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
 
-        <div className="space-y-2">
-          <Label>Registrants tab</Label>
-          <Select value={nextTab} onValueChange={setNextTab}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pick a tab" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE}>—</SelectItem>
-              {tabOptions.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            {sheetTabs.length > 0
-              ? "Tabs from this advisor's evaluations sheet. We count its data rows as the current registrant total."
-              : "Add an evaluations sheet URL above (and a GOOGLE_API_KEY) to list tabs. The registrant count reads from the selected tab."}
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Registration page URL</Label>
-          <Input
-            name="next_workshop_reg_url"
-            value={nextRegUrl}
-            onChange={(e) => setNextRegUrl(e.target.value)}
-            placeholder="https://…"
-          />
-          <p className="text-xs text-muted-foreground">
-            The advisor&apos;s next-workshop registration page. Synced to ActiveCampaign as
-            &ldquo;Advisor Reg Page URL&rdquo; (%ADVISOR_REG_PAGE_URL%) when attendees are uploaded.
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          {sheetTabs.length > 0
+            ? "Tabs come from this advisor's evaluations sheet; we count a tab's data rows as its registrant total. The registration page URL syncs to ActiveCampaign (%ADVISOR_REG_PAGE_URL%)."
+            : "Add an evaluations sheet URL above (and a GOOGLE_API_KEY) to list tabs. The registrant count still reads from a selected tab."}
+        </p>
       </div>
 
       <Button type="submit" disabled={pending}>

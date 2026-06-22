@@ -114,15 +114,15 @@ export function ClientOverview({
   workshops,
   workshopHref,
   editHref,
-  nextWorkshop,
-  registrationsExportHref,
+  nextWorkshops,
+  registrationsExportFor,
   accentColor,
 }: {
   workshops: WorkshopWithStats[];
   workshopHref: (id: string) => string;
   editHref?: (id: string) => string;
-  nextWorkshop?: NextWorkshopCard | null;
-  registrationsExportHref?: string;
+  nextWorkshops?: NextWorkshopCard[];
+  registrationsExportFor?: (index: number) => string;
   accentColor?: string | null;
 }) {
   const accent = accentColor?.trim() || null;
@@ -147,9 +147,9 @@ export function ClientOverview({
   return (
     <div className="space-y-6">
       <NextWorkshop
-        data={nextWorkshop ?? null}
+        items={nextWorkshops ?? []}
         accent={accent}
-        exportHref={registrationsExportHref}
+        exportHrefFor={registrationsExportFor}
       />
 
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
