@@ -298,6 +298,44 @@ export type CallTarget = {
   updated_at: string;
 };
 
+// Per-person call activity log (AI + human callers).
+export type CallActivity = {
+  id: string;
+  client_id: string;
+  attendee_id: string | null;
+  campaign_id: string | null;
+  workshop_id: string | null;
+  action: string;
+  notes: string | null;
+  actor_user_id: string | null;
+  actor_name: string;
+  created_at: string;
+};
+
+// Actions a human caller can record from the Part 2 page.
+export const HUMAN_CALL_ACTIONS = [
+  "registered",
+  "voicemail",
+  "no_answer",
+  "declined",
+  "call_later",
+] as const;
+export type HumanCallAction = (typeof HUMAN_CALL_ACTIONS)[number];
+
+export const CALL_ACTIVITY_LABELS: Record<string, string> = {
+  registered: "Registered",
+  voicemail: "Voicemail left",
+  no_answer: "No answer",
+  declined: "Declined",
+  call_later: "Call later",
+  completed: "Call completed",
+  callback: "Callback requested",
+  handoff: "Handoff to team",
+  booking_link_sent: "Booking link sent",
+  booked: "Booked",
+  other: "Other",
+};
+
 export type IntentType = "retiring_soon" | "cliff_notes_request";
 
 export type WorkshopIntent = {

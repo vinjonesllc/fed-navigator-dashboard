@@ -4,6 +4,7 @@ import { getAvailableSlots, prefilledBookingUrl } from "@/lib/calendly";
 import { sendSms } from "@/lib/sms";
 import { sendEmail } from "@/lib/email";
 import { notifyPart2Handoff, notifyPart2Review } from "@/lib/clickup";
+import { recordCallActivity } from "@/lib/call-activity";
 import { toE164 } from "@/lib/phone";
 import {
   TOOL_CHECK_AVAILABILITY,
@@ -168,6 +169,7 @@ async function handleToolCall(
   targetId: string | undefined,
   tz: string,
   nextWorkshopRegUrl: string | undefined,
+  clientId: string | undefined,
 ): Promise<string> {
   const admin = createSupabaseAdminClient();
 
@@ -302,6 +304,7 @@ async function handleToolCall(
     const notes = args.notes ? String(args.notes) : null;
     const flagReview = args.flag_for_review === true || String(args.flag_for_review) === "true";
     if (targetId) {
+      const t = await loadTarget(targetId);
       await admin
         .from("call_targets")
         .update({
@@ -311,8 +314,21 @@ async function handleToolCall(
           updated_at: new Date().toISOString(),
         })
         .eq("id", targetId);
+      if (clientId && t?.attendee_id) {
+        try {
+          await recordCallActivity({
+            clientId,
+            attendeeId: t.attendee_id,
+            campaignId: t.campaign_id,
+            action: status,
+            notes,
+            actorName: "AI",
+          });
+        } catch (e) {
+          console.error("[log_outcome] activity log failed:", e);
+        }
+      }
       if (isHandoff || flagReview) {
-        const t = await loadTarget(targetId);
         const phone = toE164(t?.phone) ?? t?.phone ?? null;
         if (isHandoff) {
           try {
@@ -395,6 +411,7 @@ export async function POST(request: NextRequest) {
             targetId,
             tz,
             nextWorkshopRegUrl,
+            clientId,
           );
           return { toolCallId: id, result };
         } catch (e) {
