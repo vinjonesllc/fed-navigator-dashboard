@@ -112,6 +112,7 @@ export type Attendee = {
   phone: string | null;
   phone_e164: string | null;
   phone_extension: string | null;
+  do_not_call: boolean;
   authentication_status: string | null;
   engagement_score: number | null;
   participation: string | null;
@@ -260,7 +261,8 @@ export type CallTargetStatus =
   | "declined"
   | "failed"
   | "skipped"
-  | "handoff";
+  | "handoff"
+  | "do_not_call";
 
 export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
   queued: "Queued",
@@ -273,6 +275,7 @@ export const CALL_TARGET_STATUS_LABELS: Record<CallTargetStatus, string> = {
   failed: "Failed",
   skipped: "Skipped",
   handoff: "Handoff to team",
+  do_not_call: "Do not call",
 };
 
 export type CallTarget = {
@@ -321,6 +324,7 @@ export const HUMAN_CALL_ACTIONS = [
   "no_answer",
   "declined",
   "call_later",
+  "do_not_call",
 ] as const;
 export type HumanCallAction = (typeof HUMAN_CALL_ACTIONS)[number];
 
@@ -330,6 +334,7 @@ export const CALL_ACTIVITY_LABELS: Record<string, string> = {
   no_answer: "No answer",
   declined: "Declined",
   call_later: "Call later",
+  do_not_call: "Do not call",
   completed: "Call completed",
   callback: "Callback requested",
   handoff: "Handoff to team",

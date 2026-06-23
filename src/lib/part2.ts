@@ -26,8 +26,10 @@ export type CallListEntry = {
   text_opt_in: boolean;
   /** The matching registration row, if this person has already signed up. */
   registration: Part2Registration | null;
-  /** Eligible to be called: live + has phone + not already registered. */
+  /** Eligible to be called: live + has phone + not registered + not do-not-call. */
   callable: boolean;
+  /** Flagged "do not call" by a human — kept off the call list permanently. */
+  do_not_call: boolean;
   /** ISO timestamp of the most recent logged activity (AI or human), or null. */
   last_activity_at: string | null;
 };
@@ -128,7 +130,8 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
           : null,
       text_opt_in: !!a.text_opt_in,
       registration,
-      callable: !!e164 && !registration,
+      callable: !!e164 && !registration && !a.do_not_call,
+      do_not_call: !!a.do_not_call,
       last_activity_at: lastActivity.get(a.id) ?? null,
     };
   });
