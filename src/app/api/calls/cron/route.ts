@@ -1,9 +1,35 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { timingSafeEqualStr } from "@/lib/webhook-verify";
 import { placeCallForTarget } from "@/lib/place-call";
 import { canDialNow } from "@/lib/call-scheduling";
+import { removeContactFromAutomation, PART2_AUTOMATION_NAME } from "@/lib/activecampaign";
 import type { CallTarget } from "@/lib/supabase/types";
+
+// Reconcile booked contacts out of the PART2 automation. The Calendly webhook
+// removes them on booking; if AC was down then (ac_removed stayed false), this
+// retries — circling back once AC recovers. Near-zero work normally (no backlog).
+// Runs in after() so it never blocks or times out the dial dispatch. Small batch.
+async function reconcileAcRemovals() {
+  const admin = createSupabaseAdminClient();
+  const { data: pending } = await admin
+    .from("part2_registrations")
+    .select("id, email")
+    .eq("ac_removed", false)
+    .not("email", "is", null)
+    .limit(15);
+  for (const r of pending ?? []) {
+    const email = r.email as string | null;
+    if (!email) continue;
+    try {
+      await removeContactFromAutomation(email, PART2_AUTOMATION_NAME);
+      await admin.from("part2_registrations").update({ ac_removed: true }).eq("id", r.id);
+    } catch (e) {
+      console.error("[cron reconcile] AC removal failed for", email, e instanceof Error ? e.message : e);
+    }
+  }
+}
 
 // Scheduler entrypoint — pinged on a cadence by Supabase pg_cron (via pg_net).
 // Dials targets that are due (next_attempt_at <= now) in running campaigns,
@@ -17,6 +43,10 @@ export async function POST(request: NextRequest) {
   if (!secret || !got || !timingSafeEqualStr(got, secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Circle back on any AC automation removals that didn't go through at booking
+  // time (runs in the background; no-op when there's no backlog).
+  after(() => reconcileAcRemovals());
 
   const admin = createSupabaseAdminClient();
   const nowIso = new Date().toISOString();

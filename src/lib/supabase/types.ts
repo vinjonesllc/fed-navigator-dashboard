@@ -244,6 +244,8 @@ export type Part2Registration = {
   event_ref: string | null;
   marked_by: string | null;
   notes: string | null;
+  /** Removed from the PART2 Post-Event Contacting AC automation (true once done). */
+  ac_removed: boolean;
   created_at: string;
   updated_at: string;
 };

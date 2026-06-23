@@ -169,9 +169,14 @@ export async function POST(request: NextRequest) {
   }
 
   // They've booked — pull them out of the Part 2 post-event nurture automation.
+  // On success, flag the registration so the cron reconciler doesn't retry; if it
+  // throws (e.g. AC is down), leave it false and the reconciler circles back.
   if (email) {
     try {
       await removeContactFromAutomation(email, PART2_AUTOMATION_NAME);
+      if (registrationId) {
+        await admin.from("part2_registrations").update({ ac_removed: true }).eq("id", registrationId);
+      }
     } catch (e) {
       console.error(
         "[calendly webhook] AC automation removal failed:",
