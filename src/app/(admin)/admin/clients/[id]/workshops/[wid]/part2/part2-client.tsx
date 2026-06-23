@@ -297,11 +297,13 @@ export function Part2Client({
               const isBusy = busyId === e.attendee_id && pending;
               const target = targetsByAttendee[e.attendee_id];
               const targetBusy = target ? busyId === target.id && pending : false;
-              const statusLabel = e.registration
-                ? `Registered — ${REGISTRATION_SOURCE_LABELS[e.registration.source]}`
-                : e.callable
-                  ? "Callable"
-                  : "Not callable";
+              const statusLabel = e.do_not_call
+                ? "Do not call"
+                : e.registration
+                  ? `Registered — ${REGISTRATION_SOURCE_LABELS[e.registration.source]}`
+                  : e.callable
+                    ? "Callable"
+                    : "Not callable";
               const openActivity = () =>
                 setActivityFor({
                   id: e.attendee_id,
@@ -326,6 +328,11 @@ export function Part2Client({
                     {target?.booked_event_time && target.status !== "booked" && (
                       <span className="ml-2 align-middle" title="Link sent — not booked yet">
                         🔗
+                      </span>
+                    )}
+                    {e.do_not_call && (
+                      <span className="ml-2 align-middle" title="Do not call">
+                        🚫
                       </span>
                     )}
                   </td>

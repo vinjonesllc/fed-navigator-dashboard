@@ -385,6 +385,16 @@ export async function recordActivity(formData: FormData) {
     );
   }
 
+  // "Do not call" flags the attendee (off the call list + never re-added) and
+  // stops any existing call target from being dialed.
+  if (action === "do_not_call") {
+    await admin.from("attendees").update({ do_not_call: true }).eq("id", attendeeId);
+    await admin
+      .from("call_targets")
+      .update({ status: "do_not_call", updated_at: new Date().toISOString() })
+      .eq("attendee_id", attendeeId);
+  }
+
   revalidatePath(`/admin/clients/${clientId}/workshops/${workshopId}/part2`);
   return { ok: true };
 }
