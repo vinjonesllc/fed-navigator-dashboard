@@ -27,26 +27,43 @@ export function ResetPasswordForm() {
   const [confirm, setConfirm] = useState("");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  // The reset email lands here with tokens in either the query (?code=) or
-  // the hash (#access_token=). Establish a session, then let the user set a new password.
+  // The reset email can deliver the credential in several shapes depending on
+  // the Supabase flow / email template. Handle all of them, preferring the
+  // token-hash path because it's device-independent (no PKCE code_verifier
+  // needed) and survives corporate email link-scanners that pre-fetch the URL:
+  //   1. ?token_hash=…&type=recovery  (or in the #hash)  -> verifyOtp
+  //   2. ?code=…                       (PKCE)            -> exchangeCodeForSession
+  //   3. #access_token=…&refresh_token=…  (implicit)     -> setSession
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     const url = new URL(window.location.href);
+    const hash = parseHash(window.location.hash);
+
+    const tokenHash =
+      url.searchParams.get("token_hash") ??
+      url.searchParams.get("token") ??
+      hash.token_hash ??
+      hash.token ??
+      null;
+    const type = url.searchParams.get("type") ?? hash.type ?? "recovery";
     const code = url.searchParams.get("code");
 
     async function establish() {
       try {
-        if (code) {
+        if (tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: type as "recovery",
+          });
+          if (error) throw error;
+        } else if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
-        } else if (window.location.hash.includes("access_token")) {
-          const tokens = parseHash(window.location.hash);
-          if (!tokens.access_token || !tokens.refresh_token) {
-            throw new Error("Reset link is missing tokens");
-          }
+        } else if (hash.access_token) {
+          if (!hash.refresh_token) throw new Error("Reset link is missing tokens");
           const { error } = await supabase.auth.setSession({
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
+            access_token: hash.access_token,
+            refresh_token: hash.refresh_token,
           });
           if (error) throw error;
         } else {
