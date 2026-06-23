@@ -283,9 +283,6 @@ export function UploadForm({
       <div className="space-y-2">
         <Label htmlFor="topic">Topic</Label>
         <Input id="topic" name="topic" placeholder="TSP, FERS, etc." />
-        <p className="text-xs text-muted-foreground">
-          Duration is detected automatically from the attendee data — no need to enter it.
-        </p>
       </div>
 
       <div className="space-y-2">
