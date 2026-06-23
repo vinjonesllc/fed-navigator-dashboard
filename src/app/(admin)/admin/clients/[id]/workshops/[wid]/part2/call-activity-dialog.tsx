@@ -37,6 +37,7 @@ export function CallActivityDialog({
   workshopId,
   attendeeId,
   attendeeName,
+  attendeeEmail,
   attendancePct,
   statusLabel,
   onRecorded,
@@ -47,6 +48,7 @@ export function CallActivityDialog({
   workshopId: string;
   attendeeId: string | null;
   attendeeName: string;
+  attendeeEmail: string | null;
   attendancePct: number | null;
   statusLabel: string;
   onRecorded: () => void;
@@ -108,6 +110,9 @@ export function CallActivityDialog({
         </DialogHeader>
 
         <div className="flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-ink-3">
+          <span>
+            Email: <span className="text-ink-1">{attendeeEmail || "—"}</span>
+          </span>
           <span>
             Attended:{" "}
             <span className="text-ink-1">

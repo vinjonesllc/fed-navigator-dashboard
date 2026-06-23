@@ -59,6 +59,7 @@ export function Part2Client({
   const [activityFor, setActivityFor] = useState<{
     id: string;
     name: string;
+    email: string | null;
     attendancePct: number | null;
     statusLabel: string;
   } | null>(null);
@@ -305,6 +306,7 @@ export function Part2Client({
                 setActivityFor({
                   id: e.attendee_id,
                   name: e.full_name,
+                  email: e.email,
                   attendancePct: e.attendance_pct,
                   statusLabel,
                 });
@@ -442,6 +444,7 @@ export function Part2Client({
           workshopId={workshopId}
           attendeeId={activityFor.id}
           attendeeName={activityFor.name}
+          attendeeEmail={activityFor.email}
           attendancePct={activityFor.attendancePct}
           statusLabel={activityFor.statusLabel}
           onRecorded={() => router.refresh()}
