@@ -225,6 +225,7 @@ export function parseZoomCsv(csv: string, scheduledMinutes: number): ParseResult
   }
 
   const rows: ParsedAttendee[] = [];
+  let droppedPhantom = 0;
 
   for (const raw of result.data) {
     const out: Partial<ParsedAttendee> = {
@@ -271,8 +272,22 @@ export function parseZoomCsv(csv: string, scheduledMinutes: number): ParseResult
     out.custom_responses = custom;
 
     const full = out as ParsedAttendee;
+
+    // Guard against merged registrant rows: a "Live" row with no join time AND
+    // zero time in session isn't a real live attendance — it's a duplicate
+    // registration record (e.g. the 2026-06-23 file had one such phantom twin
+    // per attendee, doubling the count). Drop it so it can't inflate stats.
+    if (full.participation === "Live" && !full.first_join_time && (full.total_time_minutes ?? 0) === 0) {
+      droppedPhantom++;
+      continue;
+    }
+
     full.attendance_bucket = bucket(full, scheduledMinutes);
     rows.push(full);
+  }
+
+  if (droppedPhantom > 0) {
+    console.warn(`[parse-zoom] dropped ${droppedPhantom} phantom "Live" rows (no join time, 0 minutes)`);
   }
 
   return {
