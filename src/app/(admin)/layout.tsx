@@ -14,6 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     nav.push({ href: "/admin/upload", label: "Upload" });
     nav.push({ href: "/admin/agency-lookup", label: "Agencies" });
   }
+  nav.push({ href: "/admin/guide", label: "Guide" });
 
   return (
     <div className="flex min-h-screen flex-col">
