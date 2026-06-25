@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "guide": "node scripts/gen-advisor-guide-content.js && python3 scripts/build-advisor-pdf.py && python3 scripts/build-advisor-cheatsheet.py && cp docs/advisor-guide.pdf docs/advisor-cheatsheet.pdf public/"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",

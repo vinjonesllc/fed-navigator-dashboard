@@ -43,8 +43,8 @@ def inline(t: str) -> str:
     t = clean(t)
     t = t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     t = re.sub(r"`([^`]+)`", r'<font face="Courier">\1</font>', t)
-    t = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", t)
-    t = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<i>\1</i>", t)
+    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)  # bold first (may contain *italic*)
+    t = re.sub(r"\*(.+?)\*", r"<i>\1</i>", t)
     return t
 
 # ---- styles -----------------------------------------------------------------
