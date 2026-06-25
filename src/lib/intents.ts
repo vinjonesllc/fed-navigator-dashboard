@@ -113,19 +113,24 @@ Identify ATTENDEES who indicate — explicitly OR plausibly — that they are re
 Scan the ENTIRE transcript — beginning, middle, and end — for any attendee statement of retiring within the year (e.g. "looking to retire next June", "I plan to retire this fall", "my last day is in August", "hoping to go end of this year"). Do NOT restrict yourself to one section.
 
 SPECIAL FOCUS — the ~30-minute mark: after attendees type their AGENCY (e.g. "VA", "IRS", "EPA", "NPS"), the presenter asks "Who is going to retire in the next 6 months / next year?" The terse messages right after are answers to THAT question — capture them even when they're just:
-- Affirmatives: "yes", "me", "meeeee", "yepper", "absolutely", "that's me", "👍"
+- Affirmatives: "yes", "me", "meeeee", "yepper", "absolutely", "that's me", "amen", "sign me up", "count me in", "🙋", "👍"
+- **Emphatic punctuation / reactions, but ONLY inside this agency-question cluster** (they're reacting to the spoken question): a lone "???", "!!!", "🙌". Do NOT treat stray punctuation elsewhere in the transcript as an answer.
 - **TENTATIVE (INCLUDE these)**: "possibly", "maybe", "probably", "hopefully", "looking to", "planning to", "I think so"
+- **Eligibility signals (INCLUDE as "Possibly")**: "I reach my MRA in <month>", "hit my MRA", "eligible in <month>", "MRA in Aug" — eligibility isn't a firm decision, so mark it Possibly with the month.
+- A **bare date or month with no affirmative word** ("8/28/26", "December", "next April") posted in this cluster IS an answer — capture it even though they didn't also type "me".
 - Durations / dates: "8 weeks", "a few months", "end of this year", "December", "May 30", "12/31"
 
 Patterns to catch ANYWHERE in the transcript:
-- **Explicit date** on/before ${cutoff12}: "May 30", "June 1", "8/31/2026", "Dec 2026", "next June"
+- **Explicit date** on/before ${cutoff12}: "May 30", "June 1", "8/31/2026", "8/28/26", "4/2/2027", "Dec 2026", "next June" (a bare date alone counts — no affirmative word required)
 - **Ambiguous date that could fall within 12 months** ("next June", "this fall", "later this year", "end of the year") — INCLUDE as "Possibly …"
 - **Countdown / short horizon**: "8 weeks", "33-day countdown", "retiring in a few weeks/months", "next month"
+- **Eligibility / MRA**: "reach/hit my MRA in <month>", "eligible <month>" — INCLUDE as "Possibly …"
 - **Retirement application activity**: "submitting my retirement application", "my last day is …"
 - **Yes / tentative answer** to the retire-soon question
 
 EXCLUDE:
 - **The generic "what's the best CALENDAR DAY to retire on?" discussion.** Earlier in the workshop the presenter asks what day of the month is best to retire on; attendees answer with general advice like "end of the month", "last day of the month", "Dec 31st", "today", "now", "January 31st". These are NOT statements that the speaker themselves is retiring then — EXCLUDE them, UNLESS that same person also gives a personal near-term retirement signal elsewhere.
+- **Negative / disappointed reactions that are NOT affirmatives**: ":-(", "😞", "😢", "nope", "not me", "wish I could", "not yet", "too long" — these usually mean the person is NOT retiring soon. EXCLUDE.
 - Clearly more than 12 months out: "2 years out", "6 years!!!", "2028", "Jan 2030", "at age 67" (with no near-term date)
 - Single-digit numbers ("1", "2", "5") that are years-until-retirement (only include if context clearly means months/weeks)
 - Anyone whose role is PRESENTER
@@ -231,6 +236,36 @@ ${lines
       `[intents] dropped ${droppedRetiring} retiring + ${droppedCliff} cliff (email not in attendees)`,
     );
   }
+
+  // Claude sometimes returns the same person more than once for one intent.
+  // Keep a single row per (intent_type, email), preferring the most specific
+  // detail: an explicit YYYY-MM-DD date > a named month/phrase > a generic
+  // "Within N months" bucket. Rows without an email are always kept.
+  const detailScore = (d?: string): number => {
+    if (!d) return 0;
+    if (/\d{4}-\d{2}-\d{2}/.test(d)) return 3;
+    if (/^(possibly )?within \d+ months$/i.test(d.trim())) return 1;
+    return 2;
+  };
+  const deduped: ExtractedIntent[] = [];
+  const idxByKey = new Map<string, number>();
+  for (const r of rows) {
+    const email = r.attendee_email?.toLowerCase();
+    if (!email) {
+      deduped.push(r);
+      continue;
+    }
+    const key = `${r.intent_type}|${email}`;
+    const existing = idxByKey.get(key);
+    if (existing === undefined) {
+      idxByKey.set(key, deduped.length);
+      deduped.push(r);
+    } else if (detailScore(r.detail) > detailScore(deduped[existing].detail)) {
+      deduped[existing] = r;
+    }
+  }
+  rows.length = 0;
+  rows.push(...deduped);
 
   if (rows.length === 0) return { inserted: 0 };
 
