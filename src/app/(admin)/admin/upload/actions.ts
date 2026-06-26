@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireContentManager } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ingestZoomCsv } from "@/lib/ingest";
+import { enrichAttendeesFromRegistrations } from "@/lib/enrich";
 import { parseChatCsv, parseQACsv } from "@/lib/csv/parse-transcripts";
 import { clusterQuestions } from "@/lib/themes";
 import { extractIntents } from "@/lib/intents";
@@ -94,6 +95,19 @@ export async function uploadCsv(formData: FormData) {
   });
 
   const admin = createSupabaseAdminClient();
+
+  // 1.5 Enrich attendees from the client's master registrations sheet. Zoom's
+  //     post-event attendee export can omit registration fields (it combines the
+  //     name and drops phone / age / the registration question); we backfill
+  //     them by matching email, so every export, the attendee pop-up, and the AC
+  //     sync get complete records. Runs before the AC sync below so AC benefits.
+  try {
+    const enrich = await enrichAttendeesFromRegistrations(result.workshopId);
+    if (enrich.skipped) console.log(`[upload] enrich skipped: ${enrich.skipped}`);
+    else console.log(`[upload] enriched ${enrich.updated}/${enrich.matched} attendees from registrations`);
+  } catch (e) {
+    console.error("[upload] enrich failed:", e);
+  }
 
   // 2. Ingest chat transcript (optional — skipped entirely if not provided).
   const chatRows = hasChat ? parseChatCsv(chatCsv) : [];
