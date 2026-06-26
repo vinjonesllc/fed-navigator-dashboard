@@ -1,5 +1,6 @@
 import Papa from "papaparse";
 import type { AttendanceBucket } from "@/lib/supabase/types";
+import { isTestEmail } from "@/lib/test-emails";
 
 const TEXT_OPT_IN_RE = /text.*update|text.*you.*update/i;
 const AGE_RE = /^age$/i;
@@ -226,6 +227,7 @@ export function parseZoomCsv(csv: string, scheduledMinutes: number): ParseResult
 
   const rows: ParsedAttendee[] = [];
   let droppedPhantom = 0;
+  let droppedTest = 0;
 
   for (const raw of result.data) {
     const out: Partial<ParsedAttendee> = {
@@ -273,6 +275,13 @@ export function parseZoomCsv(csv: string, scheduledMinutes: number): ParseResult
 
     const full = out as ParsedAttendee;
 
+    // Drop our own test/internal addresses (e.g. QA traffic) so they never
+    // count toward attendance, exports, intents, or the AC sync.
+    if (isTestEmail(full.email)) {
+      droppedTest++;
+      continue;
+    }
+
     // Guard against merged registrant rows: a "Live" row with no join time AND
     // zero time in session isn't a real live attendance — it's a duplicate
     // registration record (e.g. the 2026-06-23 file had one such phantom twin
@@ -288,6 +297,9 @@ export function parseZoomCsv(csv: string, scheduledMinutes: number): ParseResult
 
   if (droppedPhantom > 0) {
     console.warn(`[parse-zoom] dropped ${droppedPhantom} phantom "Live" rows (no join time, 0 minutes)`);
+  }
+  if (droppedTest > 0) {
+    console.warn(`[parse-zoom] dropped ${droppedTest} test/internal-email rows`);
   }
 
   return {
