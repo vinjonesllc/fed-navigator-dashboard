@@ -453,7 +453,7 @@ export function WorkshopDetail({
               title="Cliff notes requested"
               whatItIs="Attendees who asked for the cliff notes / written summary / materials, or left an email to receive them. Auto-detected from the chat and Q&A."
               whatToClick="Click anyone to open their full profile and see exactly what they asked for."
-              booking="These people raised their hand. Send what they asked for the same day — and use that email as your opener to offer a quick, no-obligation 20-minute review of their numbers."
+              booking="These people raised their hand. Send what they asked for the same day — and use that email as your opener to offer a quick, no-obligation review of their numbers."
             />
             <span className={PILL}>
               {cliff.length} {cliff.length === 1 ? "request" : "requests"}

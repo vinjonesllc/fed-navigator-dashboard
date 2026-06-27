@@ -83,19 +83,19 @@ Don't work the list top-to-bottom. Work it by **heat:**
 ### Step 1 — Same day: fulfill every explicit request
 Anyone in **"Requested cliff notes"** asked you for something. Send it the same day, personally (not an autoresponder). That email *is* your opener:
 
-> *"Hi [Name] — here are the cliff notes from yesterday's session as you requested. While I have you: a lot of folks had follow-up questions about their own numbers. If it'd help, I keep a few 20-minute slots open for workshop attendees — happy to grab one for you. [scheduling link]"*
+> *"Hi [Name] — here are the cliff notes from yesterday's session as you requested. While I have you: a lot of folks had follow-up questions about their own numbers. If it'd help, I keep a few slots open for workshop attendees — happy to grab one for you. [scheduling link]"*
 
 ### Step 2 — Within 48 hours: call your Tier-1 list
 Open with **their** question (pull it from the Q&A or their attendee pop-up):
 
-> *"Hi [Name], this is [Advisor] — I presented Thursday's federal retirement workshop. You asked about [survivor benefits / the FERS supplement / your TSP withdrawal options]. That's exactly the kind of thing that's easier to walk through with your actual numbers in front of us. Do you have 20 minutes this week?"*
+> *"Hi [Name], this is [Advisor] — I presented Thursday's federal retirement workshop. You asked about [survivor benefits / the FERS supplement / your TSP withdrawal options]. That's exactly the kind of thing that's easier to walk through with your actual numbers in front of us. Do you have a few minutes this week?"*
 
 If no answer, leave a voicemail **and** follow with a text/email referencing the same question. (Texting only those who **opted in** — the registrant export flags this.)
 
 ### Step 3 — This week: email Tier 2 & 3
 Reference the workshop, the rating, and a relevant resource. Keep it short and make the ask explicit:
 
-> *"Thanks for joining [date]'s workshop — attendees rated it [4.7]★. You mentioned you're looking at retiring [next spring]. The window before you go is when the planning matters most. I'd like to put together a quick, no-obligation snapshot for you — when's good for a 20-minute call?"*
+> *"Thanks for joining [date]'s workshop — attendees rated it [4.7]★. You mentioned you're looking at retiring [next spring]. The window before you go is when the planning matters most. I'd like to put together a quick, no-obligation snapshot for you — when's good for a quick call?"*
 
 ### Step 4 — Ongoing: work the back catalog
 Open older workshops in the **Workshops table.** Someone who was "12 months out" six months ago is now **6 months out.** Re-run that list quarterly — your past reports are a renewable pipeline.

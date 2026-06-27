@@ -20,7 +20,7 @@
 
 ## What to say — steal this
 
-> *"Hi [Name], this is [Advisor] — I led [day]'s federal retirement workshop. You asked about [their question]. That's a lot easier to walk through with your real numbers in front of us. Do you have 20 minutes this week?"*
+> *"Hi [Name], this is [Advisor] — I led [day]'s federal retirement workshop. You asked about [their question]. That's a lot easier to walk through with your real numbers in front of us. Do you have a few minutes this week?"*
 
 No answer? Leave a voicemail **and** text/email the same question. (Text only those who opted in — the export flags them.)
 
