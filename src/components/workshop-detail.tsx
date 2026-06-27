@@ -16,6 +16,7 @@ import { formatWorkshopDate, humanizeDateIfIso } from "@/lib/format-date";
 import { RetentionChart } from "@/components/charts/retention-chart";
 import { AttendeesTable } from "@/components/attendees-table";
 import { AttendeeDetailModal, fullName, type PersonRef } from "@/components/attendee-detail-modal";
+import { SectionHelp } from "@/components/section-help";
 
 const normEmail = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
 const normName = (v: string | null | undefined) =>
@@ -268,6 +269,12 @@ export function WorkshopDetail({
           <h2 className="m-0 font-display text-[18px] font-semibold tracking-[-0.005em] text-ink-1 dark:text-white">
             What attendees said
           </h2>
+          <SectionHelp
+            title="What attendees said"
+            whatItIs="Attendees' own evaluation comments and star ratings for this workshop, pulled live from your evaluations sheet."
+            whatToClick="Click any comment to open that person's full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” to export them all."
+            booking="Their own words are your best opener. Reach out referencing a specific comment (“you mentioned … in your feedback”) and quote the rating (“attendees rated this 4.7/5”) to make the ask feel earned."
+          />
           {evalComments.length > 0 && (
             <span className={PILL}>{evalComments.length} quoted</span>
           )}
@@ -400,6 +407,12 @@ export function WorkshopDetail({
             <h3 className="m-0 font-display text-[14px] font-semibold text-ink-1">
               Retiring within the next 12 months
             </h3>
+            <SectionHelp
+              title="Retiring within the next 12 months"
+              whatItIs="Attendees who signaled — in the chat or Q&A — that they plan to retire within the next 12 months, with a “soon” date or phrase when they gave one. Auto-detected from the transcript."
+              whatToClick="Click anyone to open their profile — their questions, chats, time in session, eval, and the timing they mentioned."
+              booking="This is your #1 call list. Phone anyone retiring within ~6 months in the next 48 hours, and lead with their stated timeline plus the exact question they asked — that's a warm, specific reason to talk now."
+            />
             <span className={PILL}>
               {retiring.length} {retiring.length === 1 ? "person" : "people"}
             </span>
@@ -436,6 +449,12 @@ export function WorkshopDetail({
             <h3 className="m-0 font-display text-[14px] font-semibold text-ink-1">
               Cliff notes requested
             </h3>
+            <SectionHelp
+              title="Cliff notes requested"
+              whatItIs="Attendees who asked for the cliff notes / written summary / materials, or left an email to receive them. Auto-detected from the chat and Q&A."
+              whatToClick="Click anyone to open their full profile and see exactly what they asked for."
+              booking="These people raised their hand. Send what they asked for the same day — and use that email as your opener to offer a quick, no-obligation 20-minute review of their numbers."
+            />
             <span className={PILL}>
               {cliff.length} {cliff.length === 1 ? "request" : "requests"}
             </span>
@@ -473,6 +492,12 @@ export function WorkshopDetail({
       <div className={`px-5 py-4 ${CARD}`}>
         <div className="mb-4 flex items-center gap-2.5">
           <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">Q&amp;A</h3>
+          <SectionHelp
+            title="Q&A"
+            whatItIs="Every question attendees asked during the session, alongside who asked it."
+            whatToClick="Click any row to open that person's profile — their other questions, chats, time in session, and evaluation."
+            booking="A question is a stated concern in their own words. Open your call or email with it (“you asked about survivor benefits — let's put your real numbers to it”) for an instant, relevant reason to connect."
+          />
           <span className={PILL}>
             {visibleQA.length} {visibleQA.length === 1 ? "question" : "questions"}
           </span>
@@ -546,6 +571,12 @@ export function WorkshopDetail({
           <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">
             Live attendees
           </h3>
+          <SectionHelp
+            title="Live attendees"
+            whatItIs="Everyone who attended live, with their engagement score and time in the session."
+            whatToClick="Click any name to open their profile — chats, questions, time in session, and evaluation in one place. “Export All” downloads the whole list with every field for your CRM."
+            booking="Work the list by heat: people who stayed to the end or asked questions are your warmest leads. Open each person's profile to personalize the outreach, and export to tag the hot ones for follow-up."
+          />
           <span className={PILL}>{liveAttendees.length}</span>
           <div className="ml-auto flex items-center gap-2">
             {exportAllHref && (
