@@ -506,33 +506,24 @@ export function WorkshopDetail({
                       (q.sender_name && q.sender_name.trim()) || (asker ? fullName(asker) : null);
                     const canOpen = !!(q.sender_email || displayName);
                     return (
-                      <tr key={q.id} className="hover:bg-bg-2">
+                      <tr
+                        key={q.id}
+                        onClick={
+                          canOpen
+                            ? () => setSelected({ name: displayName, email: q.sender_email })
+                            : undefined
+                        }
+                        className={`hover:bg-bg-2 ${canOpen ? "cursor-pointer" : ""}`}
+                        title={canOpen ? "View this person's details" : undefined}
+                      >
                         <td className="border-b border-line-2 px-4 py-3 align-top text-ink-2">
                           {q.question}
                         </td>
                         <td className="border-b border-line-2 px-4 py-3 align-top">
-                          {canOpen ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSelected({ name: displayName, email: q.sender_email })
-                              }
-                              className="text-left hover:underline"
-                              title="View this person's details"
-                            >
-                              <div className="font-medium text-ink-1">{displayName ?? "—"}</div>
-                              <div className="font-mono text-[11.5px] text-ink-4">
-                                {q.sender_email ?? "—"}
-                              </div>
-                            </button>
-                          ) : (
-                            <>
-                              <div className="font-medium text-ink-1">{displayName ?? "—"}</div>
-                              <div className="font-mono text-[11.5px] text-ink-4">
-                                {q.sender_email ?? "—"}
-                              </div>
-                            </>
-                          )}
+                          <div className="font-medium text-ink-1">{displayName ?? "—"}</div>
+                          <div className="font-mono text-[11.5px] text-ink-4">
+                            {q.sender_email ?? "—"}
+                          </div>
                         </td>
                       </tr>
                     );
