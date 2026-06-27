@@ -495,7 +495,16 @@ export function WorkshopDetail({
                 </thead>
                 <tbody>
                   {visibleQA.map((q) => {
-                    const canOpen = !!(q.sender_name || q.sender_email);
+                    // Some Zoom Q&A exports carry only the asker's email, not
+                    // their name. Resolve the name from the attendee list by
+                    // email so the row still shows who asked and stays clickable.
+                    const asker = findAttendee(attendees, {
+                      name: q.sender_name,
+                      email: q.sender_email,
+                    });
+                    const displayName =
+                      (q.sender_name && q.sender_name.trim()) || (asker ? fullName(asker) : null);
+                    const canOpen = !!(q.sender_email || displayName);
                     return (
                       <tr key={q.id} className="hover:bg-bg-2">
                         <td className="border-b border-line-2 px-4 py-3 align-top text-ink-2">
@@ -506,19 +515,19 @@ export function WorkshopDetail({
                             <button
                               type="button"
                               onClick={() =>
-                                setSelected({ name: q.sender_name, email: q.sender_email })
+                                setSelected({ name: displayName, email: q.sender_email })
                               }
                               className="text-left hover:underline"
                               title="View this person's details"
                             >
-                              <div className="font-medium text-ink-1">{q.sender_name ?? "—"}</div>
+                              <div className="font-medium text-ink-1">{displayName ?? "—"}</div>
                               <div className="font-mono text-[11.5px] text-ink-4">
                                 {q.sender_email ?? "—"}
                               </div>
                             </button>
                           ) : (
                             <>
-                              <div className="font-medium text-ink-1">{q.sender_name ?? "—"}</div>
+                              <div className="font-medium text-ink-1">{displayName ?? "—"}</div>
                               <div className="font-mono text-[11.5px] text-ink-4">
                                 {q.sender_email ?? "—"}
                               </div>
