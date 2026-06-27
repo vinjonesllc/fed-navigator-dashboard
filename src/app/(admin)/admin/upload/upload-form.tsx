@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,42 @@ export function UploadForm({
   const [presenter, setPresenter] = useState<string>("");
   const [workshopDate, setWorkshopDate] = useState<string>("");
   const [uploadToAc, setUploadToAc] = useState(false);
+  const [regTabs, setRegTabs] = useState<string[]>([]);
+  const [regTab, setRegTab] = useState<string>("");
+  const [regLoading, setRegLoading] = useState(false);
+
+  // Load the selected advisor's sheet tabs so the user can pick which
+  // registrations list to enrich from (defaults to their saved tab). Lets a
+  // multi-track advisor (e.g. LW1 vs LW2) point each upload at the right list.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTabs() {
+      if (!clientId) {
+        setRegTabs([]);
+        setRegTab("");
+        return;
+      }
+      setRegLoading(true);
+      try {
+        const res = await fetch(`/api/sheets/tabs?clientId=${clientId}`);
+        const d: { tabs?: string[]; configured?: string | null } = res.ok
+          ? await res.json()
+          : { tabs: [], configured: null };
+        if (!cancelled) {
+          setRegTabs(d.tabs ?? []);
+          setRegTab(d.configured ?? "");
+        }
+      } catch {
+        if (!cancelled) setRegTabs([]);
+      } finally {
+        if (!cancelled) setRegLoading(false);
+      }
+    }
+    void loadTabs();
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId]);
 
   const selectedClient = clients.find((c) => c.id === clientId) ?? null;
   const isFedPilot = selectedClient?.brand === AC_BRAND;
@@ -152,6 +188,7 @@ export function UploadForm({
     fd.set("presenter", presenter);
     fd.set("workshopDate", workshopDate);
     fd.set("uploadToAc", isFedPilot && uploadToAc ? "true" : "false");
+    fd.set("registrantTab", regTab);
 
     const pendingToast = toast.loading(
       "Ingesting attendees & Q&A… analyzing transcripts (this takes ~15-30s).",
@@ -222,6 +259,31 @@ export function UploadForm({
           <DatePicker value={workshopDate} onChange={setWorkshopDate} />
         </div>
       </div>
+
+      {selectedClient && (
+        <div className="space-y-2">
+          <Label>Registrations tab</Label>
+          <Select value={regTab} onValueChange={setRegTab} disabled={regLoading}>
+            <SelectTrigger>
+              <SelectValue
+                placeholder={regLoading ? "Loading tabs…" : "Pick the registrations list"}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from(new Set([...(regTab ? [regTab] : []), ...regTabs])).map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Missing name / phone / age / question fields are filled from this list by matching
+            email. Defaults to the advisor&apos;s saved tab — change it to point this upload at a
+            different list (e.g. a specific track or date).
+          </p>
+        </div>
+      )}
 
       {selectedClient && isFedPilot && !nextWorkshopReady && (
         <div className="rounded-lg border-2 border-rose bg-rose-soft px-4 py-3">

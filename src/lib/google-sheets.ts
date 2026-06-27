@@ -22,26 +22,55 @@ export function extractSheetId(url: string): string | null {
  * degrade gracefully to a typed/saved tab name.
  */
 export async function listSheetTabs(sheetUrl: string | null | undefined): Promise<string[]> {
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey || !sheetUrl) return [];
+  if (!sheetUrl) return [];
   const sheetId = extractSheetId(sheetUrl);
   if (!sheetId) return [];
 
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title&key=${apiKey}`;
-    const res = await fetch(url, { redirect: "follow" });
-    if (!res.ok) {
-      console.warn(`[google-sheets] listSheetTabs ${sheetId} -> HTTP ${res.status}`);
-      return [];
+  // Preferred: the official API (precise) when a key is configured.
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (apiKey) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title&key=${apiKey}`;
+      const res = await fetch(url, { redirect: "follow" });
+      if (res.ok) {
+        const body = (await res.json()) as { sheets?: { properties?: { title?: string } }[] };
+        const names = (body.sheets ?? [])
+          .map((s) => s.properties?.title)
+          .filter((t): t is string => !!t);
+        if (names.length > 0) return names;
+      } else {
+        console.warn(`[google-sheets] listSheetTabs ${sheetId} -> HTTP ${res.status}`);
+      }
+    } catch (e) {
+      console.error("[google-sheets] listSheetTabs (API) failed:", e);
     }
-    const body = (await res.json()) as {
-      sheets?: { properties?: { title?: string } }[];
-    };
-    return (body.sheets ?? [])
-      .map((s) => s.properties?.title)
-      .filter((t): t is string => !!t);
+  }
+
+  // Fallback (no API key): scrape tab names from the static htmlview. Works on
+  // any "anyone with the link can view" sheet.
+  return listTabsViaHtmlView(sheetId);
+}
+
+/**
+ * Pull tab titles out of the sheet's htmlview page, which embeds them in a
+ * `items.push({name: "Tab", pageUrl: ...})` bootstrap block. No API key needed.
+ */
+async function listTabsViaHtmlView(sheetId: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/htmlview`, {
+      redirect: "follow",
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const names: string[] = [];
+    // Names appear as: {name: \"Tab name\", pageUrl: ... } with escaped quotes/slashes.
+    for (const m of html.matchAll(/name:\s*\\?"((?:\\.|[^"\\])*?)\\?",\s*pageUrl/g)) {
+      const name = m[1].replace(/\\(.)/g, "$1").trim(); // unescape \/ and \"
+      if (name) names.push(name);
+    }
+    return names;
   } catch (e) {
-    console.error("[google-sheets] listSheetTabs failed:", e);
+    console.error("[google-sheets] listTabsViaHtmlView failed:", e);
     return [];
   }
 }

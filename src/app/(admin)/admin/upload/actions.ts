@@ -44,6 +44,8 @@ const Schema = z.object({
   topic: z.string().optional(),
   notes: z.string().optional(),
   uploadToAc: z.coerce.boolean().optional(),
+  // Optional override of the client's saved registrations tab, chosen per upload.
+  registrantTab: z.string().optional(),
 });
 
 export async function uploadCsv(formData: FormData) {
@@ -74,6 +76,7 @@ export async function uploadCsv(formData: FormData) {
     topic: formData.get("topic") ?? undefined,
     notes: formData.get("notes") ?? undefined,
     uploadToAc: formData.get("uploadToAc") === "true",
+    registrantTab: formData.get("registrantTab") ?? undefined,
   });
 
   const [attendeeCsv, chatCsv, qaCsv] = await Promise.all([
@@ -102,7 +105,7 @@ export async function uploadCsv(formData: FormData) {
   //     them by matching email, so every export, the attendee pop-up, and the AC
   //     sync get complete records. Runs before the AC sync below so AC benefits.
   try {
-    const enrich = await enrichAttendeesFromRegistrations(result.workshopId);
+    const enrich = await enrichAttendeesFromRegistrations(result.workshopId, parsed.registrantTab);
     if (enrich.skipped) console.log(`[upload] enrich skipped: ${enrich.skipped}`);
     else console.log(`[upload] enriched ${enrich.updated}/${enrich.matched} attendees from registrations`);
   } catch (e) {

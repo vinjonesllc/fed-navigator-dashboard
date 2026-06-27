@@ -45,6 +45,8 @@ async function runInChunks<T>(items: T[], size: number, fn: (item: T) => Promise
 
 export async function enrichAttendeesFromRegistrations(
   workshopId: string,
+  /** Override the client's saved registrations tab (e.g. the upload picker). */
+  overrideTab?: string | null,
 ): Promise<EnrichResult> {
   const admin = createSupabaseAdminClient();
 
@@ -60,11 +62,13 @@ export async function enrichAttendeesFromRegistrations(
     .select("eval_sheet_url, next_workshop_registrant_tab")
     .eq("id", ws.client_id)
     .maybeSingle<{ eval_sheet_url: string | null; next_workshop_registrant_tab: string | null }>();
-  if (!client?.eval_sheet_url || !client?.next_workshop_registrant_tab) {
+
+  const tab = (overrideTab && overrideTab.trim()) || client?.next_workshop_registrant_tab || null;
+  if (!client?.eval_sheet_url || !tab) {
     return { matched: 0, updated: 0, skipped: "no registrations sheet/tab configured" };
   }
 
-  const csv = await fetchTabCsvForExport(client.eval_sheet_url, client.next_workshop_registrant_tab);
+  const csv = await fetchTabCsvForExport(client.eval_sheet_url, tab);
   if (!csv) return { matched: 0, updated: 0, skipped: "could not read registrations tab" };
 
   const parsed = Papa.parse<Record<string, string>>(csv, { header: true, skipEmptyLines: "greedy" });
