@@ -83,11 +83,33 @@ export function parseQACsv(csv: string): ParsedQA[] {
     transformHeader: (h) => h.replace(/^﻿/, "").trim(),
   });
 
+  // Header drift: older exports have a single "Name (sender)" column; newer ones
+  // split the asker into "First name"/"Last name" (and may rename the email
+  // header). Resolve all of them so the asker name isn't lost.
+  const fields = result.meta.fields ?? [];
+  const lc = (h: string) => h.toLowerCase().trim();
+  const firstNameH = fields.find((h) => /^first\s*name/.test(lc(h)));
+  const lastNameH = fields.find((h) => /^last\s*name/.test(lc(h)));
+  const emailH =
+    fields.find((h) => /e-?mail.*sender|sender.*e-?mail/.test(lc(h))) ??
+    fields.find((h) => /e-?mail/.test(lc(h)));
+
+  const senderName = (r: Record<string, string>): string | null => {
+    const single = naToNull(r["Name (sender)"] ?? r["Name"]);
+    if (single) return single;
+    const fn = firstNameH ? naToNull(r[firstNameH]) : null;
+    const ln = lastNameH ? naToNull(r[lastNameH]) : null;
+    const combined = [fn, ln].filter(Boolean).join(" ").trim();
+    return combined || null;
+  };
+  const senderEmail = (r: Record<string, string>): string | null =>
+    naToNull(r["Email (sender)"]) ?? (emailH ? naToNull(r[emailH]) : null);
+
   return (result.data ?? [])
     .filter((r) => {
       const q = r["Question"]?.trim();
       if (!q) return false;
-      if (QA_EMPTY_SENTINELS.test(q) && !r["Email (sender)"]?.trim()) return false;
+      if (QA_EMPTY_SENTINELS.test(q) && !senderEmail(r)) return false;
       return true;
     })
     .map((r) => {
@@ -96,8 +118,8 @@ export function parseQACsv(csv: string): ParsedQA[] {
       const cleaned = raw.replace(/^\(DISMISSED\)\s*/i, "");
       return {
         question: cleaned,
-        sender_name: naToNull(r["Name (sender)"]),
-        sender_email: naToNull(r["Email (sender)"]),
+        sender_name: senderName(r),
+        sender_email: senderEmail(r),
         sender_auth_status: naToNull(r["Authentication status"]),
         submitted_at: parseTs(r["Submission date"]),
         answer: naToNull(r["Answer"]),
