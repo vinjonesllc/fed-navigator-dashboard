@@ -35,7 +35,7 @@ export function parsePhone(raw: string | null | undefined): ParsedPhone {
   const s = String(raw).trim();
   let base = s;
   let extension: string | null = null;
-  const m = s.match(/[\s,;]*(?:x|ext\.?|extension|#)\s*\.?\s*(\d{1,7})\s*$/i);
+  const m = s.match(/[\s,;]*(?:x|ext\.?|extension|#)\s*[.:]?\s*(\d{1,7})\s*$/i);
   if (m && m.index !== undefined) {
     extension = m[1];
     base = s.slice(0, m.index).trim();
