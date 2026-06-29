@@ -52,33 +52,43 @@ export async function listSheetTabs(sheetUrl: string | null | undefined): Promis
 }
 
 /**
- * Pull tab titles out of the sheet's htmlview page, which embeds them in a
- * `items.push({name: "Tab", pageUrl: ...})` bootstrap block. No API key needed.
+ * Pull tab {name, gid} pairs out of the sheet's htmlview page, which embeds them
+ * in an `items.push({name: "Tab", pageUrl: "...gid=NNN", ...})` bootstrap block.
+ * No API key needed. The gid lets us read a tab via the fresher export endpoint.
  */
-async function listTabsViaHtmlView(sheetId: string): Promise<string[]> {
+async function getTabItems(sheetId: string): Promise<{ name: string; gid: string }[]> {
   try {
     const res = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/htmlview`, {
       redirect: "follow",
     });
     if (!res.ok) return [];
     const html = await res.text();
-    const names: string[] = [];
-    // Names appear as: {name: \"Tab name\", pageUrl: ... } with escaped quotes/slashes.
-    for (const m of html.matchAll(/name:\s*\\?"((?:\\.|[^"\\])*?)\\?",\s*pageUrl/g)) {
+    const items: { name: string; gid: string }[] = [];
+    for (const m of html.matchAll(
+      /name:\s*\\?"((?:\\.|[^"\\])*?)\\?",\s*pageUrl:[^}]*?gid=(\d+)/g,
+    )) {
       const name = m[1].replace(/\\(.)/g, "$1").trim(); // unescape \/ and \"
-      if (name) names.push(name);
+      if (name) items.push({ name, gid: m[2] });
     }
-    return names;
+    return items;
   } catch (e) {
-    console.error("[google-sheets] listTabsViaHtmlView failed:", e);
+    console.error("[google-sheets] getTabItems failed:", e);
     return [];
   }
 }
 
+async function listTabsViaHtmlView(sheetId: string): Promise<string[]> {
+  return (await getTabItems(sheetId)).map((t) => t.name);
+}
+
 /**
- * Fetch the full raw CSV of a single tab (all columns + rows, header included),
- * for download/export. Uses the keyless gviz endpoint, so it works on any
- * link-readable sheet. Returns null on any failure.
+ * Fetch the full raw CSV of a single tab (all columns + rows, header included).
+ *
+ * Prefers the `export?format=csv&gid=` endpoint (resolving the tab's gid from
+ * the htmlview), because the gviz CSV endpoint serves a heavily CACHED snapshot
+ * — recently-added cells (e.g. phone numbers) can be missing for a long time.
+ * Falls back to gviz (by tab name) if the gid can't be resolved. Returns null
+ * on any failure.
  */
 export async function fetchTabCsvForExport(
   sheetUrl: string | null | undefined,
@@ -90,17 +100,39 @@ export async function fetchTabCsvForExport(
   return fetchTabCsv(sheetId, tab);
 }
 
+function isSignInHtml(text: string): boolean {
+  // Google returns an HTML sign-in page when the sheet isn't link-readable.
+  return text.trim().startsWith("<");
+}
+
 async function fetchTabCsv(sheetId: string, tab: string): Promise<string | null> {
+  // 1) Fresh path: resolve the tab's gid and use the export endpoint.
+  try {
+    const items = await getTabItems(sheetId);
+    const match = items.find((t) => t.name === tab);
+    if (match) {
+      const cb = Date.now(); // cache-buster — keep reads current
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${match.gid}&_cb=${cb}`;
+      const res = await fetch(url, { redirect: "follow" });
+      if (res.ok) {
+        const text = await res.text();
+        if (!isSignInHtml(text)) return text;
+      }
+    }
+  } catch (e) {
+    console.error("[google-sheets] fetchTabCsv (export) failed:", e);
+  }
+
+  // 2) Fallback: gviz by tab name (cached, but works without a gid).
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
   try {
     const res = await fetch(url, { redirect: "follow" });
     if (!res.ok) return null;
     const text = await res.text();
-    // Google returns an HTML sign-in page when the sheet isn't link-readable.
-    if (text.trim().startsWith("<")) return null;
+    if (isSignInHtml(text)) return null;
     return text;
   } catch (e) {
-    console.error("[google-sheets] fetchTabCsv failed:", e);
+    console.error("[google-sheets] fetchTabCsv (gviz) failed:", e);
     return null;
   }
 }
