@@ -51,9 +51,28 @@ export async function POST(request: NextRequest) {
   const admin = createSupabaseAdminClient();
   const nowIso = new Date().toISOString();
 
+  // Only consider targets belonging to RUNNING campaigns. Restricting BEFORE the
+  // limit is essential: a paused/completed campaign keeps its targets' stale
+  // next_attempt_at (mid-past), so those sort first and would fill the whole
+  // batch — starving live campaigns (every slot filters out, eligible=0, nothing
+  // dials). Scoping the query to running campaigns prevents that head-of-line block.
+  const { data: campaigns } = await admin
+    .from("call_campaigns")
+    .select("id, status, max_attempts, client_id")
+    .eq("status", "running");
+  const byId = new Map(
+    (campaigns ?? []).map((c) => [
+      c.id as string,
+      c as { status: string; max_attempts: number; client_id: string },
+    ]),
+  );
+  const runningIds = Array.from(byId.keys());
+  if (runningIds.length === 0) return NextResponse.json({ ok: true, dialed: 0 });
+
   const { data: due } = await admin
     .from("call_targets")
     .select("id, attempts, campaign_id")
+    .in("campaign_id", runningIds)
     .in("status", DIALABLE)
     .lte("next_attempt_at", nowIso)
     .order("next_attempt_at", { ascending: true })
@@ -62,20 +81,8 @@ export async function POST(request: NextRequest) {
   const targets = (due ?? []) as Pick<CallTarget, "id" | "attempts" | "campaign_id">[];
   if (targets.length === 0) return NextResponse.json({ ok: true, dialed: 0 });
 
-  // Only dial running campaigns, respect each campaign's max_attempts, and only
-  // on US workdays inside the calling window (using the workshop's timezone).
-  const campaignIds = Array.from(new Set(targets.map((t) => t.campaign_id)));
-  const { data: campaigns } = await admin
-    .from("call_campaigns")
-    .select("id, status, max_attempts, client_id")
-    .in("id", campaignIds);
-  const byId = new Map(
-    (campaigns ?? []).map((c) => [
-      c.id as string,
-      c as { status: string; max_attempts: number; client_id: string },
-    ]),
-  );
-
+  // Respect each campaign's max_attempts, and only dial on US workdays inside the
+  // calling window (using the workshop's timezone).
   const clientIds = Array.from(new Set((campaigns ?? []).map((c) => c.client_id as string)));
   const { data: clients } = await admin
     .from("clients")
