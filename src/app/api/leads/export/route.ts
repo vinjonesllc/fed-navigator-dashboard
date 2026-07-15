@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import { requireUser, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { engagementIndex } from "@/lib/workshop-stats";
+import { splitName } from "@/lib/name";
 import type { Attendee, Workshop } from "@/lib/supabase/types";
 
 type Preset = "hot" | "engaged" | "live" | "noshow" | "all";
@@ -36,9 +37,10 @@ function presetFilter(rows: Attendee[], workshop: Workshop, preset: Preset): Att
 // `custom_responses` is flattened separately (one column per question).
 function fullRow(r: Attendee, workshop: Workshop): Record<string, string | number> {
   const yn = (v: boolean | null | undefined) => (v == null ? "" : v ? "Yes" : "No");
+  const name = splitName(r.first_name, r.last_name);
   return {
-    first_name: r.first_name ?? "",
-    last_name: r.last_name ?? "",
+    first_name: name.first,
+    last_name: name.last,
     email: r.email ?? "",
     email_domain: r.email_domain ?? "",
     phone: r.phone ?? "",
@@ -141,20 +143,23 @@ export async function GET(request: NextRequest) {
     csv = Papa.unparse(fullRows, { columns: [...baseKeys, ...customKeys] });
   } else {
     // Lead-list presets keep the curated outreach columns.
-    const csvRows = rows.map((r) => ({
-      first_name: r.first_name ?? "",
-      last_name: r.last_name ?? "",
-      email: r.email ?? "",
-      phone: r.phone ?? "",
-      agency: r.agency ?? "",
-      state: r.state_province ?? "",
-      age: r.age ?? "",
-      // The Engagement Index (0–10) shown per attendee in the dashboard — only
-      // meaningful for those who attended (Live); blank for everyone else.
-      engagement_score:
-        r.participation === "Live" ? engagementIndex(r, workshop.scheduled_minutes) ?? "" : "",
-      registration_question: r.registration_question ?? "",
-    }));
+    const csvRows = rows.map((r) => {
+      const name = splitName(r.first_name, r.last_name);
+      return {
+        first_name: name.first,
+        last_name: name.last,
+        email: r.email ?? "",
+        phone: r.phone ?? "",
+        agency: r.agency ?? "",
+        state: r.state_province ?? "",
+        age: r.age ?? "",
+        // The Engagement Index (0–10) shown per attendee in the dashboard — only
+        // meaningful for those who attended (Live); blank for everyone else.
+        engagement_score:
+          r.participation === "Live" ? engagementIndex(r, workshop.scheduled_minutes) ?? "" : "",
+        registration_question: r.registration_question ?? "",
+      };
+    });
     csv = Papa.unparse(csvRows);
   }
 
