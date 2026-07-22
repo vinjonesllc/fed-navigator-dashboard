@@ -363,6 +363,99 @@ export async function getAttendeeEvalColumns(
   return { headers: loaded.headers, rows, matched };
 }
 
+const normAgency = (v: string | null | undefined) =>
+  (v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+// Loose agency comparison: used only as a tiebreaker between same-first-name
+// eval rows. Reg agency is often a short code ("FDA") vs the eval's free text
+// ("DHHS/FDA"), so we accept a substring match either direction.
+function agencyLooseEq(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = normAgency(a);
+  const y = normAgency(b);
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+/**
+ * Identity-keyed eval matcher for the registration-driven export. Matches each
+ * person to their eval response by FIRST + LAST + AGENCY (the registration row
+ * supplies all three). Tiers, most specific first, and only ever accepts a
+ * UNIQUE candidate so we never mis-assign between same-named respondents:
+ *   1. first name must match (hard gate)
+ *   2. narrow by last name (when the eval sheet has a last-name column)
+ *   3. else narrow by agency (loose)
+ *   4. else accept only if the first name is unique in the window
+ *
+ * Returns the eval columns to append — every header EXCEPT the submission
+ * date, the name column(s), and Device — plus, aligned to `people`, each
+ * person's matched row (or null).
+ */
+export async function getEvalColumnsByIdentity(
+  sheetUrl: string,
+  workshopDate: string,
+  people: { first: string | null; last: string | null; agency: string | null }[],
+): Promise<
+  | { headers: string[]; rows: (Record<string, string> | null)[]; matched: number }
+  | { error: string }
+> {
+  const loaded = await loadWindowedEvalRows(sheetUrl, workshopDate);
+  if ("error" in loaded) return loaded;
+
+  const firstCol = loaded.headers.find((h) => /first.*name/i.test(h)) ?? null;
+  const lastCol = loaded.headers.find((h) => /last.*name/i.test(h)) ?? null;
+  const agencyCol = loaded.headers.find((h) => /agency/i.test(h)) ?? null;
+
+  // Columns to append: drop the submission timestamp, any name column, and Device.
+  const headers = loaded.headers.filter(
+    (h) => !/submitted|timestamp/i.test(h) && !/name/i.test(h) && !/device/i.test(h),
+  );
+
+  // Without a first-name column we can't key anything — return no matches.
+  if (!firstCol) {
+    return { headers, rows: people.map(() => null), matched: 0 };
+  }
+
+  let matched = 0;
+  const rows = people.map((p) => {
+    const wantFirst = normName(p.first);
+    if (!wantFirst) return null;
+    const candidates = loaded.windowed.filter((r) => normName(r[firstCol]) === wantFirst);
+    if (candidates.length === 0) return null;
+
+    const wantLast = normName(p.last);
+    if (lastCol && wantLast) {
+      const byLast = candidates.filter((r) => normName(r[lastCol]) === wantLast);
+      if (byLast.length === 1) {
+        matched++;
+        return byLast[0];
+      }
+      if (byLast.length > 1 && agencyCol) {
+        const byAg = byLast.filter((r) => agencyLooseEq(r[agencyCol], p.agency));
+        if (byAg.length === 1) {
+          matched++;
+          return byAg[0];
+        }
+      }
+    }
+
+    if (agencyCol && normAgency(p.agency)) {
+      const byAg = candidates.filter((r) => agencyLooseEq(r[agencyCol], p.agency));
+      if (byAg.length === 1) {
+        matched++;
+        return byAg[0];
+      }
+    }
+
+    if (candidates.length === 1) {
+      matched++;
+      return candidates[0];
+    }
+    return null; // ambiguous — never guess
+  });
+
+  return { headers, rows, matched };
+}
+
 export async function fetchEvalComments(
   workshopId: string,
 ): Promise<{ inserted: number; error?: string }> {
