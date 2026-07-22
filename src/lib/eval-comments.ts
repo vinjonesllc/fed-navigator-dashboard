@@ -271,6 +271,98 @@ export async function getAttendeeEval(
   return { found: true, tab: loaded.tab, fields };
 }
 
+/**
+ * Batch version of {@link getAttendeeEval} for exports: load the windowed eval
+ * rows ONCE, then match every attendee against them. Matching, strongest first:
+ *   1. email (when the sheet has an email column)
+ *   2. full name (combined "Full Name" column, or first + last columns)
+ *   3. first-name-only sheets (no email, no last name — like the FEDUCATE eval
+ *      form): match on first name, but ONLY when exactly one eval row carries
+ *      that first name, so we never guess between two same-named respondents.
+ *
+ * Returns the full set of eval headers to append plus, aligned to the input
+ * `attendees` order, each attendee's matched row (or null when unmatched).
+ */
+export async function getAttendeeEvalColumns(
+  sheetUrl: string,
+  workshopDate: string,
+  attendees: { email: string | null; name: string | null }[],
+): Promise<
+  | { headers: string[]; rows: (Record<string, string> | null)[]; matched: number }
+  | { error: string }
+> {
+  const loaded = await loadWindowedEvalRows(sheetUrl, workshopDate);
+  if ("error" in loaded) return loaded;
+
+  const emailCol = loaded.headers.find((h) => /e-?mail/i.test(h)) ?? null;
+  const nameCols = loaded.headers.filter((h) => /name/i.test(h));
+  const firstCol = loaded.headers.find((h) => /first.*name/i.test(h)) ?? null;
+  const lastCol = loaded.headers.find((h) => /last.*name/i.test(h)) ?? null;
+  // A sheet we can only key by first name — no email, no last name, and the
+  // sole name column is a first-name column. First-name matching is enabled
+  // only here, and only for uniquely-named respondents (see below).
+  const firstNameOnly = !emailCol && !lastCol && !!firstCol && nameCols.length <= 1;
+
+  const byEmail = new Map<string, Record<string, string>>();
+  const byFullName = new Map<string, Record<string, string>>();
+  const byFirstName = new Map<string, Record<string, string>[]>();
+
+  for (const row of loaded.windowed) {
+    if (emailCol) {
+      const e = normEmail(row[emailCol]);
+      if (e && !byEmail.has(e)) byEmail.set(e, row);
+    }
+    for (const nc of nameCols) {
+      const n = normName(row[nc]);
+      if (n && !byFullName.has(n)) byFullName.set(n, row);
+    }
+    if (firstCol && lastCol) {
+      const n = normName(`${row[firstCol] ?? ""} ${row[lastCol] ?? ""}`);
+      if (n && !byFullName.has(n)) byFullName.set(n, row);
+    }
+    if (firstNameOnly && firstCol) {
+      const fn = normName(row[firstCol]);
+      if (fn) {
+        const arr = byFirstName.get(fn) ?? [];
+        arr.push(row);
+        byFirstName.set(fn, arr);
+      }
+    }
+  }
+
+  let matched = 0;
+  const rows = attendees.map((a) => {
+    const wantEmail = normEmail(a.email);
+    const wantName = normName(a.name);
+
+    if (emailCol && wantEmail) {
+      const hit = byEmail.get(wantEmail);
+      if (hit) {
+        matched++;
+        return hit;
+      }
+    }
+    if (wantName) {
+      const hit = byFullName.get(wantName);
+      if (hit) {
+        matched++;
+        return hit;
+      }
+    }
+    if (firstNameOnly && wantName) {
+      const first = wantName.split(" ")[0];
+      const cands = byFirstName.get(first);
+      if (cands && cands.length === 1) {
+        matched++;
+        return cands[0];
+      }
+    }
+    return null;
+  });
+
+  return { headers: loaded.headers, rows, matched };
+}
+
 export async function fetchEvalComments(
   workshopId: string,
 ): Promise<{ inserted: number; error?: string }> {

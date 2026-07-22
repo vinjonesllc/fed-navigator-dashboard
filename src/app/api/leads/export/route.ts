@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import { requireUser, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { engagementIndex } from "@/lib/workshop-stats";
+import { getAttendeeEvalColumns } from "@/lib/eval-comments";
 import { splitName } from "@/lib/name";
 import type { Attendee, Workshop } from "@/lib/supabase/types";
 
@@ -92,6 +93,51 @@ function fullRow(r: Attendee, workshop: Workshop): Record<string, string | numbe
   };
 }
 
+// Post-workshop evaluation columns to append, aligned to the export's rows:
+// `perRow[i]` is attendee i's matched eval response (or null when unmatched).
+type EvalColumns = { headers: string[]; perRow: (Record<string, string> | null)[] };
+
+// Prefix eval-sheet headers so they're unmistakably the survey response (and
+// never collide with a registration column of the same name, e.g. agency).
+const evalKey = (header: string) => `eval: ${header}`;
+
+// Build the CSV for a set of rows. Both "Export All" and "Export Attendees"
+// share this: every stored attendee field (plus each custom/registration
+// question flattened into its own column), including engagement, and — on the
+// end — the attendee's post-workshop evaluation response. The only difference
+// between the two buttons is *which rows* they pass in (all vs. live
+// attendees). Columns that are empty for every row in this particular export
+// are dropped, so a workshop that only populated fields A–K downloads with just
+// those columns — no sea of blank headers.
+function buildCsv(rows: Attendee[], workshop: Workshop, evals?: EvalColumns): string {
+  const baseKeys = Object.keys(fullRow({} as Attendee, workshop));
+  const customKeys = Array.from(
+    new Set(rows.flatMap((r) => Object.keys(r.custom_responses ?? {}))),
+  )
+    .filter((k) => !baseKeys.includes(k))
+    .sort();
+  const evalHeaders = evals?.headers ?? [];
+  const evalKeys = evalHeaders.map(evalKey);
+
+  const fullRows = rows.map((r, i) => {
+    const obj = fullRow(r, workshop);
+    for (const k of customKeys) obj[k] = (r.custom_responses ?? {})[k] ?? "";
+    const ev = evals?.perRow[i] ?? null;
+    for (const h of evalHeaders) obj[evalKey(h)] = ev ? (ev[h] ?? "") : "";
+    return obj;
+  });
+
+  const allColumns = [...baseKeys, ...customKeys, ...evalKeys];
+  const nonEmptyColumns = allColumns.filter((col) =>
+    fullRows.some((row) => row[col] !== "" && row[col] != null),
+  );
+  // With zero rows there's nothing to prune against — keep the full header set
+  // so an empty export still documents the available columns.
+  const columns = fullRows.length === 0 ? allColumns : nonEmptyColumns;
+
+  return Papa.unparse(fullRows, { columns });
+}
+
 export async function GET(request: NextRequest) {
   const session = await requireUser();
   const workshopId = request.nextUrl.searchParams.get("workshopId");
@@ -124,44 +170,38 @@ export async function GET(request: NextRequest) {
 
   const rows = presetFilter((attendees ?? []) as Attendee[], workshop, preset);
 
-  let csv: string;
-  if (preset === "all") {
-    // "Export All" = every field we store on each attendee, plus each
-    // registration / custom-response question flattened into its own column.
-    const baseKeys = Object.keys(fullRow({} as Attendee, workshop));
-    const customKeys = Array.from(
-      new Set(rows.flatMap((r) => Object.keys(r.custom_responses ?? {}))),
-    )
-      .filter((k) => !baseKeys.includes(k))
-      .sort();
-
-    const fullRows = rows.map((r) => {
-      const obj = fullRow(r, workshop);
-      for (const k of customKeys) obj[k] = (r.custom_responses ?? {})[k] ?? "";
-      return obj;
+  // Append each attendee's post-workshop evaluation response as extra columns
+  // on the end, matched from the client's eval Google Sheet. Best-effort: if no
+  // eval sheet is configured, or it can't be loaded, we export without them.
+  let evals: EvalColumns | undefined;
+  const { data: client } = await admin
+    .from("clients")
+    .select("eval_sheet_url")
+    .eq("id", workshop.client_id)
+    .maybeSingle<{ eval_sheet_url: string | null }>();
+  const evalUrl = client?.eval_sheet_url?.trim();
+  if (evalUrl) {
+    const people = rows.map((r) => {
+      const n = splitName(r.first_name, r.last_name);
+      return { email: r.email ?? null, name: `${n.first} ${n.last}`.trim() || null };
     });
-    csv = Papa.unparse(fullRows, { columns: [...baseKeys, ...customKeys] });
-  } else {
-    // Lead-list presets keep the curated outreach columns.
-    const csvRows = rows.map((r) => {
-      const name = splitName(r.first_name, r.last_name);
-      return {
-        first_name: name.first,
-        last_name: name.last,
-        email: r.email ?? "",
-        phone: r.phone ?? "",
-        agency: r.agency ?? "",
-        state: r.state_province ?? "",
-        age: r.age ?? "",
-        // The Engagement Index (0–10) shown per attendee in the dashboard — only
-        // meaningful for those who attended (Live); blank for everyone else.
-        engagement_score:
-          r.participation === "Live" ? engagementIndex(r, workshop.scheduled_minutes) ?? "" : "",
-        registration_question: r.registration_question ?? "",
-      };
-    });
-    csv = Papa.unparse(csvRows);
+    try {
+      const res = await getAttendeeEvalColumns(evalUrl, workshop.workshop_date, people);
+      if ("error" in res) {
+        console.warn(`[leads/export] eval columns unavailable: ${res.error}`);
+      } else {
+        evals = { headers: res.headers, perRow: res.rows };
+        console.log(
+          `[leads/export] matched ${res.matched}/${people.length} attendees to eval responses`,
+        );
+      }
+    } catch (e) {
+      console.warn("[leads/export] eval fetch failed:", e instanceof Error ? e.message : e);
+    }
   }
+
+  // Both exports carry the full column set; the preset only decides which rows.
+  const csv = buildCsv(rows, workshop, evals);
 
   const safeTitle = workshop.title.replace(/[^a-z0-9]+/gi, "_").slice(0, 40);
   const filename = `leads_${safeTitle}_${preset}_${workshop.workshop_date}.csv`;
