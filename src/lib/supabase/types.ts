@@ -85,6 +85,9 @@ export type Workshop = {
   scheduled_minutes: number | null;
   registered_count: number;
   attended_count: number;
+  /** The eval/registration Google Sheet tab chosen at upload; the leads export
+   *  reads exactly this tab. Null on older workshops (falls back). */
+  registrant_tab: string | null;
   part2_enabled: boolean;
   eval_rating_avg: number | null;
   eval_rating_responses: number | null;

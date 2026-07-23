@@ -20,24 +20,34 @@ import type { Workshop } from "@/lib/supabase/types";
 
 const PRESENTERS = ["Dionne Belk", "Kevin Jones"];
 
+const NONE = "__none__";
+
 export function WorkshopEditForm({
   workshop,
   clientName,
   backHref,
+  sheetTabs,
 }: {
   workshop: Workshop;
   clientName: string;
   backHref: string;
+  sheetTabs: string[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [workshopDate, setWorkshopDate] = useState<string>(workshop.workshop_date ?? "");
   const [presenter, setPresenter] = useState<string>(workshop.presenter ?? "");
+  const [regTab, setRegTab] = useState<string>(workshop.registrant_tab ?? NONE);
 
   // Include the current presenter as an option even if it's not in the canned
   // list, so editing a workshop never silently drops an existing value.
   const presenterOptions = Array.from(
     new Set([...PRESENTERS, ...(workshop.presenter ? [workshop.presenter] : [])]),
+  );
+
+  // Always offer the currently-saved tab even if live tab listing is unavailable.
+  const tabOptions = Array.from(
+    new Set([...(workshop.registrant_tab ? [workshop.registrant_tab] : []), ...sheetTabs]),
   );
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -50,6 +60,7 @@ export function WorkshopEditForm({
     fd.set("workshopId", workshop.id);
     fd.set("workshopDate", workshopDate);
     fd.set("presenter", presenter);
+    fd.set("registrantTab", regTab === NONE ? "" : regTab);
 
     const pendingToast = toast.loading("Saving workshop…");
     startTransition(async () => {
@@ -129,6 +140,27 @@ export function WorkshopEditForm({
           required
           defaultValue={workshop.scheduled_minutes ?? 180}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Registrations tab</Label>
+        <Select value={regTab} onValueChange={setRegTab}>
+          <SelectTrigger>
+            <SelectValue placeholder="Pick the registrations list" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}>— None (use attendee data) —</SelectItem>
+            {tabOptions.map((t) => (
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          The tab this workshop&apos;s exports read for registration columns. Leave as
+          &ldquo;None&rdquo; to export from attendee data instead.
+        </p>
       </div>
 
       <div className="space-y-2">

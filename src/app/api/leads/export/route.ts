@@ -4,8 +4,7 @@ import { requireUser, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { engagementIndex } from "@/lib/workshop-stats";
 import { getAttendeeEvalColumns, getEvalColumnsByIdentity } from "@/lib/eval-comments";
-import { fetchTabCsvForExport, listSheetTabs } from "@/lib/google-sheets";
-import { parseNextWorkshops } from "@/lib/next-workshop";
+import { fetchTabCsvForExport } from "@/lib/google-sheets";
 import { splitName } from "@/lib/name";
 import type { Attendee, Workshop } from "@/lib/supabase/types";
 
@@ -50,62 +49,14 @@ const TOTAL_TIME_COL = "Total time spent";
 // ---------------------------------------------------------------------------
 // Registration-sheet-driven export (primary path)
 //
-// The columns come from THAT workshop's own registration tab, read live and
-// replicated verbatim in the tab's own order — registration forms differ, so
-// nothing is hard-coded. Attendee reports append Engagement (our index) + Total
-// time spent + the evaluation columns; Export All appends just the two computed
-// columns for every registrant. Empty columns are dropped.
+// The registration data comes from EXACTLY the tab chosen at upload and saved on
+// the workshop (workshop.registrant_tab) — no date/name inference. Its columns
+// are replicated verbatim in the tab's own order (forms differ, nothing is
+// hard-coded), scoped to this workshop by the Zoom attendee emails (so a shared
+// "Master Registrations" list resolves to just this workshop's people).
+// Attendee reports append Engagement (our index) + Total time spent + eval;
+// Export All appends just the two computed columns. Empty columns are dropped.
 // ---------------------------------------------------------------------------
-
-/** Pull {month, day, year?} out of a registration tab name ("South West 7/21/26"). */
-function parseTabDate(name: string): { m: number; d: number; y: number | null } | null {
-  const m = name.match(/(\d{1,2})\s*[/-]\s*(\d{1,2})(?:\s*[/-]\s*(\d{2,4}))?/);
-  if (!m) return null;
-  const month = Number(m[1]);
-  const day = Number(m[2]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  let year: number | null = null;
-  if (m[3]) {
-    year = Number(m[3]);
-    if (year < 100) year += 2000;
-  }
-  return { m: month, d: day, y: year };
-}
-
-/**
- * Resolve which registration tab belongs to this (usually completed) workshop.
- * The tab isn't stored on the workshop, so: prefer a still-present next_workshops
- * entry whose date matches; otherwise date-match the sheet's live tab names
- * (which persist). Returns the tab name, or null when nothing matches.
- */
-async function resolveRegistrantTab(
-  sheetUrl: string,
-  nextWorkshops: unknown,
-  workshopDate: string,
-): Promise<string | null> {
-  const iso = (workshopDate ?? "").slice(0, 10);
-
-  // 1. A matching next_workshops entry (covers just-passed, not-yet-pruned ones).
-  const entry = parseNextWorkshops(nextWorkshops).find((e) => e.date === iso);
-  if (entry?.registrant_tab) return entry.registrant_tab;
-
-  // 2. Date-match the sheet's tab names.
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return null;
-  const wy = Number(m[1]);
-  const wm = Number(m[2]);
-  const wd = Number(m[3]);
-
-  const tabs = await listSheetTabs(sheetUrl);
-  const matches = tabs.filter((t) => {
-    const td = parseTabDate(t);
-    if (!td) return false;
-    if (td.m !== wm || td.d !== wd) return false;
-    return td.y === null || td.y === wy; // tolerate year-less tab names
-  });
-  // Only trust an unambiguous single match.
-  return matches.length === 1 ? matches[0] : null;
-}
 
 /** Detect the join-key columns in a registration tab's headers (names vary). */
 function regKeyColumns(headers: string[]) {
@@ -125,7 +76,6 @@ type RegBuild =
 async function buildRegistrationCsv(
   sheetUrl: string,
   tab: string,
-  nextWorkshops: unknown,
   workshop: Workshop,
   attendees: Attendee[],
   preset: Preset,
@@ -142,8 +92,18 @@ async function buildRegistrationCsv(
   // (e.g. a stray trailing comma) since they carry no meaning.
   const regHeaders = (parsed.meta.fields ?? []).filter((h) => h && h.trim() !== "");
   if (regHeaders.length === 0) return { skip: `registration tab "${tab}" has no columns` };
-  const regRows = parsed.data;
   const keys = regKeyColumns(regHeaders);
+  // A real registrant list must have an Email column — the join key for both
+  // engagement and workshop scoping. Without one (e.g. a summary tab) we skip to
+  // the attendee-based fallback rather than export nonsense.
+  if (!keys.email) return { skip: `tab "${tab}" has no Email column` };
+  const emailCol = keys.email;
+
+  // Scope the tab to THIS workshop by the emails in its Zoom upload (registrants
+  // + no-shows). For a per-workshop tab this keeps ~everyone; for a shared master
+  // list it selects just this workshop's people.
+  const attEmails = new Set(attendees.map((a) => norm(a.email)).filter(Boolean));
+  const regRows = parsed.data.filter((r) => attEmails.has(norm(r[emailCol])));
 
   // Index this workshop's Zoom attendees by email for the engagement / time join.
   const attByEmail = new Map<string, Attendee>();
@@ -161,7 +121,7 @@ async function buildRegistrationCsv(
   // matched attendee (if any).
   const joined: { reg: Record<string, string>; att: Attendee | null }[] = [];
   for (const reg of regRows) {
-    const att = keys.email ? attByEmail.get(norm(reg[keys.email])) ?? null : null;
+    const att = attByEmail.get(norm(reg[emailCol])) ?? null;
     const attended = att?.participation === "Live";
     let keep: boolean;
     switch (preset) {
@@ -391,30 +351,20 @@ export async function GET(request: NextRequest) {
 
   const { data: client } = await admin
     .from("clients")
-    .select("eval_sheet_url, next_workshops")
+    .select("eval_sheet_url")
     .eq("id", workshop.client_id)
-    .maybeSingle<{ eval_sheet_url: string | null; next_workshops: unknown }>();
+    .maybeSingle<{ eval_sheet_url: string | null }>();
   const sheetUrl = client?.eval_sheet_url?.trim() || null;
 
-  // Primary: build from the workshop's own registration tab.
+  // Primary: build from EXACTLY the registrations tab chosen at upload and saved
+  // on the workshop. No date/name inference. Anything else falls back below.
+  const tab = workshop.registrant_tab?.trim() || null;
   let csv: string | null = null;
-  if (sheetUrl) {
+  if (sheetUrl && tab) {
     try {
-      const tab = await resolveRegistrantTab(sheetUrl, client?.next_workshops, workshop.workshop_date);
-      if (tab) {
-        const built = await buildRegistrationCsv(
-          sheetUrl,
-          tab,
-          client?.next_workshops,
-          workshop,
-          attendees,
-          preset,
-        );
-        if ("csv" in built) csv = built.csv;
-        else console.warn(`[leads/export] registration build skipped: ${built.skip}`);
-      } else {
-        console.warn("[leads/export] no registration tab resolved; using attendee fallback");
-      }
+      const built = await buildRegistrationCsv(sheetUrl, tab, workshop, attendees, preset);
+      if ("csv" in built) csv = built.csv;
+      else console.warn(`[leads/export] registration tab "${tab}" unusable: ${built.skip}`);
     } catch (e) {
       console.warn("[leads/export] registration build failed:", e instanceof Error ? e.message : e);
     }

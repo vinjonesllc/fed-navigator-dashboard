@@ -112,6 +112,17 @@ export async function uploadCsv(formData: FormData) {
     console.error("[upload] enrich failed:", e);
   }
 
+  // Persist the chosen registrations tab so the leads export reads exactly it.
+  // Best-effort: if the registrant_tab column hasn't been added yet, don't fail
+  // the upload — the export just falls back until the migration is applied.
+  if (parsed.registrantTab?.trim()) {
+    const { error } = await admin
+      .from("workshops")
+      .update({ registrant_tab: parsed.registrantTab.trim() })
+      .eq("id", result.workshopId);
+    if (error) console.warn(`[upload] could not save registrant_tab (column may be missing): ${error.message}`);
+  }
+
   // 2. Ingest chat transcript (optional — skipped entirely if not provided).
   const chatRows = hasChat ? parseChatCsv(chatCsv) : [];
   if (chatRows.length > 0) {
@@ -315,6 +326,8 @@ const UpdateSchema = z.object({
   topic: z.string().optional(),
   notes: z.string().optional(),
   scheduledMinutes: z.coerce.number().int().positive().max(720),
+  // Optional; "" clears it. Persisted separately so a missing column can't fail the edit.
+  registrantTab: z.string().optional(),
 });
 
 export async function updateWorkshop(formData: FormData) {
@@ -327,6 +340,7 @@ export async function updateWorkshop(formData: FormData) {
     topic: formData.get("topic") ?? undefined,
     notes: formData.get("notes") ?? undefined,
     scheduledMinutes: formData.get("scheduledMinutes"),
+    registrantTab: formData.get("registrantTab") ?? undefined,
   });
 
   const admin = createSupabaseAdminClient();
@@ -346,6 +360,15 @@ export async function updateWorkshop(formData: FormData) {
 
   if (error) throw new Error(error.message);
   if (!ws) throw new Error("Workshop not found");
+
+  // Registrations tab — best-effort so a not-yet-added column never blocks edits.
+  if (parsed.registrantTab !== undefined) {
+    const { error: tabErr } = await admin
+      .from("workshops")
+      .update({ registrant_tab: parsed.registrantTab.trim() || null })
+      .eq("id", parsed.workshopId);
+    if (tabErr) console.warn(`[updateWorkshop] could not save registrant_tab (column may be missing): ${tabErr.message}`);
+  }
 
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${ws.client_id}`);

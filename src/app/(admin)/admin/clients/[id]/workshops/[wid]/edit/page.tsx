@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireContentManager, userCanAccessClient } from "@/lib/auth";
+import { listSheetTabs } from "@/lib/google-sheets";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Client, Workshop } from "@/lib/supabase/types";
 import { WorkshopEditForm } from "./workshop-edit-form";
@@ -28,6 +29,9 @@ export default async function EditWorkshopPage({
 
   if (!client || !workshop) notFound();
 
+  // Tabs of the client's eval/registration sheet, for the Registrations-tab picker.
+  const sheetTabs = await listSheetTabs(client.eval_sheet_url);
+
   const backHref = `/admin/clients/${id}/workshops/${wid}`;
 
   return (
@@ -50,7 +54,12 @@ export default async function EditWorkshopPage({
           <CardTitle>Workshop details</CardTitle>
         </CardHeader>
         <CardContent>
-          <WorkshopEditForm workshop={workshop} clientName={client.name} backHref={backHref} />
+          <WorkshopEditForm
+            workshop={workshop}
+            clientName={client.name}
+            backHref={backHref}
+            sheetTabs={sheetTabs}
+          />
         </CardContent>
       </Card>
     </div>
