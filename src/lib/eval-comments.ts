@@ -378,13 +378,16 @@ function agencyLooseEq(a: string | null | undefined, b: string | null | undefine
 
 /**
  * Identity-keyed eval matcher for the registration-driven export. Matches each
- * person to their eval response by FIRST + LAST + AGENCY (the registration row
- * supplies all three). Tiers, most specific first, and only ever accepts a
- * UNIQUE candidate so we never mis-assign between same-named respondents:
- *   1. first name must match (hard gate)
- *   2. narrow by last name (when the eval sheet has a last-name column)
- *   3. else narrow by agency (loose)
- *   4. else accept only if the first name is unique in the window
+ * person to their eval response by FULL NAME (agency as tiebreaker), and only
+ * ever accepts a UNIQUE candidate so it never mis-assigns between same-named
+ * respondents.
+ *
+ * Why full name rather than first + last separately: eval forms are messy —
+ * respondents routinely type their WHOLE name into the "First Name" field and
+ * leave "Last Name" blank (e.g. First Name="Ben Feliciano", Last Name=""). So
+ * we compare the registration row's first+last, combined, against the eval
+ * row's first+last, combined — which matches whether the eval split the name
+ * properly or crammed it all into one field.
  *
  * Returns the eval columns to append — every header EXCEPT the submission
  * date, the name column(s), and Device — plus, aligned to `people`, each
@@ -410,47 +413,49 @@ export async function getEvalColumnsByIdentity(
     (h) => !/submitted|timestamp/i.test(h) && !/name/i.test(h) && !/device/i.test(h),
   );
 
-  // Without a first-name column we can't key anything — return no matches.
-  if (!firstCol) {
+  // Without a name column we can't key anything — return no matches.
+  if (!firstCol && !lastCol) {
     return { headers, rows: people.map(() => null), matched: 0 };
   }
 
+  // An eval row's full name, combining whatever name columns it has.
+  const evalFullName = (r: Record<string, string>) =>
+    normName(`${firstCol ? r[firstCol] ?? "" : ""} ${lastCol ? r[lastCol] ?? "" : ""}`);
+
   let matched = 0;
   const rows = people.map((p) => {
-    const wantFirst = normName(p.first);
-    if (!wantFirst) return null;
-    const candidates = loaded.windowed.filter((r) => normName(r[firstCol]) === wantFirst);
-    if (candidates.length === 0) return null;
+    const wantFull = normName(`${p.first ?? ""} ${p.last ?? ""}`);
+    if (!wantFull) return null;
 
-    const wantLast = normName(p.last);
-    if (lastCol && wantLast) {
-      const byLast = candidates.filter((r) => normName(r[lastCol]) === wantLast);
-      if (byLast.length === 1) {
-        matched++;
-        return byLast[0];
-      }
-      if (byLast.length > 1 && agencyCol) {
-        const byAg = byLast.filter((r) => agencyLooseEq(r[agencyCol], p.agency));
-        if (byAg.length === 1) {
-          matched++;
-          return byAg[0];
-        }
-      }
+    const candidates = loaded.windowed.filter((r) => evalFullName(r) === wantFull);
+    if (candidates.length === 1) {
+      matched++;
+      return candidates[0];
     }
-
-    if (agencyCol && normAgency(p.agency)) {
+    // Same full name more than once — only accept if agency breaks the tie.
+    if (candidates.length > 1 && agencyCol && normAgency(p.agency)) {
       const byAg = candidates.filter((r) => agencyLooseEq(r[agencyCol], p.agency));
       if (byAg.length === 1) {
         matched++;
         return byAg[0];
       }
     }
-
-    if (candidates.length === 1) {
-      matched++;
-      return candidates[0];
+    // First-name-only eval sheets (NO last-name column at all, e.g. FEDUCATE):
+    // fall back to a UNIQUE first-name match. Gated on `!lastCol` so sheets that
+    // DO have a last-name column (e.g. David Ocasio's) never guess by first name.
+    if (!lastCol && firstCol) {
+      const wantFirst = normName(p.first);
+      if (wantFirst) {
+        const byFirst = loaded.windowed.filter(
+          (r) => normName(r[firstCol]).split(" ")[0] === wantFirst,
+        );
+        if (byFirst.length === 1) {
+          matched++;
+          return byFirst[0];
+        }
+      }
     }
-    return null; // ambiguous — never guess
+    return null; // no match or ambiguous — never guess
   });
 
   return { headers, rows, matched };
