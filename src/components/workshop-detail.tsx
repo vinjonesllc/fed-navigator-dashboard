@@ -224,20 +224,23 @@ export function WorkshopDetail({
         <div className="flex flex-wrap justify-end gap-2">
           {deleteAction}
           {exportAllHref && (
-            <Link
+            // Plain <a>, not <Link>: this hits an API route that streams a CSV
+            // download (Content-Disposition: attachment). Next's client-side
+            // <Link> navigation silently no-ops on a file response.
+            <a
               href={exportAllHref}
               className="inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3.5 py-2 text-[13px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
             >
               ↓ Export All
-            </Link>
+            </a>
           )}
           {leadsExportHref && (
-            <Link
+            <a
               href={leadsExportHref}
               className="inline-flex items-center gap-2 rounded-[9px] border border-[oklch(0.10_0.01_260)] bg-[oklch(0.18_0.02_260)] px-3.5 py-2 text-[13px] font-medium text-white shadow-[0_1px_0_oklch(1_0_0_/_0.15)_inset,0_6px_18px_oklch(0.20_0.02_260/0.20)] transition hover:bg-[oklch(0.12_0.02_260)]"
             >
               ↓ Export Attendees
-            </Link>
+            </a>
           )}
         </div>
       </div>
