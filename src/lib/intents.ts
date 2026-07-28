@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ExtractedIntent = {
-  intent_type: "retiring_soon" | "cliff_notes_request";
+  intent_type: "retiring_soon" | "cliff_notes_request" | "worried_confused";
   attendee_name?: string;
   attendee_email?: string;
   detail?: string;
@@ -155,10 +155,38 @@ Identify ATTENDEES who want the workshop's "cliff notes" / written summary / han
 
 For each match, return same fields as above. detail = a short summary of the ask ("Couldn't open link", "Wants link re-sent", "Gave email for delivery").
 
+# Task 3 — worried_confused (worried / apprehensive / overwhelmed / confused)
+
+Identify ATTENDEES who signal that they feel **worried, apprehensive, overwhelmed, or confused** about their federal retirement benefits.
+
+DETECTION WINDOW — IMPORTANT: the workshop opens with a warm-up where attendees type their goals/topics, and then a cluster where they answer with a bare NUMBER (a 1–10 self-rating). **Ignore everything up to and including that numbers cluster** (roughly the first ~15 minutes). Only detect worried/confused signals that occur AFTER the numbers cluster. If you see a run of messages that are just numbers ("4", "6-7", "1", "5"), that is the warm-up — start detecting after it.
+
+There are TWO kinds of signal:
+
+**(A) The "roller coaster" reaction.** At some point (typically ~45–60 min in, usually shortly BEFORE the cluster where attendees type their STATE or state abbreviation — "GA", "AL", "Minnesota", "Virginia") the presenter asks something like "aren't you on a roller coaster of a ride trying to reach your final destination — retirement?" The terse messages reacting to THAT question are agreement that they feel that way. Capture affirmations/agreement in that reaction cluster:
+- Words: "Amen", "amen all day", "AMEN!!!", "Me", "That's me", "That's me all day", "yeah", "Yeah!", "Oh yeah", "yes", "yep"
+- Confusion phrased directly: "clear as mud", "so confusing", "lost", "no idea"
+- Agreeing / overwhelmed EMOJIS reacting to the question: 😩 😫 😵 🤯 😰 😬 🥴 🎯 🙌 (🎯 = "you nailed it" = agreement). Only treat emojis as a signal inside this reaction cluster, not scattered elsewhere.
+
+**(B) Standalone worry/overwhelm/confusion anywhere after the numbers cluster.** Any attendee statement expressing that this is a lot / hard to follow / confusing / stressful, EVEN IF it is praise-adjacent:
+- "A LOT of information", "a lot to think about", "like a jigsaw puzzle", "so much to keep track of", "overwhelming", "this is complicated", "hard to understand", "I'm confused about …", "I don't understand …", "makes my head spin"
+
+EXCLUDE:
+- **Opposite signals — people saying they are NOT worried/afraid**: "Not afraid!!", "I feel good about it", "not worried", "piece of cake", "I've got this" — EXCLUDE.
+- **Bare "yes" / "me" that are answering a DIFFERENT question.** There are other spoken questions in the session (e.g. the ~30-min "who's retiring in the next 6 months?" question, and end-of-session "do you want the cliff notes / a consult?" questions) that also produce "yes"/"me" bursts. Only count a "yes"/"me"/"amen" burst as worried_confused when it is the reaction to the roller-coaster / "is this overwhelming?" style question — i.e. the cluster that sits shortly before the STATE-name cluster. A "yes"/"me" burst near the agency/retire-soon question or at the very end of the session is NOT this signal.
+- Bare eligibility facts posted in the cluster ("56 with 25 years") — not a reaction — EXCLUDE (unless the same person also reacts, e.g. with an emoji).
+- Anyone whose role is PRESENTER.
+
+For each match, return:
+- attendee_name, attendee_email (lowercase)
+- detail — a 2–4 word summary of the signal ("Roller-coaster: Amen", "Feels overwhelmed", "Confused — 'clear as mud'").
+- source ("chat" or "qa")
+- source_quote — the person's EXACT message text (verbatim, including an emoji if that was their message), ≤140 chars. This quote is shown to the client, so keep it exact.
+
 # Output format
 
 Return STRICT JSON only — no prose, no markdown — exactly:
-{"retiring_soon": [...], "cliff_notes_request": [...]}
+{"retiring_soon": [...], "cliff_notes_request": [...], "worried_confused": [...]}
 
 If a person matches multiple lines, return them ONCE per intent_type using the most informative quote. The same person can appear in both lists if they expressed both intents.
 
@@ -202,7 +230,11 @@ ${lines
     return { inserted: 0, error: "Claude returned no JSON" };
   }
 
-  let parsed: { retiring_soon?: ExtractedIntent[]; cliff_notes_request?: ExtractedIntent[] };
+  let parsed: {
+    retiring_soon?: ExtractedIntent[];
+    cliff_notes_request?: ExtractedIntent[];
+    worried_confused?: ExtractedIntent[];
+  };
   try {
     parsed = JSON.parse(jsonMatch[0]);
   } catch (e) {
@@ -212,11 +244,15 @@ ${lines
 
   const rawRetiring = parsed.retiring_soon?.length ?? 0;
   const rawCliff = parsed.cliff_notes_request?.length ?? 0;
-  console.log(`[intents] Claude returned ${rawRetiring} retiring + ${rawCliff} cliff-notes`);
+  const rawWorried = parsed.worried_confused?.length ?? 0;
+  console.log(
+    `[intents] Claude returned ${rawRetiring} retiring + ${rawCliff} cliff-notes + ${rawWorried} worried`,
+  );
 
   const rows: ExtractedIntent[] = [];
   let droppedRetiring = 0;
   let droppedCliff = 0;
+  let droppedWorried = 0;
   for (const r of parsed.retiring_soon ?? []) {
     if (r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
       droppedRetiring++;
@@ -231,9 +267,16 @@ ${lines
     }
     rows.push({ ...r, intent_type: "cliff_notes_request" });
   }
-  if (droppedRetiring + droppedCliff > 0) {
+  for (const r of parsed.worried_confused ?? []) {
+    if (r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
+      droppedWorried++;
+      continue;
+    }
+    rows.push({ ...r, intent_type: "worried_confused" });
+  }
+  if (droppedRetiring + droppedCliff + droppedWorried > 0) {
     console.log(
-      `[intents] dropped ${droppedRetiring} retiring + ${droppedCliff} cliff (email not in attendees)`,
+      `[intents] dropped ${droppedRetiring} retiring + ${droppedCliff} cliff + ${droppedWorried} worried (email not in attendees)`,
     );
   }
 

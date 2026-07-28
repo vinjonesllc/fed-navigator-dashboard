@@ -346,7 +346,7 @@ export const CALL_ACTIVITY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export type IntentType = "retiring_soon" | "cliff_notes_request";
+export type IntentType = "retiring_soon" | "cliff_notes_request" | "worried_confused";
 
 export type WorkshopIntent = {
   id: string;

@@ -183,6 +183,7 @@ export function WorkshopDetail({
 
   const retiring = intents.filter((i) => i.intent_type === "retiring_soon");
   const cliff = intents.filter((i) => i.intent_type === "cliff_notes_request");
+  const worried = intents.filter((i) => i.intent_type === "worried_confused");
 
   const [selected, setSelected] = useState<PersonRef | null>(null);
   const selectedAttendee = useMemo(
@@ -489,6 +490,57 @@ export function WorkshopDetail({
             </ul>
           )}
         </div>
+      </div>
+
+      {/* Worried about current situation */}
+      <div className={`px-5 py-4 ${CARD}`}>
+        <div className="mb-3 flex items-center gap-2.5">
+          <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">
+            Worried about current situation
+          </h3>
+          <SectionHelp
+            title="Worried about current situation"
+            whatItIs="Attendees who signaled they feel worried, apprehensive, overwhelmed, or confused about their benefits — most say so when the presenter asks if they feel like they're on a roller coaster trying to reach retirement (they reply “Amen”, “Me”, “Yes!”, or an agreeing emoji), plus anyone who calls the material a lot to take in or “clear as mud.” Auto-detected from the transcript."
+            whatToClick="Click anyone to open their full profile — their questions, chats, time in session, and evaluation — with the exact words they used."
+            booking="This is a warm call list: they've admitted they're overwhelmed and need help making sense of it. Lead with reassurance and their own words (“you mentioned it feels like a roller coaster — let's make it simple with your real numbers”) to book a one-on-one."
+          />
+          <span className={PILL}>
+            {worried.length} {worried.length === 1 ? "person" : "people"}
+          </span>
+        </div>
+        {worried.length === 0 ? (
+          <p className="text-[12.5px] text-ink-3">No worried / confused signals detected.</p>
+        ) : (
+          <ul className="divide-y divide-line-2">
+            {worried.map((r) => {
+              const quote = r.source_quote?.trim() || r.detail?.trim() || null;
+              return (
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelected({ name: r.attendee_name, email: r.attendee_email })
+                    }
+                    className="w-full space-y-0.5 py-2 text-left text-[13px] hover:bg-bg-2"
+                    title="View this person's details"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-x-3">
+                      <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                      <span className="font-mono text-[11.5px] text-ink-4">
+                        {r.attendee_email ?? ""}
+                      </span>
+                    </div>
+                    {quote && (
+                      <p className="text-[12.5px] italic text-[oklch(0.60_0.13_50)]">
+                        &ldquo;{quote}&rdquo;
+                      </p>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {/* Q&A */}
