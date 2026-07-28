@@ -511,35 +511,36 @@ export function WorkshopDetail({
         {worried.length === 0 ? (
           <p className="text-[12.5px] text-ink-3">No worried / confused signals detected.</p>
         ) : (
-          <ul className="divide-y divide-line-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {worried.map((r) => {
               const quote = r.source_quote?.trim() || r.detail?.trim() || null;
               return (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelected({ name: r.attendee_name, email: r.attendee_email })
-                    }
-                    className="w-full space-y-0.5 py-2 text-left text-[13px] hover:bg-bg-2"
-                    title="View this person's details"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-x-3">
-                      <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
-                      <span className="font-mono text-[11.5px] text-ink-4">
-                        {r.attendee_email ?? ""}
-                      </span>
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() =>
+                    setSelected({ name: r.attendee_name, email: r.attendee_email })
+                  }
+                  className="flex h-full flex-col rounded-[10px] border border-line-1 bg-bg-2 p-3.5 text-left transition hover:bg-surface hover:shadow-sm"
+                  title="View this person's details"
+                >
+                  {quote && (
+                    <p className="mb-3 text-[13px] italic leading-snug text-[oklch(0.60_0.13_50)] [text-wrap:pretty]">
+                      &ldquo;{quote}&rdquo;
+                    </p>
+                  )}
+                  <div className="mt-auto border-t border-line-2 pt-2.5">
+                    <div className="text-[13px] font-medium text-ink-1">
+                      {r.attendee_name ?? "—"}
                     </div>
-                    {quote && (
-                      <p className="text-[12.5px] italic text-[oklch(0.60_0.13_50)]">
-                        &ldquo;{quote}&rdquo;
-                      </p>
-                    )}
-                  </button>
-                </li>
+                    <div className="truncate font-mono text-[11px] text-ink-4">
+                      {r.attendee_email ?? ""}
+                    </div>
+                  </div>
+                </button>
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
 

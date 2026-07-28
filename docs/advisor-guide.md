@@ -40,6 +40,7 @@ Everything else (attendance %, retention curve, ratings) tells you how the *work
 | **Q&A** | Every question asked, with who asked it | Personalize outreach: *"You asked about survivor benefits — let's walk through your numbers."* |
 | **Retiring soon** | Attendees signaling retirement within 6–12 months | **Tier-1 leads. Call first.** |
 | **Requested cliff notes** | People who asked for the summary/materials | **High intent. They asked you for something — respond.** |
+| **Worried about current situation** | Attendees who signaled they feel worried, overwhelmed, or confused about their benefits — the "roller coaster" crowd (they replied *Amen / Me / Yes!*) plus anyone who called it *"clear as mud"* or *"a lot to take in."* Each is a clickable card with their exact words. | **The people who most need you.** They've openly admitted they're lost — lead with reassurance and their own quote to book a one-on-one. |
 | **What attendees said** | Their evaluation comments + ratings | Real quotes you can reference, and warm fuzzies that justify a call. |
 
 ### The attendee detail pop-up (click any name)
@@ -66,6 +67,7 @@ Don't work the list top-to-bottom. Work it by **heat:**
 **🟠 Tier 2 — Call this week**
 - **Retiring within 6–12 months** (including the "Possibly…" ones — tentative still means thinking about it)
 - **Cliff-notes requesters** — fulfill the request, then offer a conversation
+- **"Worried about current situation"** — they told you they're overwhelmed or confused; that's a stated need. Open with empathy and their own words ("you said it feels like a roller coaster — let's make it simple with your real numbers").
 
 **🟡 Tier 3 — Email this week, call next**
 - **Stayed to the end** of the workshop but gave no timeline
