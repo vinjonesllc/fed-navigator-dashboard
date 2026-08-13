@@ -326,7 +326,10 @@ export type CampaignReport = {
   completed: number; // reached, link sent, conversation done
   remaining: number; // still queued / mid-dial
   placed: number; // total calls actually dialed, including retries
-  toGo: number; // people not yet in a final outcome (still being worked)
+  // People-based buckets that sum to `total` (clearer than mixing calls + people):
+  done: number; // reached a final outcome: booked / declined / handoff / bad number / completed
+  working: number; // dialed but not final — on the line now, or awaiting a retry (no-answer/voicemail)
+  notCalled: number; // never dialed yet (still queued)
 };
 
 export async function getCampaignReport(campaignId: string): Promise<CampaignReport> {
@@ -366,8 +369,12 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     completed: 0,
     remaining: 0,
     placed: 0,
-    toGo: 0,
+    done: 0,
+    working: 0,
+    notCalled: 0,
   };
+  let queued = 0;
+  let calling = 0;
   for (const t of targets) {
     const s = t.status as string;
     if (s === "booked") r.booked += 1;
@@ -377,7 +384,8 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     else if (s === "handoff") r.handoff += 1;
     else if (s === "skipped") r.badNumber += 1;
     else if (s === "completed") r.completed += 1;
-    else if (s === "queued" || s === "calling") r.remaining += 1;
+    else if (s === "queued") queued += 1;
+    else if (s === "calling") calling += 1;
     if (t.flagged_for_review) r.flaggedForReview += 1;
     if (s === "completed" || s === "booked" || s === "declined") r.fullConversation += 1;
     if (t.booked_event_time) r.linksSent += 1;
@@ -386,7 +394,9 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     else if (t.link_channel === "email") r.linkEmail += 1;
     r.placed += (t.attempts as number) ?? 0;
   }
-  // People still being worked = not yet in a terminal outcome.
-  r.toGo = r.total - (r.booked + r.declined + r.handoff + r.badNumber + r.completed);
+  r.remaining = queued + calling;
+  r.done = r.booked + r.declined + r.handoff + r.badNumber + r.completed;
+  r.working = calling + r.voicemail + r.noAnswer; // dialed, not final — on the line or awaiting retry
+  r.notCalled = queued;
   return r;
 }

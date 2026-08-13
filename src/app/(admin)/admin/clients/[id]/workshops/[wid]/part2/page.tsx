@@ -117,33 +117,35 @@ export default async function Part2BookingPage({
               Call results
               <LiveIndicator active={campaignView.campaign?.status === "running"} />
             </span>
-            <span className="flex items-center gap-x-3 gap-y-1 text-[12px] text-ink-3 tabular-nums">
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-3 tabular-nums">
               {campaignView.campaign && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1" title="Time the campaign has been working the list">
                   ⏱
                   <CampaignTimer
                     startedAt={campaignView.campaign.created_at}
                     running={campaignView.campaign.status === "running"}
                     stoppedAt={campaignView.campaign.updated_at}
                   />
-                  <span className="text-ink-4">working</span>
                 </span>
               )}
               <span aria-hidden className="text-ink-4">·</span>
-              <span>
+              <span title="Total dial attempts, including retries of no-answers/voicemails">
                 <span className="font-medium text-ink-1">{report.placed}</span> calls placed
               </span>
               <span aria-hidden className="text-ink-4">·</span>
-              <span>
-                {report.toGo > 0 ? (
-                  <>
-                    <span className="font-medium text-ink-1">{report.toGo}</span> of {report.total} to
-                    go
-                  </>
-                ) : (
-                  <>all {report.total} done</>
-                )}
+              {/* People buckets — these sum to the total on the list */}
+              <span title="Reached a final outcome: booked, declined, handoff, bad number, or link sent">
+                <span className="font-medium text-ink-1">{report.done}</span> done
               </span>
+              <span aria-hidden className="text-ink-4">·</span>
+              <span title="Dialed but not finished — on a call now, or awaiting a retry after a no-answer/voicemail">
+                <span className="font-medium text-ink-1">{report.working}</span> in progress
+              </span>
+              <span aria-hidden className="text-ink-4">·</span>
+              <span title="Never dialed yet">
+                <span className="font-medium text-ink-1">{report.notCalled}</span> not yet called
+              </span>
+              <span className="text-ink-4">· {report.total} total</span>
             </span>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
