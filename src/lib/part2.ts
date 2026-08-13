@@ -54,6 +54,10 @@ function fullName(a: Attendee): string {
   return [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
 }
 
+// Identity key for matching a person across attendee/registration rows when
+// emails differ — lowercased, punctuation/space stripped ("O'Connor" → "oconnor").
+const nameKey = (s: string | null | undefined) => (s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
 /**
  * Build the Part 2 call list for a workshop: every LIVE attendee, with their
  * phone status and whether they've already registered. Registered people are
@@ -77,18 +81,34 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
       .eq("workshop_id", workshopId)
       .eq("participation", "Live")
       .order("total_time_minutes", { ascending: false }),
-    admin
-      .from("part2_registrations")
-      .select("*")
-      .eq("workshop_id", workshopId),
+    // ALL registrations, not just this workshop's: a person who booked Part 2
+    // should be suppressed from every call list, and the same person can appear
+    // as attendee rows across several workshops (and register under a different
+    // email than they later show up under). We match on identity — email OR
+    // normalized name — so those still get caught.
+    admin.from("part2_registrations").select("*"),
   ]);
 
   const attendees = (attendeeRows ?? []) as Attendee[];
   const regs = (regRows ?? []) as Part2Registration[];
   const regByAttendee = new Map<string, Part2Registration>();
+  const regByEmail = new Map<string, Part2Registration>();
+  const regByName = new Map<string, Part2Registration>();
   for (const r of regs) {
     if (r.attendee_id) regByAttendee.set(r.attendee_id, r);
+    if (r.email) {
+      const k = r.email.toLowerCase();
+      if (!regByEmail.has(k)) regByEmail.set(k, r);
+    }
+    const nk = nameKey(r.full_name);
+    if (nk && !regByName.has(nk)) regByName.set(nk, r);
   }
+  // Resolve a person's registration by attendee_id, then email, then name.
+  const findRegistration = (a: Attendee): Part2Registration | null =>
+    regByAttendee.get(a.id) ??
+    (a.email ? regByEmail.get(a.email.toLowerCase()) : undefined) ??
+    regByName.get(nameKey(fullName(a))) ??
+    null;
 
   const scheduled = workshop.scheduled_minutes ?? null;
 
@@ -111,7 +131,7 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
   }
 
   const entries: CallListEntry[] = attendees.map((a) => {
-    const registration = regByAttendee.get(a.id) ?? null;
+    const registration = findRegistration(a);
     const e164 = a.phone_e164 ?? null;
     // A raw phone that didn't normalize is an invalid/uncallable number.
     const phoneInvalid = !e164 && hasPhone(a.phone);
@@ -160,10 +180,12 @@ const RECONCILE_DIALABLE = ["queued", "no_answer", "voicemail", "calling"];
  * suppresses them. Once the roster lands, this backfills the registration by
  * email so they drop off the call list.
  *
- * Matches by email only. A booking whose Calendly email differs from the Zoom
- * registration email can't be linked here and is returned "unmatched" (surfaced
- * by the reconciler for manual review). Idempotent: never overwrites a row the
- * webhook already wrote.
+ * Matching: by email first; if that finds no attendee (the booker used a
+ * different address than they registered with), fall back to a GLOBALLY UNIQUE
+ * normalized-name match — i.e. only when exactly one attendee in the whole
+ * system has that name, so we can never attach a booking to the wrong
+ * same-named person. Still no match → "unmatched" (surfaced for manual review).
+ * Idempotent: never overwrites a row the webhook already wrote.
  */
 export async function ensurePart2RegistrationForBooking(booking: {
   email: string | null;
@@ -171,15 +193,33 @@ export async function ensurePart2RegistrationForBooking(booking: {
   eventTime: string | null;
   eventRef: string | null;
 }): Promise<"created" | "exists" | "unmatched"> {
-  if (!booking.email) return "unmatched";
   const admin = createSupabaseAdminClient();
 
-  const { data: attendee } = await admin
-    .from("attendees")
-    .select("*")
-    .ilike("email", booking.email)
-    .limit(1)
-    .maybeSingle<Attendee>();
+  let attendee: Attendee | null = null;
+  if (booking.email) {
+    const { data } = await admin
+      .from("attendees")
+      .select("*")
+      .ilike("email", booking.email)
+      .limit(1)
+      .maybeSingle<Attendee>();
+    attendee = data ?? null;
+  }
+  if (!attendee && booking.name) {
+    // Name fallback for email mismatches — fetch same-last-name attendees and
+    // keep only exact normalized-full-name matches. Accept ONLY when there's
+    // exactly one such person system-wide.
+    const key = nameKey(booking.name);
+    const last = booking.name.trim().split(/\s+/).pop() ?? "";
+    if (key && last) {
+      const { data: cands } = await admin
+        .from("attendees")
+        .select("*")
+        .ilike("last_name", `%${last}%`);
+      const matches = ((cands ?? []) as Attendee[]).filter((a) => nameKey(fullName(a)) === key);
+      if (matches.length === 1) attendee = matches[0];
+    }
+  }
   if (!attendee || !attendee.workshop_id) return "unmatched";
 
   const { data: ws } = await admin
