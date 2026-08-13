@@ -449,13 +449,40 @@ export async function POST(request: NextRequest) {
     const heuristic = classifyOutcome(message.endedReason, !!transcript);
     const statusToOutcome = (s: string): CallOutcome =>
       s === "voicemail" ? "voicemail" : s === "no_answer" ? "no_answer" : s === "failed" ? "failed" : "answered";
-    // No agent disposition + an answered call = the call connected but ended
-    // before the agent could finish. If a link already went out, count it
-    // completed; otherwise hand it to the team (don't bury it as "completed").
+
+    // How much the CALLER actually said — the signal that separates a real
+    // conversation from a hang-up during the agent's intro. (Counts only "User:"
+    // turns in the transcript; the agent's lines don't count.)
+    const userChars = (transcript ?? "")
+      .split("\n")
+      .filter((l) => /^\s*user\s*:/i.test(l))
+      .reduce((n, l) => n + l.replace(/^\s*user\s*:/i, "").trim().length, 0);
+    const HANGUP_MAX_USER_CHARS = 40; // tunable: below this = no real conversation
+
+    // No agent disposition + an "answered" call = it connected but ended before
+    // the agent logged an outcome. Split that case:
+    //   • booking link already sent → completed
+    //   • caller barely spoke (hung up during the intro) → treat as a no-answer
+    //     and RETRY — not a warm callback, so don't route it to the team
+    //   • a real conversation that ended without booking → handoff (human follow-up)
     let finalStatus: string;
-    if (agentDisposition) finalStatus = agentDisposition;
-    else if (heuristic === "answered") finalStatus = target?.booked_event_time ? "completed" : "handoff";
-    else finalStatus = heuristic;
+    let derivedNotes: string | null = null;
+    if (agentDisposition) {
+      finalStatus = agentDisposition;
+    } else if (heuristic === "answered") {
+      if (target?.booked_event_time) {
+        finalStatus = "completed";
+      } else if (userChars < HANGUP_MAX_USER_CHARS) {
+        finalStatus = "no_answer";
+        derivedNotes = `Hung up during the intro — no real conversation (caller said ~${userChars} chars). Auto-retry, not a callback.`;
+      } else {
+        finalStatus = "handoff";
+        derivedNotes =
+          "Call connected and had a conversation, but ended before a booking link was sent — needs a human follow-up.";
+      }
+    } else {
+      finalStatus = heuristic;
+    }
     const outcome = statusToOutcome(finalStatus);
 
     // Timing log for best-time learning (best-effort).
@@ -479,7 +506,12 @@ export async function POST(request: NextRequest) {
     // agent didn't log one (status was still "calling"). Schedule a retry for
     // voicemail / no-answer in either case.
     if (target && (target.status === "calling" || RETRYABLE.includes(target.status))) {
-      if (target.status === "calling") update.status = finalStatus;
+      if (target.status === "calling") {
+        update.status = finalStatus;
+        // Persist the reason to the DB (not just the ClickUp alert) so the call
+        // list / registered tab show why it landed here.
+        if (derivedNotes) update.outcome_notes = derivedNotes;
+      }
       if (finalStatus === "voicemail" || finalStatus === "no_answer") {
         const { data: campaign } = await admin
           .from("call_campaigns")
@@ -506,7 +538,7 @@ export async function POST(request: NextRequest) {
           name: target.full_name ?? null,
           phone: toE164(target.phone) ?? target.phone ?? null,
           agency: target.agency ?? null,
-          reason: "Call connected but dropped before finishing — no booking link sent.",
+          reason: derivedNotes ?? "Call connected but dropped before finishing — no booking link sent.",
         });
       } catch (e) {
         console.error("[end-of-call] handoff ClickUp notify failed:", e);
