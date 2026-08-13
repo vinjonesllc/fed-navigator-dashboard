@@ -7,6 +7,7 @@ import { formatWorkshopDate } from "@/lib/format-date";
 import type { Client } from "@/lib/supabase/types";
 import { Part2Client } from "./part2-client";
 import { Part2ToggleButton } from "../part2-toggle-button";
+import { LiveIndicator } from "./live-indicator";
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -112,7 +113,10 @@ export default async function Part2BookingPage({
       {report && report.total > 0 && (
         <div className={`${CARD} mb-5 p-4`}>
           <div className="mb-3 flex items-baseline justify-between">
-            <span className="text-[13px] font-medium text-ink-1">Call results</span>
+            <span className="flex items-center gap-2 text-[13px] font-medium text-ink-1">
+              Call results
+              <LiveIndicator active={campaignView.campaign?.status === "running"} />
+            </span>
             <span className="text-[12px] text-ink-3">
               {report.total} on the list
               {report.remaining > 0 ? ` · ${report.remaining} still to call` : " · complete"}
