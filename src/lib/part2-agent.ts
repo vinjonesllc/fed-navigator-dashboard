@@ -29,6 +29,14 @@ const VOICE = {
 };
 const TRANSCRIBER = { provider: "deepgram", model: "nova-2" };
 
+// Seconds of continuous dead air before Vapi ends the call. Bumped above Vapi's
+// 30s default so a caller who parks the agent on hold (a receptionist fetching
+// the person) isn't dropped mid-wait. Vapi has no "hold" state, so this is a
+// single per-call value — it can't be hold-only — but a real conversation almost
+// never has this much unbroken silence, so in practice the extra window only
+// matters during a hold. Tune with VAPI_SILENCE_TIMEOUT (Vapi allows 10–3600).
+const SILENCE_TIMEOUT_SECONDS = Number(process.env.VAPI_SILENCE_TIMEOUT) || 60;
+
 export const TOOL_CHECK_AVAILABILITY = "check_availability";
 export const TOOL_SEND_BOOKING_LINK = "send_booking_link";
 export const TOOL_SEND_WORKSHOP_LINK = "send_next_workshop_link";
@@ -230,6 +238,7 @@ export function buildPart2Assistant(ctx: Part2Context): Record<string, unknown> 
     firstMessage: `Hi, is this ${firstName}?`,
     recordingEnabled: false,
     backgroundSound: "off", // no call-center ambience
+    silenceTimeoutSeconds: SILENCE_TIMEOUT_SECONDS,
     server: serverConfig(webhookUrl),
     voice: VOICE,
     transcriber: TRANSCRIBER,
