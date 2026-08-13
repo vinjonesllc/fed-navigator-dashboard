@@ -94,6 +94,104 @@ export async function getAvailableSlots(days = 35, fromIso?: string): Promise<Ca
   return out.slice(0, MAX_RESULTS);
 }
 
+// ----------------------------------------------------------------------------
+// Reconciliation: list real Part 2 bookings straight from Calendly (the source
+// of truth), independent of whether the invitee.created webhook was delivered.
+// Used by /api/calls/reconcile-clickup to backfill missed ClickUp alerts.
+// ----------------------------------------------------------------------------
+
+export type CalendlyBooking = {
+  /** Calendly invitee uri — globally unique, one per booking. Dedupe key. */
+  eventRef: string;
+  name: string | null;
+  email: string | null;
+  /** ISO 8601 start of the booked slot. */
+  eventTime: string | null;
+  /** ISO 8601 time the invitee booked (invitee.created). */
+  createdAt: string;
+};
+
+type Paginated<T> = { collection: T[]; pagination?: { next_page: string | null } };
+
+async function calendlyGetAll<T>(firstUrl: string): Promise<T[]> {
+  const out: T[] = [];
+  let next: string | null = firstUrl;
+  // Bound the walk so a runaway pagination cursor can't spin forever.
+  for (let i = 0; next && i < 50; i++) {
+    const res = await fetch(next, {
+      headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new Error(`Calendly GET ${res.status} ${await res.text()}`);
+    const data = (await res.json()) as Paginated<T>;
+    out.push(...(data.collection ?? []));
+    next = data.pagination?.next_page ?? null;
+  }
+  return out;
+}
+
+let _orgUri: string | null = null;
+async function organizationUri(): Promise<string> {
+  if (_orgUri) return _orgUri;
+  const res = await fetch(`${CALENDLY_BASE}/users/me`, {
+    headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error(`Calendly /users/me → ${res.status} ${await res.text()}`);
+  const data = (await res.json()) as { resource: { current_organization: string } };
+  _orgUri = data.resource.current_organization;
+  return _orgUri;
+}
+
+/**
+ * All active Part 2 bookings whose invitee.created is at/after `sinceIso`.
+ *
+ * Calendly's scheduled_events endpoint filters by the slot's START time, not by
+ * when the booking was made, so we scan events starting within the next
+ * `windowDays` (a just-booked Part 2 slot is always in the future, and the
+ * booking horizon is ~5 weeks) and keep invitees created since `sinceIso`. The
+ * `windowDays` default of 45 covers the availability horizon with headroom.
+ */
+export async function listPart2Bookings(sinceIso: string, windowDays = 45): Promise<CalendlyBooking[]> {
+  const org = await organizationUri();
+  const wanted = eventTypeUri();
+  const now = Date.now();
+  const params = new URLSearchParams({
+    organization: org,
+    // NOTE: the `event_type` filter is unreliable on scheduled_events when
+    // scoped by organization (Calendly returns every event type regardless), so
+    // we send it as a hint but authoritatively filter client-side below.
+    event_type: wanted,
+    status: "active",
+    // Include slots that just started / are mid-call so a booking made moments
+    // ago for an imminent slot isn't skipped.
+    min_start_time: new Date(now - 6 * 3_600_000).toISOString(),
+    max_start_time: new Date(now + windowDays * 86_400_000).toISOString(),
+    count: "100",
+    sort: "start_time:asc",
+  });
+
+  type Event = { uri: string; start_time: string; event_type: string };
+  type Invitee = { uri: string; name?: string; email?: string; created_at: string; status?: string };
+
+  const events = await calendlyGetAll<Event>(`${CALENDLY_BASE}/scheduled_events?${params}`);
+  const out: CalendlyBooking[] = [];
+  for (const ev of events) {
+    // Authoritative event-type filter (the query param above can't be trusted).
+    if (ev.event_type !== wanted) continue;
+    const invitees = await calendlyGetAll<Invitee>(`${ev.uri}/invitees?count=100&status=active`);
+    for (const inv of invitees) {
+      if (!inv.created_at || inv.created_at < sinceIso) continue;
+      out.push({
+        eventRef: inv.uri,
+        name: inv.name ?? null,
+        email: inv.email ?? null,
+        eventTime: ev.start_time ?? null,
+        createdAt: inv.created_at,
+      });
+    }
+  }
+  return out;
+}
+
 // Calendly prefills custom invitee questions by POSITION (a1, a2, …), not name.
 // On the Part 2 form the custom questions are: a1 = "share anything to prepare",
 // a2 = "best contact number?" (name/email/location aren't custom questions), so

@@ -461,6 +461,68 @@ export async function getEvalColumnsByIdentity(
   return { headers, rows, matched };
 }
 
+export type EvalCommentLine = {
+  name: string | null;
+  email: string | null;
+  agency: string | null;
+  text: string;
+};
+
+/**
+ * All RAW free-text evaluation comments for a workshop, one entry per non-empty
+ * comment cell, within the workshop_date → +7-day window. Unlike
+ * {@link fetchEvalComments} (which curates the 7 most glowing testimonials for
+ * display), this returns every comment verbatim with its author/email/agency —
+ * used by the intent extractor so worried/overwhelmed eval feedback can feed the
+ * "worried_confused" list. Returns `error` if the sheet can't be loaded.
+ */
+export async function getEvalCommentLines(
+  sheetUrl: string,
+  workshopDate: string,
+): Promise<{ comments: EvalCommentLine[]; tab: string } | { error: string }> {
+  const loaded = await loadWindowedEvalRows(sheetUrl, workshopDate);
+  if ("error" in loaded) return loaded;
+
+  const emailCol = loaded.headers.find((h) => /e-?mail/i.test(h)) ?? null;
+  const agencyCol = loaded.headers.find((h) => /agency/i.test(h)) ?? null;
+  const nameCols = loaded.headers.filter((h) => /name/i.test(h));
+  const firstCol = loaded.headers.find((h) => /first.*name/i.test(h)) ?? null;
+  const lastCol = loaded.headers.find((h) => /last.*name/i.test(h)) ?? null;
+
+  // Free-text comment columns: "Tell Coworkers?", "Other Comments?", or any
+  // open-feedback/recommendation header. Exclude the identity, rating, date, and
+  // device columns so we only pull genuine prose.
+  const commentCols = loaded.headers.filter(
+    (h) =>
+      /comment|coworker|feedback|recommend|anything else|suggestion|takeaway/i.test(h) &&
+      !/name|e-?mail|agency|device|rating|star|score/i.test(h),
+  );
+
+  const rowName = (row: Record<string, string>): string | null => {
+    if (firstCol || lastCol) {
+      const n = normName(`${firstCol ? row[firstCol] ?? "" : ""} ${lastCol ? row[lastCol] ?? "" : ""}`);
+      if (n) return n;
+    }
+    for (const nc of nameCols) {
+      const n = (row[nc] ?? "").trim();
+      if (n) return n;
+    }
+    return null;
+  };
+
+  const comments: EvalCommentLine[] = [];
+  for (const row of loaded.windowed) {
+    const name = rowName(row);
+    const email = emailCol ? (row[emailCol] ?? "").trim() || null : null;
+    const agency = agencyCol ? (row[agencyCol] ?? "").trim() || null : null;
+    for (const cc of commentCols) {
+      const text = (row[cc] ?? "").trim();
+      if (text) comments.push({ name, email, agency, text });
+    }
+  }
+  return { comments, tab: loaded.tab };
+}
+
 export async function fetchEvalComments(
   workshopId: string,
 ): Promise<{ inserted: number; error?: string }> {

@@ -254,6 +254,17 @@ export type Part2Registration = {
   updated_at: string;
 };
 
+/** Durable ClickUp-notification ledger, keyed on the Calendly invitee uri.
+ *  See migration 0025 and src/lib/part2-notify.ts. */
+export type Part2BookingNotification = {
+  event_ref: string;
+  full_name: string | null;
+  email: string | null;
+  event_time: string | null;
+  source: string | null;
+  notified_at: string;
+};
+
 export type CallTargetStatus =
   | "queued"
   | "calling"
@@ -355,7 +366,7 @@ export type WorkshopIntent = {
   attendee_name: string | null;
   attendee_email: string | null;
   detail: string | null;
-  source: "chat" | "qa" | "both" | null;
+  source: "chat" | "qa" | "both" | "eval" | null;
   source_quote: string | null;
   created_at: string;
 };

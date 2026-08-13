@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { notifyPart2Booking } from "@/lib/clickup";
+import { notifyPart2BookingOnce } from "@/lib/part2-notify";
 import { recordCallActivity } from "@/lib/call-activity";
 import { removeContactFromAutomation, PART2_AUTOMATION_NAME } from "@/lib/activecampaign";
 import { verifyCalendlySignature } from "@/lib/webhook-verify";
@@ -62,6 +62,10 @@ export async function POST(request: NextRequest) {
   const name = body.payload?.name ?? "Someone";
   const startTime = body.payload?.scheduled_event?.start_time ?? null;
   const eventRef = body.payload?.scheduled_event?.uri ?? body.payload?.uri ?? null;
+  // The invitee uri is unique per booking — the dedupe key for the ClickUp
+  // notification ledger (the scheduled_event uri above can be shared by group
+  // events, so it isn't safe as the notification key).
+  const inviteeUri = body.payload?.uri ?? null;
 
   const admin = createSupabaseAdminClient();
 
@@ -186,17 +190,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await notifyPart2Booking({
+    await notifyPart2BookingOnce({
+      eventRef: inviteeUri,
       name: attendee
         ? [attendee.first_name, attendee.last_name].filter(Boolean).join(" ").trim() || name
         : name,
+      email,
+      eventTime: startTime,
+      source,
       agency: attendee?.agency ?? null,
       workshopTitle,
-      slotTime: startTime,
-      source,
     });
   } catch (e) {
-    // Don't fail the webhook if the ClickUp DM hiccups — the booking is recorded.
+    // Don't fail the webhook if the ClickUp DM hiccups — the booking is recorded
+    // in Supabase, and the reconciler cron (/api/calls/reconcile-clickup) will
+    // backfill the alert from Calendly since no ledger row was written.
     console.error("[calendly webhook] ClickUp notify failed:", e instanceof Error ? e.message : e);
   }
 

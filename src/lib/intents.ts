@@ -1,13 +1,14 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getEvalCommentLines } from "@/lib/eval-comments";
 
 type ExtractedIntent = {
   intent_type: "retiring_soon" | "cliff_notes_request" | "worried_confused";
   attendee_name?: string;
   attendee_email?: string;
   detail?: string;
-  source?: "chat" | "qa" | "both";
+  source?: "chat" | "qa" | "both" | "eval";
   source_quote?: string;
 };
 
@@ -26,7 +27,7 @@ export async function extractIntents(
     await Promise.all([
       admin
         .from("workshops")
-        .select("workshop_date, presenter")
+        .select("workshop_date, presenter, client_id")
         .eq("id", workshopId)
         .maybeSingle(),
       admin
@@ -46,7 +47,6 @@ export async function extractIntents(
     ]);
 
   if (!workshop) throw new Error("workshop not found");
-  if (!chats?.length && !qa?.length) return { inserted: 0 };
 
   const attendeeEmails = new Set(
     (attendees ?? [])
@@ -90,6 +90,35 @@ export async function extractIntents(
   // Sort by timestamp so Claude sees the full conversational context
   // (presenter prompts followed by attendee answers).
   lines.sort((a, b) => a.ts.localeCompare(b.ts));
+
+  // Post-workshop evaluation comments — an ADDITIONAL source for worried_confused
+  // (Task 3) only. They aren't part of the live transcript timeline, so they're
+  // presented in their own section and the timing/window rules don't apply.
+  let evalComments: { name: string | null; email: string | null; agency: string | null; text: string }[] = [];
+  if (workshop.client_id) {
+    try {
+      const { data: client } = await admin
+        .from("clients")
+        .select("eval_sheet_url")
+        .eq("id", workshop.client_id)
+        .maybeSingle();
+      const sheetUrl = (client?.eval_sheet_url as string | null)?.trim();
+      if (sheetUrl) {
+        const res = await getEvalCommentLines(sheetUrl, workshop.workshop_date as string);
+        if ("error" in res) {
+          console.warn("[intents] eval comments unavailable:", res.error);
+        } else {
+          evalComments = res.comments;
+          console.log(`[intents] loaded ${evalComments.length} eval comment(s)`);
+        }
+      }
+    } catch (e) {
+      // Eval comments are a bonus signal — never let them break intent extraction.
+      console.warn("[intents] eval comment load failed:", e instanceof Error ? e.message : e);
+    }
+  }
+
+  if (!lines.length && !evalComments.length) return { inserted: 0 };
 
   const workshopDate = workshop.workshop_date as string;
   const addMonthsISO = (n: number) => {
@@ -135,12 +164,14 @@ EXCLUDE:
 - Single-digit numbers ("1", "2", "5") that are years-until-retirement (only include if context clearly means months/weeks)
 - Anyone whose role is PRESENTER
 
+ALSO scan the "# Evaluation comments" section below: include an author whose written feedback states or implies they are retiring on or before ${cutoff12} (e.g. "retiring this December", "my last day is in August", "so glad I did this before I retire next spring"). The agency-cluster and timing rules above are transcript-only and do NOT apply to eval comments — judge them on content. For an eval match set source = "eval".
+
 For each match, return:
 - attendee_name (from the line)
 - attendee_email (lowercase)
 - detail — an indication of WHEN they retire, in order of preference: (1) a specific date normalized to YYYY-MM-DD if stated; (2) the stated month or phrase ("December", "end of this year", "next June", "8 weeks") — ALWAYS prefer this over a generic bucket whenever any timing is mentioned; (3) only if NO timing at all is given, use "Within 6 months" (if it sounds imminent or is on/before ${cutoff6}) or "Within 12 months". For TENTATIVE or AMBIGUOUS answers, prefix with "Possibly " (e.g. "Possibly next June", "Possibly December", "Possibly within 12 months").
-- source ("chat" or "qa")
-- source_quote — exact text, ≤140 chars
+- source ("chat", "qa", or "eval" for an evaluation-comment match)
+- source_quote — exact text (≤140 chars for chat/qa; for an eval comment, the relevant sentence verbatim, ≤200 chars)
 
 # Task 2 — cliff_notes_request
 
@@ -152,8 +183,9 @@ Identify ATTENDEES who want the workshop's "cliff notes" / written summary / han
 - **Providing email so cliff notes can be sent** to them ("crystal.wilkinson@va.gov please send cliff notes")
 - **Asking for the recording or materials to be sent**
 - **Saying they had to drop / will miss the rest** and asking where to find materials
+- **In an EVALUATION comment** (the "# Evaluation comments" section below): written feedback asking for the cliff notes / slides / recording / materials, or saying they missed part and want the summary ("please send the slides", "wish I had the cliff notes"). Set source = "eval" for these.
 
-For each match, return same fields as above. detail = a short summary of the ask ("Couldn't open link", "Wants link re-sent", "Gave email for delivery").
+For each match, return same fields as above (source is "chat", "qa", or "eval"). detail = a short summary of the ask ("Couldn't open link", "Wants link re-sent", "Gave email for delivery").
 
 # Task 3 — worried_confused (worried / apprehensive / overwhelmed / confused)
 
@@ -171,6 +203,8 @@ There are TWO kinds of signal:
 **(B) Standalone worry/overwhelm/confusion anywhere after the numbers cluster.** Any attendee statement expressing that this is a lot / hard to follow / confusing / stressful, EVEN IF it is praise-adjacent:
 - "A LOT of information", "a lot to think about", "like a jigsaw puzzle", "so much to keep track of", "overwhelming", "this is complicated", "hard to understand", "I'm confused about …", "I don't understand …", "makes my head spin"
 
+**(C) Post-workshop EVALUATION comments.** In addition to the live transcript, a separate "# Evaluation comments" section is provided below. These are written survey responses, NOT part of the transcript — the timing/window and reaction-cluster rules above do NOT apply to them. Include the author whenever their comment expresses that they feel worried, apprehensive, overwhelmed, or confused about their federal retirement/benefits — **even if the comment is otherwise positive, grateful, or praises the workshop** (the worry and the praise can coexist). Example: "Even though it is unquestionably overwhelming, Tony made it click" → INCLUDE (feels overwhelmed). For these matches set source = "eval". (Eval comments also feed Task 1 and Task 2 per their own rules above — a single comment can match more than one task.)
+
 EXCLUDE:
 - **Opposite signals — people saying they are NOT worried/afraid**: "Not afraid!!", "I feel good about it", "not worried", "piece of cake", "I've got this" — EXCLUDE.
 - **Bare "yes" / "me" that are answering a DIFFERENT question.** There are other spoken questions in the session (e.g. the ~30-min "who's retiring in the next 6 months?" question, and end-of-session "do you want the cliff notes / a consult?" questions) that also produce "yes"/"me" bursts. Only count a "yes"/"me"/"amen" burst as worried_confused when it is the reaction to the roller-coaster / "is this overwhelming?" style question — i.e. the cluster that sits shortly before the STATE-name cluster. A "yes"/"me" burst near the agency/retire-soon question or at the very end of the session is NOT this signal.
@@ -180,8 +214,8 @@ EXCLUDE:
 For each match, return:
 - attendee_name, attendee_email (lowercase)
 - detail — a 2–4 word summary of the signal ("Roller-coaster: Amen", "Feels overwhelmed", "Confused — 'clear as mud'").
-- source ("chat" or "qa")
-- source_quote — the person's EXACT message text (verbatim, including an emoji if that was their message), ≤140 chars. This quote is shown to the client, so keep it exact.
+- source ("chat", "qa", or "eval" for an evaluation-comment match)
+- source_quote — the person's EXACT text (verbatim, including an emoji if that was their message). For chat/qa keep it ≤140 chars; for an eval comment quote the relevant sentence(s) verbatim, ≤200 chars. This quote is shown to the client, so keep it exact.
 
 # Output format
 
@@ -197,7 +231,20 @@ ${lines
     (l, i) =>
       `${i + 1}. [${l.role}][${l.src.toUpperCase()}] ${l.name} <${l.email}> @ ${l.ts}: ${l.text.replace(/\s+/g, " ").slice(0, 400)}`,
   )
-  .join("\n")}`;
+  .join("\n")}
+
+# Evaluation comments (post-workshop written feedback — consider for Tasks 1, 2, and 3)
+
+${
+  evalComments.length
+    ? evalComments
+        .map(
+          (c, i) =>
+            `${i + 1}. ${c.name ?? "(name unknown)"} <${(c.email ?? "").toLowerCase()}>${c.agency ? ` [${c.agency}]` : ""}: ${c.text.replace(/\s+/g, " ").slice(0, 600)}`,
+        )
+        .join("\n")
+    : "(none available)"
+}`;
 
   const client = new Anthropic({ apiKey });
   console.log(
@@ -253,22 +300,32 @@ ${lines
   let droppedRetiring = 0;
   let droppedCliff = 0;
   let droppedWorried = 0;
+  // Eval-comment matches (source "eval") are kept even when the email isn't a
+  // known Zoom attendee — survey respondents often use a different address than
+  // they registered with. Chat/Q&A matches still require an attendee email.
   for (const r of parsed.retiring_soon ?? []) {
-    if (r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
+    if (r.source !== "eval" && r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
       droppedRetiring++;
       continue;
     }
     rows.push({ ...r, intent_type: "retiring_soon" });
   }
   for (const r of parsed.cliff_notes_request ?? []) {
-    if (r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
+    if (r.source !== "eval" && r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
       droppedCliff++;
       continue;
     }
     rows.push({ ...r, intent_type: "cliff_notes_request" });
   }
   for (const r of parsed.worried_confused ?? []) {
-    if (r.attendee_email && !attendeeEmails.has(r.attendee_email.toLowerCase())) {
+    // Eval-comment matches are kept even when the email isn't a known Zoom
+    // attendee (respondents often use a different address on the survey than
+    // they registered with). Chat/Q&A matches still require an attendee email.
+    if (
+      r.source !== "eval" &&
+      r.attendee_email &&
+      !attendeeEmails.has(r.attendee_email.toLowerCase())
+    ) {
       droppedWorried++;
       continue;
     }

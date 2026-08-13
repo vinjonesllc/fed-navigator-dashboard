@@ -153,6 +153,28 @@ function KpiCard({
   );
 }
 
+// Small badge showing where an intent signal came from — the live chat/Q&A, or
+// a post-workshop evaluation comment. Eval gets an amber tint so it stands out
+// from the transcript-sourced rows.
+function SourceBadge({ source }: { source: WorkshopIntent["source"] }) {
+  if (!source) return null;
+  const isEval = source === "eval";
+  const label =
+    source === "eval" ? "Eval" : source === "qa" ? "Q&A" : source === "both" ? "Chat + Q&A" : "Chat";
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.04em] ${
+        isEval
+          ? "border-[oklch(0.62_0.13_50/0.4)] bg-[oklch(0.62_0.13_50/0.09)] text-[oklch(0.52_0.13_50)]"
+          : "border-line-2 bg-bg-2 text-ink-4"
+      }`}
+      title={isEval ? "From a post-workshop evaluation comment" : "From the live chat / Q&A"}
+    >
+      {label}
+    </span>
+  );
+}
+
 function Stars({ avg, className }: { avg: number; className?: string }) {
   const full = Math.floor(avg);
   const hasHalf = avg - full >= 0.25 && avg - full < 0.75;
@@ -303,15 +325,19 @@ export function WorkshopDetail({
       {/* KPI grid — ordered by what a follow-up team acts on: the outcome
           metrics lead and are visually ranked; the raw counts trail, muted. */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="% Attended" value={pctLabel} hint="Live ÷ registered" tone="primary" />
+        <KpiCard
+          label="Attended (live)"
+          value={funnel.attended}
+          hint="Participation = Live"
+          tone="primary"
+        />
+        <KpiCard label="% Attended" value={pctLabel} hint="Live ÷ registered" tone="secondary" />
+        <KpiCard label="Registered" value={funnel.registered} hint="Total CSV rows ingested" />
         <KpiCard
           label="Engaged"
           value={funnel.engaged}
           hint="≥ 1 chat, question, or reaction"
-          tone="secondary"
         />
-        <KpiCard label="Attended (live)" value={funnel.attended} hint="Participation = Live" />
-        <KpiCard label="Registered" value={funnel.registered} hint="Total CSV rows ingested" />
       </div>
 
       {/* Attendee feedback — rating banner leads, then the quote wall */}
@@ -471,7 +497,7 @@ export function WorkshopDetail({
             </h3>
             <SectionHelp
               title="Retiring within the next 12 months"
-              whatItIs="Attendees who signaled — in the chat or Q&A — that they plan to retire within the next 12 months, with a “soon” date or phrase when they gave one. Auto-detected from the transcript."
+              whatItIs="Attendees who signaled that they plan to retire within the next 12 months, with a “soon” date or phrase when they gave one. Auto-detected from the live transcript and post-workshop evaluation comments."
               whatToClick="Click anyone to open their profile — their questions, chats, time in session, eval, and the timing they mentioned."
               booking="This is your #1 call list. Phone anyone retiring within ~6 months in the next 48 hours, and lead with their stated timeline plus the exact question they asked — that's a warm, specific reason to talk now."
             />
@@ -493,7 +519,10 @@ export function WorkshopDetail({
                     className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-left text-[13px] hover:bg-bg-2"
                     title="View this person's details"
                   >
-                    <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                      <SourceBadge source={r.source} />
+                    </span>
                     <span className="font-mono text-[11.5px] text-ink-4">
                       {r.attendee_email ?? ""}
                     </span>
@@ -513,7 +542,7 @@ export function WorkshopDetail({
             </h3>
             <SectionHelp
               title="Cliff notes requested"
-              whatItIs="Attendees who asked for the cliff notes / written summary / materials, or left an email to receive them. Auto-detected from the chat and Q&A."
+              whatItIs="Attendees who asked for the cliff notes / written summary / materials, or left an email to receive them. Auto-detected from the live chat, Q&A, and post-workshop evaluation comments."
               whatToClick="Click anyone to open their full profile and see exactly what they asked for."
               booking="These people raised their hand. Send what they asked for the same day — and use that email as your opener to offer a quick, no-obligation review of their numbers."
             />
@@ -536,7 +565,10 @@ export function WorkshopDetail({
                     title="View this person's details"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-x-3">
-                      <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-medium text-ink-1">{r.attendee_name ?? "—"}</span>
+                        <SourceBadge source={r.source} />
+                      </span>
                       <span className="font-mono text-[11.5px] text-ink-4">
                         {r.attendee_email ?? ""}
                       </span>
@@ -558,7 +590,7 @@ export function WorkshopDetail({
           </h3>
           <SectionHelp
             title="Worried about current situation"
-            whatItIs="Attendees who signaled they feel worried, apprehensive, overwhelmed, or confused about their benefits — most say so when the presenter asks if they feel like they're on a roller coaster trying to reach retirement (they reply “Amen”, “Me”, “Yes!”, or an agreeing emoji), plus anyone who calls the material a lot to take in or “clear as mud.” Auto-detected from the transcript."
+            whatItIs="Attendees who signaled they feel worried, apprehensive, overwhelmed, or confused about their benefits — most say so when the presenter asks if they feel like they're on a roller coaster trying to reach retirement (they reply “Amen”, “Me”, “Yes!”, or an agreeing emoji), plus anyone who calls the material a lot to take in or “clear as mud.” Auto-detected from the live transcript and from post-workshop evaluation comments."
             whatToClick="Click anyone to open their full profile — their questions, chats, time in session, and evaluation — with the exact words they used."
             booking="This is a warm call list: they've admitted they're overwhelmed and need help making sense of it. Lead with reassurance and their own words (“you mentioned it feels like a roller coaster — let's make it simple with your real numbers”) to book a one-on-one."
           />
@@ -588,8 +620,9 @@ export function WorkshopDetail({
                     </p>
                   )}
                   <div className="mt-auto border-t border-line-2 pt-2.5">
-                    <div className="text-[13px] font-medium text-ink-1">
-                      {r.attendee_name ?? "—"}
+                    <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink-1">
+                      <span>{r.attendee_name ?? "—"}</span>
+                      <SourceBadge source={r.source} />
                     </div>
                     <div className="truncate font-mono text-[11px] text-ink-4">
                       {r.attendee_email ?? ""}

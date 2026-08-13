@@ -22,17 +22,29 @@ export async function postClickUpMessage(content: string, channelId?: string): P
     );
   }
 
-  const res = await fetch(
-    `${CLICKUP_BASE}/workspaces/${workspaceId}/chat/channels/${chan}/messages`,
-    {
+  const url = `${CLICKUP_BASE}/workspaces/${workspaceId}/chat/channels/${chan}/messages`;
+  const body = JSON.stringify({ type: "message", content_format: "text/md", content });
+
+  // Retry transient failures (429 rate limit, 5xx) with short backoff — a burst
+  // of near-simultaneous bookings was the failure mode that dropped alerts. A
+  // 4xx other than 429 is a real error and rethrows immediately (no point
+  // retrying a bad request). The durable ledger + reconciler is still the
+  // backstop if every attempt here fails.
+  const MAX_ATTEMPTS = 3;
+  let lastErr = "";
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(url, {
       method: "POST",
       headers: { Authorization: token, "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "message", content_format: "text/md", content }),
-    },
-  );
-  if (!res.ok) {
-    throw new Error(`ClickUp message → ${res.status} ${await res.text()}`);
+      body,
+    });
+    if (res.ok) return;
+    lastErr = `${res.status} ${await res.text()}`;
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt === MAX_ATTEMPTS) break;
+    await new Promise((r) => setTimeout(r, 300 * attempt));
   }
+  throw new Error(`ClickUp message → ${lastErr}`);
 }
 
 /** Format + send the "someone booked Part 2" alert. */
@@ -41,13 +53,19 @@ export async function notifyPart2Booking(args: {
   agency: string | null;
   workshopTitle: string;
   slotTime: string | null;
-  source: "ai_call" | "self_serve" | "manual";
+  source: "ai_call" | "self_serve" | "manual" | "reconciled";
 }): Promise<void> {
   const when = args.slotTime
     ? new Date(args.slotTime).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" })
     : "time TBD";
   const how =
-    args.source === "ai_call" ? "via AI call" : args.source === "self_serve" ? "self-registered" : "marked manually";
+    args.source === "ai_call"
+      ? "via AI call"
+      : args.source === "self_serve"
+        ? "self-registered"
+        : args.source === "reconciled"
+          ? "self-registered · recovered"
+          : "marked manually";
   const lines = [
     `✅ *Part 2 booked* (${how})`,
     `• ${args.name}${args.agency ? ` — ${args.agency}` : ""}`,
