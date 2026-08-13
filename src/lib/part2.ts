@@ -149,6 +149,93 @@ export async function getCallList(workshopId: string): Promise<CallListResult | 
   };
 }
 
+const RECONCILE_DIALABLE = ["queued", "no_answer", "voicemail", "calling"];
+
+/**
+ * Ensure a self-serve Part 2 booking is reflected as a registration (the
+ * call-suppression ledger) and that the person's call target, if any, is marked
+ * booked. Used by the reconciler to close the gap the live webhook can't: when
+ * someone books BEFORE their workshop's attendee roster is uploaded, the webhook
+ * finds no attendee (so writes no registration), and nothing on the call list
+ * suppresses them. Once the roster lands, this backfills the registration by
+ * email so they drop off the call list.
+ *
+ * Matches by email only. A booking whose Calendly email differs from the Zoom
+ * registration email can't be linked here and is returned "unmatched" (surfaced
+ * by the reconciler for manual review). Idempotent: never overwrites a row the
+ * webhook already wrote.
+ */
+export async function ensurePart2RegistrationForBooking(booking: {
+  email: string | null;
+  name: string | null;
+  eventTime: string | null;
+  eventRef: string | null;
+}): Promise<"created" | "exists" | "unmatched"> {
+  if (!booking.email) return "unmatched";
+  const admin = createSupabaseAdminClient();
+
+  const { data: attendee } = await admin
+    .from("attendees")
+    .select("*")
+    .ilike("email", booking.email)
+    .limit(1)
+    .maybeSingle<Attendee>();
+  if (!attendee || !attendee.workshop_id) return "unmatched";
+
+  const { data: ws } = await admin
+    .from("workshops")
+    .select("client_id")
+    .eq("id", attendee.workshop_id)
+    .maybeSingle<{ client_id: string }>();
+  if (!ws?.client_id) return "unmatched";
+
+  const { data: existing } = await admin
+    .from("part2_registrations")
+    .select("id")
+    .eq("attendee_id", attendee.id)
+    .maybeSingle<{ id: string }>();
+
+  if (!existing) {
+    // ignoreDuplicates: if the live webhook wrote a row in the same window,
+    // leave its (richer) row untouched.
+    await admin.from("part2_registrations").upsert(
+      {
+        client_id: ws.client_id,
+        attendee_id: attendee.id,
+        workshop_id: attendee.workshop_id,
+        full_name:
+          [attendee.first_name, attendee.last_name].filter(Boolean).join(" ").trim() ||
+          booking.name,
+        email: attendee.email,
+        phone: attendee.phone ?? null,
+        agency: attendee.agency ?? null,
+        source: "self_serve",
+        event_time: booking.eventTime,
+        event_ref: booking.eventRef,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "attendee_id", ignoreDuplicates: true },
+    );
+  }
+
+  // Take the person off the live call list if a target is still dialable.
+  const { data: target } = await admin
+    .from("call_targets")
+    .select("id, status")
+    .eq("attendee_id", attendee.id)
+    .order("last_attempt_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle<{ id: string; status: string }>();
+  if (target && RECONCILE_DIALABLE.includes(target.status)) {
+    await admin
+      .from("call_targets")
+      .update({ status: "booked", booked_event_time: booking.eventTime, updated_at: new Date().toISOString() })
+      .eq("id", target.id);
+  }
+
+  return existing ? "exists" : "created";
+}
+
 export type CampaignView = {
   campaign: CallCampaign | null;
   /** call_target keyed by attendee_id, for merging status into the call list. */
