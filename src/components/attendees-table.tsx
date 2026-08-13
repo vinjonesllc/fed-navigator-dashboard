@@ -8,8 +8,11 @@ import { engagementIndex } from "@/lib/workshop-stats";
 type SortKey = "name" | "agency" | "time" | "engagement";
 type SortDir = "asc" | "desc";
 
+// Sort by the name as displayed ("First Last"), case-insensitive — so the
+// visible order reads alphabetically. (Previously sorted by last name while the
+// row shows the first name first, which looked unordered.)
 const NAME_OF = (a: Attendee) =>
-  `${a.last_name ?? ""} ${a.first_name ?? ""}`.trim().toLowerCase();
+  `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim().toLowerCase();
 
 const FED_TLDS = [".gov", ".mil", ".fed.us"];
 const isGovDomain = (a: Attendee) =>

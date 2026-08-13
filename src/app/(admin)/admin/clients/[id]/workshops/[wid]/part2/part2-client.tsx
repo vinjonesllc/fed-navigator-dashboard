@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,8 @@ export function Part2Client({
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("callable");
+  // null = keep the default (attendance) order; click the Name header to sort.
+  const [nameDir, setNameDir] = useState<"asc" | "desc" | null>(null);
   const [advisorName, setAdvisorName] = useState(defaultAdvisorName);
   const [schedulingUrl, setSchedulingUrl] = useState("");
   const [activityFor, setActivityFor] = useState<{
@@ -70,13 +73,23 @@ export function Part2Client({
   };
 
   const shown = useMemo(() => {
-    if (filter === "callable") return entries.filter((e) => e.callable);
-    if (filter === "registered") return entries.filter((e) => e.registration);
-    if (filter === "link_not_booked")
-      return entries.filter((e) => linkSentNoBooking(e.attendee_id));
-    return entries;
+    let list: CallListEntry[];
+    if (filter === "callable") list = entries.filter((e) => e.callable);
+    else if (filter === "registered") list = entries.filter((e) => e.registration);
+    else if (filter === "link_not_booked")
+      list = entries.filter((e) => linkSentNoBooking(e.attendee_id));
+    else list = entries;
+    if (nameDir) {
+      // Sort by the displayed name, case-insensitive (accent-insensitive).
+      list = [...list].sort(
+        (a, b) =>
+          a.full_name.localeCompare(b.full_name, undefined, { sensitivity: "base" }) *
+          (nameDir === "asc" ? 1 : -1),
+      );
+    }
+    return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, filter, targetsByAttendee]);
+  }, [entries, filter, targetsByAttendee, nameDir]);
 
   // Callable people not yet on the call list — what "Add to call list" will add.
   const unqueuedCallable = useMemo(
@@ -274,7 +287,23 @@ export function Part2Client({
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-line-1 text-left text-[11px] uppercase tracking-[0.04em] text-ink-4">
-              <th className="px-4 py-2.5 font-medium">Name</th>
+              <th className="px-4 py-2.5 font-medium">
+                <button
+                  type="button"
+                  onClick={() => setNameDir((d) => (d === "asc" ? "desc" : "asc"))}
+                  className="inline-flex items-center gap-1 hover:text-ink-1"
+                  title="Sort by name"
+                >
+                  Name
+                  {nameDir === "asc" ? (
+                    <ArrowUp className="h-3 w-3" />
+                  ) : nameDir === "desc" ? (
+                    <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 opacity-60" />
+                  )}
+                </button>
+              </th>
               <th className="px-4 py-2.5 font-medium">Agency</th>
               <th className="px-4 py-2.5 font-medium">Phone</th>
               {campaign && <th className="px-4 py-2.5 font-medium">Call</th>}
