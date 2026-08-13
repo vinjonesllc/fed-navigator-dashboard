@@ -7,7 +7,7 @@ import { formatWorkshopDate } from "@/lib/format-date";
 import type { Client } from "@/lib/supabase/types";
 import { Part2Client } from "./part2-client";
 import { Part2ToggleButton } from "../part2-toggle-button";
-import { LiveIndicator } from "./live-indicator";
+import { LiveIndicator, CampaignTimer } from "./live-indicator";
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -112,14 +112,38 @@ export default async function Part2BookingPage({
 
       {report && report.total > 0 && (
         <div className={`${CARD} mb-5 p-4`}>
-          <div className="mb-3 flex items-baseline justify-between">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
             <span className="flex items-center gap-2 text-[13px] font-medium text-ink-1">
               Call results
               <LiveIndicator active={campaignView.campaign?.status === "running"} />
             </span>
-            <span className="text-[12px] text-ink-3">
-              {report.total} on the list
-              {report.remaining > 0 ? ` · ${report.remaining} still to call` : " · complete"}
+            <span className="flex items-center gap-x-3 gap-y-1 text-[12px] text-ink-3 tabular-nums">
+              {campaignView.campaign && (
+                <span className="flex items-center gap-1">
+                  ⏱
+                  <CampaignTimer
+                    startedAt={campaignView.campaign.created_at}
+                    running={campaignView.campaign.status === "running"}
+                    stoppedAt={campaignView.campaign.updated_at}
+                  />
+                  <span className="text-ink-4">working</span>
+                </span>
+              )}
+              <span aria-hidden className="text-ink-4">·</span>
+              <span>
+                <span className="font-medium text-ink-1">{report.placed}</span> calls placed
+              </span>
+              <span aria-hidden className="text-ink-4">·</span>
+              <span>
+                {report.toGo > 0 ? (
+                  <>
+                    <span className="font-medium text-ink-1">{report.toGo}</span> of {report.total} to
+                    go
+                  </>
+                ) : (
+                  <>all {report.total} done</>
+                )}
+              </span>
             </span>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">

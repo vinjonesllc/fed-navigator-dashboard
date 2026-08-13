@@ -1,9 +1,55 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const RED = "oklch(0.60 0.23 27)";
+
+/**
+ * Live count-up of how long the campaign has been working the list. Ticks every
+ * second while running; when stopped, freezes at (stoppedAt − startedAt).
+ * Initializes from startedAt so server and client first-render match (no
+ * hydration mismatch), then jumps to real elapsed on mount.
+ */
+export function CampaignTimer({
+  startedAt,
+  running,
+  stoppedAt,
+}: {
+  startedAt: string;
+  running: boolean;
+  stoppedAt?: string | null;
+}) {
+  const start = Date.parse(startedAt);
+  // Init from `start` so server/client first render match (no hydration
+  // mismatch); the timeout below jumps to real elapsed on the next tick.
+  const [now, setNow] = useState(start);
+  useEffect(() => {
+    if (!running) return;
+    let id: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      setNow(Date.now());
+      id = setTimeout(tick, 1000);
+    };
+    id = setTimeout(tick, 0); // async first tick — avoids synchronous setState in the effect body
+    return () => clearTimeout(id);
+  }, [running]);
+
+  const end = running ? now : stoppedAt ? Date.parse(stoppedAt) : now;
+  const secs = Number.isFinite(start) ? Math.max(0, Math.floor((end - start) / 1000)) : 0;
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  const fmt =
+    h > 0
+      ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+      : `${m}:${String(s).padStart(2, "0")}`;
+  return (
+    <span className="tabular-nums" title="Time the campaign has been working the call list">
+      {fmt}
+    </span>
+  );
+}
 
 /**
  * Shown only while the campaign is actively calling. Flashes a red "live" dot

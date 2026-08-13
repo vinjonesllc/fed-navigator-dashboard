@@ -323,7 +323,10 @@ export type CampaignReport = {
   handoff: number; // asked for a callback / dropped early — team calls by hand
   flaggedForReview: number; // agent flagged as off / hard to categorize
   badNumber: number; // skipped — un-callable number
-  remaining: number; // still queued / in progress
+  completed: number; // reached, link sent, conversation done
+  remaining: number; // still queued / mid-dial
+  placed: number; // total calls actually dialed, including retries
+  toGo: number; // people not yet in a final outcome (still being worked)
 };
 
 export async function getCampaignReport(campaignId: string): Promise<CampaignReport> {
@@ -331,7 +334,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
   const [{ data: targetRows }, { data: answeredRows }] = await Promise.all([
     admin
       .from("call_targets")
-      .select("status, link_channel, booked_event_time, flagged_for_review")
+      .select("status, link_channel, booked_event_time, flagged_for_review, attempts")
       .eq("campaign_id", campaignId),
     admin
       .from("call_attempts")
@@ -360,7 +363,10 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     handoff: 0,
     flaggedForReview: 0,
     badNumber: 0,
+    completed: 0,
     remaining: 0,
+    placed: 0,
+    toGo: 0,
   };
   for (const t of targets) {
     const s = t.status as string;
@@ -370,6 +376,7 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     else if (s === "no_answer") r.noAnswer += 1;
     else if (s === "handoff") r.handoff += 1;
     else if (s === "skipped") r.badNumber += 1;
+    else if (s === "completed") r.completed += 1;
     else if (s === "queued" || s === "calling") r.remaining += 1;
     if (t.flagged_for_review) r.flaggedForReview += 1;
     if (s === "completed" || s === "booked" || s === "declined") r.fullConversation += 1;
@@ -377,6 +384,9 @@ export async function getCampaignReport(campaignId: string): Promise<CampaignRep
     if (t.booked_event_time && s !== "booked") r.linkSentNotBooked += 1;
     if (t.link_channel === "text") r.linkText += 1;
     else if (t.link_channel === "email") r.linkEmail += 1;
+    r.placed += (t.attempts as number) ?? 0;
   }
+  // People still being worked = not yet in a terminal outcome.
+  r.toGo = r.total - (r.booked + r.declined + r.handoff + r.badNumber + r.completed);
   return r;
 }
