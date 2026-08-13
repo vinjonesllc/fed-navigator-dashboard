@@ -320,11 +320,6 @@ export function Part2Client({
                 >
                   <td className="px-4 py-2.5 text-ink-1">
                     {e.full_name}
-                    {e.text_opt_in && (
-                      <span className="ml-2 align-middle font-mono text-[10px] text-lime">
-                        opted-in
-                      </span>
-                    )}
                     {target?.booked_event_time && target.status !== "booked" && (
                       <span className="ml-2 align-middle" title="Link sent — not booked yet">
                         🔗
