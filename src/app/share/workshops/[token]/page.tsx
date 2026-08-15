@@ -158,9 +158,9 @@ export default async function PublicWorkshopPage({
         .eq("dismissed", false),
       admin
         .from("clients")
-        .select("accent_color, eval_sheet_url, next_workshops")
+        .select("eval_sheet_url, next_workshops")
         .eq("id", workshop.client_id)
-        .maybeSingle<Pick<Client, "accent_color" | "eval_sheet_url" | "next_workshops">>(),
+        .maybeSingle<Pick<Client, "eval_sheet_url" | "next_workshops">>(),
     ]);
 
   const rows = (attendees ?? []) as Attendee[];
@@ -290,7 +290,7 @@ export default async function PublicWorkshopPage({
       </div>
 
       {/* Next workshop */}
-      <NextWorkshop items={nextWorkshops} accent={client?.accent_color ?? null} />
+      <NextWorkshop items={nextWorkshops} />
 
       {/* Footer CTA */}
       <div className="flex items-center justify-center gap-4 border-t border-line-2 pt-8">

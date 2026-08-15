@@ -5,12 +5,11 @@ const CARD =
 
 const KELLY_MAILTO = "mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date";
 
-export function AccentStrip({ accent }: { accent?: string | null }) {
-  if (!accent) return null;
+export function AccentStrip() {
   return (
     <span
       className="absolute left-0 top-0 bottom-0 w-[3px]"
-      style={{ background: accent }}
+      style={{ background: "var(--brand)" }}
       aria-hidden
     />
   );
@@ -62,17 +61,15 @@ function WorkshopTile({
  */
 export function NextWorkshop({
   items,
-  accent,
   exportHrefFor,
 }: {
   items: NextWorkshopCard[];
-  accent?: string | null;
   exportHrefFor?: (index: number) => string;
 }) {
   if (items.length === 0) {
     return (
       <div className={`relative overflow-hidden p-[18px_20px_20px] ${CARD}`}>
-        <AccentStrip accent={accent} />
+        <AccentStrip />
         <div className="mb-2 text-[12px] uppercase tracking-[0.04em] text-ink-3">
           Next workshop
         </div>
@@ -95,7 +92,7 @@ export function NextWorkshop({
 
   return (
     <div className={`relative overflow-hidden p-[18px_20px_20px] ${CARD}`}>
-      <AccentStrip accent={accent} />
+      <AccentStrip />
       <div className="mb-3 text-[12px] uppercase tracking-[0.04em] text-ink-3">
         {items.length === 1 ? "Next workshop" : "Next workshops"}
       </div>

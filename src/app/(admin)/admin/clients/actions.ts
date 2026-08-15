@@ -16,7 +16,6 @@ const ClientInput = z.object({
   name: z.string().min(2).max(120),
   slug: z.string().optional(),
   contact_email: z.string().email().optional().or(z.literal("")),
-  accent_color: z.string().optional(),
   eval_sheet_url: z.string().url().optional().or(z.literal("")),
   brand: z.enum(CLIENT_BRANDS).default("Fed Pilot"),
   // JSON array of { date, hour, tz, registrant_tab, reg_url } from the form.
@@ -70,7 +69,6 @@ function readClientForm(formData: FormData) {
     name: formData.get("name"),
     slug: formData.get("slug") ?? undefined,
     contact_email: formData.get("contact_email") ?? "",
-    accent_color: formData.get("accent_color") ?? "",
     eval_sheet_url: formData.get("eval_sheet_url") ?? "",
     brand: formData.get("brand") ?? undefined,
     next_workshops: formData.get("next_workshops") ?? undefined,
@@ -94,7 +92,6 @@ export async function createClient(formData: FormData): Promise<ActionResult> {
     name: parsed.name,
     slug,
     contact_email: parsed.contact_email || null,
-    accent_color: parsed.accent_color || null,
     eval_sheet_url: parsed.eval_sheet_url || null,
     brand: parsed.brand,
     ...nextWorkshopFields(parsed),
@@ -124,7 +121,6 @@ export async function updateClient(id: string, formData: FormData): Promise<Acti
       name: parsed.name,
       slug,
       contact_email: parsed.contact_email || null,
-      accent_color: parsed.accent_color || null,
       eval_sheet_url: parsed.eval_sheet_url || null,
       brand: parsed.brand,
       ...nextWorkshopFields(parsed),
@@ -136,30 +132,4 @@ export async function updateClient(id: string, formData: FormData): Promise<Acti
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${id}`);
   return { ok: true };
-}
-
-export async function uploadClientLogo(clientId: string, formData: FormData) {
-  await requireContentManager();
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) return;
-
-  const admin = createSupabaseAdminClient();
-  const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
-  const path = `${clientId}/logo-${Date.now()}.${ext}`;
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const { error: upErr } = await admin.storage
-    .from("client-logos")
-    .upload(path, buffer, { contentType: file.type, upsert: true });
-  if (upErr) throw new Error(upErr.message);
-
-  const { data: pub } = admin.storage.from("client-logos").getPublicUrl(path);
-  const { error: updErr } = await admin
-    .from("clients")
-    .update({ logo_url: pub.publicUrl, updated_at: new Date().toISOString() })
-    .eq("id", clientId);
-  if (updErr) throw new Error(updErr.message);
-
-  revalidatePath("/admin/clients");
-  revalidatePath(`/admin/clients/${clientId}`);
 }

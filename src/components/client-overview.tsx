@@ -10,27 +10,21 @@ const CARD =
 const PILL =
   "inline-flex items-center gap-1.5 rounded-full border border-line-1 bg-bg-2 px-2 py-0.5 font-mono text-[11px] text-ink-3";
 
+/** Brand-blue hairline across the top of a tile. */
+const HAIRLINE = "linear-gradient(to right, transparent, var(--brand), transparent)";
+
 function Stat({
   label,
   value,
   hint,
-  accent,
 }: {
   label: string;
   value: string | number;
   hint?: string;
-  accent?: string | null;
 }) {
   return (
     <div className="relative overflow-hidden rounded-[14px] border border-line-1 bg-gradient-to-b from-surface to-background p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
-      <div
-        className="absolute left-0 right-0 top-0 h-px"
-        style={{
-          background: accent
-            ? `linear-gradient(to right, transparent, ${accent}, transparent)`
-            : "linear-gradient(to right, transparent, oklch(0.60 0.02 260 / 0.18), transparent)",
-        }}
-      />
+      <div className="absolute left-0 right-0 top-0 h-px" style={{ background: HAIRLINE }} />
       <div className="mb-3.5 text-[12px] uppercase tracking-[0.04em] text-ink-3">{label}</div>
       <div className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1">
         {value}
@@ -40,27 +34,12 @@ function Stat({
   );
 }
 
-function RatingStat({
-  avg,
-  count,
-  accent,
-}: {
-  avg: number | null;
-  count: number;
-  accent?: string | null;
-}) {
+function RatingStat({ avg, count }: { avg: number | null; count: number }) {
   const full = avg !== null ? Math.floor(avg) : 0;
   const hasHalf = avg !== null && avg - full >= 0.25 && avg - full < 0.75;
   return (
     <div className="relative overflow-hidden rounded-[14px] border border-line-1 bg-gradient-to-b from-surface to-background p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
-      <div
-        className="absolute left-0 right-0 top-0 h-px"
-        style={{
-          background: accent
-            ? `linear-gradient(to right, transparent, ${accent}, transparent)`
-            : "linear-gradient(to right, transparent, oklch(0.60 0.02 260 / 0.18), transparent)",
-        }}
-      />
+      <div className="absolute left-0 right-0 top-0 h-px" style={{ background: HAIRLINE }} />
       <div className="mb-3.5 text-[12px] uppercase tracking-[0.04em] text-ink-3">Average rating</div>
       {avg === null ? (
         <>
@@ -116,16 +95,13 @@ export function ClientOverview({
   editHref,
   nextWorkshops,
   registrationsExportFor,
-  accentColor,
 }: {
   workshops: WorkshopWithStats[];
   workshopHref: (id: string) => string;
   editHref?: (id: string) => string;
   nextWorkshops?: NextWorkshopCard[];
   registrationsExportFor?: (index: number) => string;
-  accentColor?: string | null;
 }) {
-  const accent = accentColor?.trim() || null;
   const totalAttendees = workshops.reduce((acc, w) => acc + w.live_count, 0);
   const totalRegistered = workshops.reduce((acc, w) => acc + w.registered_count, 0);
   const avgAttendancePct =
@@ -146,31 +122,25 @@ export function ClientOverview({
 
   return (
     <div className="space-y-6">
-      <NextWorkshop
-        items={nextWorkshops ?? []}
-        accent={accent}
-        exportHrefFor={registrationsExportFor}
-      />
+      <NextWorkshop items={nextWorkshops ?? []} exportHrefFor={registrationsExportFor} />
 
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Workshops" value={workshops.length} accent={accent} />
+        <Stat label="Workshops" value={workshops.length} />
         <Stat
           label="Total attendees"
           value={totalAttendees}
           hint={`${totalRegistered} registered`}
-          accent={accent}
         />
         <Stat
           label="Average attendance"
           value={`${avgAttendancePct}%`}
           hint="Live ÷ registered"
-          accent={accent}
         />
-        <RatingStat avg={avgRating} count={ratedWorkshops.length} accent={accent} />
+        <RatingStat avg={avgRating} count={ratedWorkshops.length} />
       </div>
 
       <div className={`relative ${CARD} overflow-hidden`}>
-        <AccentStrip accent={accent} />
+        <AccentStrip />
         <div className="flex items-center gap-2.5 px-5 pb-3.5 pt-4">
           <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">Workshops</h3>
           <span className={PILL}>{workshops.length}</span>
