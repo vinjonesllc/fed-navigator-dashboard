@@ -89,6 +89,10 @@ export type Workshop = {
    *  reads exactly this tab. Null on older workshops (falls back). */
   registrant_tab: string | null;
   part2_enabled: boolean;
+  /** Random hex token that keys the public /share/workshops/<token> page.
+   *  Separate from `id` so a shared link can be rotated or revoked without
+   *  touching the workshop row. Null only until migration 0027 is applied. */
+  share_token: string | null;
   eval_rating_avg: number | null;
   eval_rating_responses: number | null;
   created_at: string;

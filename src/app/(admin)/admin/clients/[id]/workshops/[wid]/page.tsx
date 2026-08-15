@@ -96,7 +96,11 @@ export default async function AdminWorkshopDetailPage({
       leadsExportHref={`/api/leads/export?workshopId=${wid}&preset=live`}
       exportAllHref={`/api/leads/export?workshopId=${wid}&preset=all`}
       evalsExportHref={client.eval_sheet_url ? `/api/evals/export?workshopId=${wid}` : undefined}
-      shareBar={manager ? <ShareLinkBar workshopId={wid} /> : undefined}
+      shareBar={
+        manager ? (
+          <ShareLinkBar workshopId={wid} shareToken={workshop.share_token ?? null} />
+        ) : undefined
+      }
       deleteAction={
         manager ? (
           <>

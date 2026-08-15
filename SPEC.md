@@ -206,7 +206,7 @@ RLS policies enforce client-isolation everywhere.
 - [x] Per-client Google Sheet eval ingestion → Claude-picked top 7 testimonials + aggregate rating tile
 - [x] Re-upload Chat / Re-upload Q&A / Re-extract intents / Re-fetch evals admin actions on the workshop page
 - [x] Four-role permission model (`admin` / `editor` / `super_advisor` / `advisor`) + `super_advisor_clients` many-to-many table
-- [x] Public share page `/share/workshops/[wid]` with copy-link UX
+- [x] Public share page `/share/workshops/[token]` with copy-link UX — routed on `workshops.share_token`, `noindex`/`nofollow`
 - [x] Full design port from Claude Design — Space Grotesk + IBM Plex + JetBrains Mono fonts, OKLCH palette, manual dark-mode toggle with anti-FOUC
 - [x] Resend SMTP wired for password-reset emails (fednavigator.com verified)
 

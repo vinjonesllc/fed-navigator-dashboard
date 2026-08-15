@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -13,7 +14,16 @@ import type {
   WorkshopEvalComment,
 } from "@/lib/supabase/types";
 
-export const metadata = { title: "Workshop summary — Fed Navigator" };
+/** The only eval-comment fields this public page is allowed to read. */
+type PublicEvalComment = Pick<WorkshopEvalComment, "id" | "comment_text">;
+
+// Public by design (shared with prospects, no login) — but never indexable:
+// this page shows attendee names, agencies and verbatim eval quotes. Paired
+// with the X-Robots-Tag header on /share/:path* in next.config.ts.
+export const metadata: Metadata = {
+  title: "Workshop summary — Fed Navigator",
+  robots: { index: false, follow: false },
+};
 
 const CARD =
   "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
@@ -106,18 +116,24 @@ function RatingTile({
 export default async function PublicWorkshopPage({
   params,
 }: {
-  params: Promise<{ wid: string }>;
+  params: Promise<{ token: string }>;
 }) {
-  const { wid } = await params;
+  const { token } = await params;
   const admin = createSupabaseAdminClient();
+
+  // Looked up on share_token, never on workshops.id — the workshop id is not a
+  // secret and must not grant access to this page.
+  if (!/^[0-9a-f]{32}$/.test(token)) notFound();
 
   const { data: workshop } = await admin
     .from("workshops")
     .select("*")
-    .eq("id", wid)
+    .eq("share_token", token)
     .maybeSingle<Workshop>();
 
   if (!workshop) notFound();
+
+  const wid = workshop.id;
 
   const [{ data: attendees }, { data: evalComments }, { count: qaCount }, { data: client }] =
     await Promise.all([
@@ -126,9 +142,13 @@ export default async function PublicWorkshopPage({
         .select("*")
         .eq("workshop_id", wid)
         .order("total_time_minutes", { ascending: false }),
+      // Quote text only. comment_author / comment_agency / comment_email are
+      // deliberately not selected: this page is openable by anyone holding the
+      // link, so no attendee is identified on it. The private report reads the
+      // full row.
       admin
         .from("workshop_eval_comments")
-        .select("*")
+        .select("id, comment_text")
         .eq("workshop_id", wid)
         .order("display_order"),
       admin
@@ -145,7 +165,7 @@ export default async function PublicWorkshopPage({
 
   const rows = (attendees ?? []) as Attendee[];
   const liveRows = rows.filter(isLive);
-  const evals = (evalComments ?? []) as WorkshopEvalComment[];
+  const evals = (evalComments ?? []) as PublicEvalComment[];
   const nextWorkshops = client ? await getNextWorkshops(client) : [];
 
   const funnel = buildFunnel(rows);
@@ -170,15 +190,8 @@ export default async function PublicWorkshopPage({
             Workshop
           </span>
           {formatWorkshopDate(workshop.workshop_date)}
-          {workshop.presenter && (
-            <>
-              {"   "}
-              <span className="mr-1.5 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-4 dark:text-[oklch(0.7_0.012_260)]">
-                Presenter
-              </span>
-              {workshop.presenter}
-            </>
-          )}
+          {/* No presenter name here — this page names nobody. The private
+              report still shows it. */}
         </p>
       </div>
 
@@ -214,18 +227,11 @@ export default async function PublicWorkshopPage({
                 <div className="mb-2.5 font-display text-[30px] font-bold leading-[0.7] tracking-[-0.04em] text-lime opacity-80">
                   &ldquo;
                 </div>
+                {/* No attribution here by design — see the eval-comment query
+                    above. The private report still shows author + agency. */}
                 <div className="flex-1 text-[13px] leading-[1.55] text-ink-2 [text-wrap:pretty]">
                   {c.comment_text}
                 </div>
-                {(c.comment_author || c.comment_agency) && (
-                  <div className="mt-3.5 flex items-center gap-2.5 border-t border-line-2 pt-3 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-3">
-                    <span className="text-ink-4">—</span>
-                    <span>
-                      {c.comment_author ?? "Anonymous"}
-                      {c.comment_agency ? `, ${c.comment_agency}` : ""}
-                    </span>
-                  </div>
-                )}
               </div>
             ))}
             {workshop.eval_rating_avg !== null && (
