@@ -8,7 +8,7 @@
 
 - Multi-tenant Next.js 15 + Supabase dashboard where Fed Pilot's workshop clients see their own Zoom Webinar attendee + engagement data
 - Primary ingest: **manual CSV upload** by Fed Pilot admin (Zoom API ingest is deferred — see SPEC §"Ingest model")
-- Co-branded: Fed Pilot logo + client name in the header
+- Fed Navigator branded only — no client logo, client name, or per-client accent colour anywhere in the UI
 - 10+ clients today, magic-link auth, multiple users per client, admin role for Fed Pilot
 
 ## Important files

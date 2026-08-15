@@ -13,7 +13,7 @@ export default async function OverviewPage() {
   const admin = createSupabaseAdminClient();
   const { data: client } = await admin
     .from("clients")
-    .select("accent_color, eval_sheet_url, next_workshops")
+    .select("eval_sheet_url, next_workshops")
     .eq("id", clientId)
     .maybeSingle();
 
@@ -37,7 +37,6 @@ export default async function OverviewPage() {
             ? (w) => `/api/registrations/export?clientId=${clientId}&w=${w}`
             : undefined
         }
-        accentColor={client?.accent_color ?? null}
       />
     </div>
   );

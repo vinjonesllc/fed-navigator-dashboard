@@ -22,12 +22,14 @@ export default async function ClientLayout({ children }: { children: React.React
   const clientId = session.appUser.client_id;
   if (!clientId) redirect("/login?error=no-client");
 
+  // Authorization guard only — the header is Fed Navigator branded, so the row
+  // itself is never rendered. A user whose client_id points at nothing is out.
   const admin = createSupabaseAdminClient();
   const { data: client } = await admin
     .from("clients")
-    .select("*")
+    .select("id")
     .eq("id", clientId)
-    .maybeSingle<Client>();
+    .maybeSingle<Pick<Client, "id">>();
 
   if (!client) redirect("/login?error=no-client");
 
@@ -36,7 +38,6 @@ export default async function ClientLayout({ children }: { children: React.React
       <AppHeader
         email={session.email}
         role={session.appUser.role}
-        client={client}
         nav={
           <nav className="hidden gap-1 md:flex">
             {NAV.map((item) => (
