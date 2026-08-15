@@ -39,7 +39,7 @@ Email + password (no magic links — switched to passwords because of SMTP rate-
 - `/admin/upload` — admin/editor, drag the three Zoom CSVs (attendees + chat + Q&A)
 - `/admin/agency-lookup` — admin/editor, edit email-domain → agency table
 - `/api/leads/export?workshopId=…&preset=live|all|engaged|hot|noshow` — CSV download
-- `/share/workshops/[wid]` — **public**, no auth required; streamlined overview + copy-link from admin workshop page
+- `/share/workshops/[token]` — **public**, no auth required; keyed on `workshops.share_token` (never the workshop id). `noindex, nofollow` via page metadata + an `X-Robots-Tag` header on `/share/:path*`. Names nobody — no attendee names, agencies or presenter; eval quotes render text only. Copy / Revoke / Open from the admin workshop page; Revoke rolls the token and 404s the old URL
 
 ## First-time setup (local dev)
 
@@ -82,7 +82,7 @@ To replicate from scratch:
 - `src/lib/format-date.ts` — `formatWorkshopDate` (TZ-stable YYYY-MM-DD → "May 20, 2026")
 - `src/proxy.ts` — auth session refresh + route gating (Next 16 renamed middleware → proxy)
 - `src/components/workshop-detail.tsx` — admin + client workshop report (single component, role-gated bits passed as props)
-- `src/app/share/workshops/[wid]/page.tsx` — public share page
+- `src/app/share/workshops/[token]/page.tsx` — public share page
 - `supabase/migrations/` — all schema changes in order
 
 ## Develop

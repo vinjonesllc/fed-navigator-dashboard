@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
@@ -489,6 +490,38 @@ export async function reuploadQA(formData: FormData) {
   }
 
   return { qaRows: rows.length, intentInserted: intentResult.inserted };
+}
+
+const RevokeShareLinkSchema = z.object({ workshopId: z.string().uuid() });
+
+/**
+ * Roll the workshop's public share token. The previously copied URL 404s the
+ * moment this returns — that's the point: it's the kill switch for a link that
+ * was forwarded further than intended. Returns the replacement token so the
+ * share bar can show the new URL without a round trip.
+ */
+export async function revokeShareLink(formData: FormData) {
+  await requireContentManager();
+  const parsed = RevokeShareLinkSchema.parse({ workshopId: formData.get("workshopId") });
+
+  // 16 bytes of hex — same shape the DB default and the public route's format
+  // check expect (32 lowercase hex chars).
+  const token = randomBytes(16).toString("hex");
+
+  const admin = createSupabaseAdminClient();
+  const { data: ws, error } = await admin
+    .from("workshops")
+    .update({ share_token: token })
+    .eq("id", parsed.workshopId)
+    .select("client_id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!ws) throw new Error("Workshop not found");
+
+  revalidatePath(`/admin/clients/${ws.client_id}/workshops/${parsed.workshopId}`);
+
+  return { token };
 }
 
 const DeleteSchema = z.object({ workshopId: z.string().uuid() });
