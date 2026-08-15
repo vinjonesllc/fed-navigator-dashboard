@@ -9,7 +9,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ingestZoomCsv } from "@/lib/ingest";
 import { enrichAttendeesFromRegistrations } from "@/lib/enrich";
 import { parseChatCsv, parseQACsv } from "@/lib/csv/parse-transcripts";
-import { clusterQuestions } from "@/lib/themes";
 import { extractIntents } from "@/lib/intents";
 import { fetchEvalComments } from "@/lib/eval-comments";
 import {
@@ -143,12 +142,9 @@ export async function uploadCsv(formData: FormData) {
   }
 
   // 4. Run Claude-side analyses synchronously so the workshop detail page
-  //    renders with intents + themes + eval comments already populated.
+  //    renders with intents + eval comments already populated.
   //    Adds ~20-40s to upload.
   const claudeResults = await Promise.allSettled([
-    result.registrationQuestionHeader
-      ? clusterQuestions(result.workshopId)
-      : Promise.resolve({ created: 0 }),
     extractIntents(result.workshopId),
     fetchEvalComments(result.workshopId),
   ]);
