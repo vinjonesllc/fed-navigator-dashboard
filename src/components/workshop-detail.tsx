@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type {
   Attendee,
-  QuestionTheme,
   Workshop,
   WorkshopChat,
   WorkshopEvalComment,
@@ -221,7 +220,6 @@ function RatingBanner({ avg, responses }: { avg: number; responses: number | nul
 export function WorkshopDetail({
   workshop,
   attendees,
-  themes: _themes,
   intents,
   qa,
   chats = [],
@@ -236,7 +234,6 @@ export function WorkshopDetail({
 }: {
   workshop: Workshop;
   attendees: Attendee[];
-  themes: QuestionTheme[];
   intents: WorkshopIntent[];
   qa: WorkshopQA[];
   chats?: WorkshopChat[];
@@ -249,7 +246,6 @@ export function WorkshopDetail({
   deleteAction?: React.ReactNode;
   shareBar?: React.ReactNode;
 }) {
-  void _themes;
   const funnel = buildFunnel(attendees);
   const liveAttendees = attendees.filter(isLive);
   const visibleQA = qa.filter((q) => !q.dismissed);

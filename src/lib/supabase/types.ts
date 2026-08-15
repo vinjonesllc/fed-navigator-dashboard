@@ -159,16 +159,6 @@ export type Attendee = {
   created_at: string;
 };
 
-export type QuestionTheme = {
-  id: string;
-  workshop_id: string;
-  theme_label: string;
-  description: string | null;
-  count: number;
-  example_quotes: string[];
-  created_at: string;
-};
-
 export type AgencyLookup = {
   domain: string;
   agency_name: string;

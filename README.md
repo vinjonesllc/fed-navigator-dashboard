@@ -75,7 +75,6 @@ To replicate from scratch:
 - `src/lib/supabase/{server,browser,admin}.ts` — three Supabase client factories
 - `src/lib/csv/{parse-zoom,parse-transcripts}.ts` — Zoom export parsers (attendees, chat, Q&A)
 - `src/lib/ingest.ts` — full ingest pipeline
-- `src/lib/themes.ts` — registration-question theme clustering
 - `src/lib/intents.ts` — retiring-soon + cliff-notes-request extraction (presenter context preserved, attendee-email gated)
 - `src/lib/eval-comments.ts` — fetches per-client Google Sheet, code-level date prefilter (workshop_date → +7d), Claude picks best 7 testimonials + computes aggregate rating
 - `src/lib/workshop-stats.ts` — funnel / engagement / retention

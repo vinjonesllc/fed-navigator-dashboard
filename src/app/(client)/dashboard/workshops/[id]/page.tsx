@@ -4,7 +4,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { WorkshopDetail } from "@/components/workshop-detail";
 import type {
   Attendee,
-  QuestionTheme,
   Workshop,
   WorkshopChat,
   WorkshopEvalComment,
@@ -40,7 +39,6 @@ export default async function WorkshopDetailPage({
 
   const [
     { data: attendees },
-    { data: themes },
     { data: intents },
     { data: qa },
     { data: chats },
@@ -51,11 +49,6 @@ export default async function WorkshopDetailPage({
       .select("*")
       .eq("workshop_id", id)
       .order("total_time_minutes", { ascending: false }),
-    admin
-      .from("question_themes")
-      .select("*")
-      .eq("workshop_id", id)
-      .order("count", { ascending: false }),
     admin.from("workshop_intents").select("*").eq("workshop_id", id),
     admin
       .from("workshop_qa")
@@ -78,7 +71,6 @@ export default async function WorkshopDetailPage({
     <WorkshopDetail
       workshop={workshop}
       attendees={(attendees ?? []) as Attendee[]}
-      themes={(themes ?? []) as QuestionTheme[]}
       intents={(intents ?? []) as WorkshopIntent[]}
       qa={(qa ?? []) as WorkshopQA[]}
       chats={(chats ?? []) as WorkshopChat[]}
