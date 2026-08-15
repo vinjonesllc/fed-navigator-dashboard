@@ -1,0 +1,1128 @@
+<!doctype html>
+<!-- Hallmark · macrostructure: Workbench ("Console") · nav: N3 side-rail (+ off-canvas drawer < 1024px) · footer: Ft7 rail-pinned utility
+     genre: modern-minimal · theme: Fed Pilot palette (#3080C2 brand blue, #295F86 deep, navy nav) · tone: utilitarian
+     Report page (workshop detail) — Direction B. Original files untouched. Sample data. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workshop report — Fed Navigator (Direction B · Console)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){try{var m=localStorage.getItem('fednav-theme');
+  if(!m)m=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+</script>
+<style>
+:root{
+  /* ── Fed Pilot palette ────────────────────────────────────────────────
+     Anchor hue 247, taken from the Fed Pilot logo: #3080C2 brand blue,
+     #295F86 deep blue, #BD434A red (kept for errors only). Page is white,
+     navigation sits on a deep Fed Pilot navy. No neutral greys — every
+     neutral carries the anchor's blue tint.                              */
+  --background:oklch(1 0 0);                       /* page — white, no tint */
+  --surface:oklch(1 0 0);                          /* cards                */
+  --wash:oklch(0.975 0.008 248);                   /* #F4F8FC hovers + table heads only */
+  --ink-1:oklch(0.225 0.028 250);                  /* #111D28              */
+  --ink-2:oklch(0.360 0.022 250);
+  --ink-3:oklch(0.520 0.018 250);
+  --ink-4:oklch(0.655 0.014 250);
+  --line-1:oklch(0.480 0.034 248 / 0.42);   /* card edge */
+  --line-2:oklch(0.480 0.034 248 / 0.20);   /* inner rules */
+  /* brand */
+  --brand:#3080C2;                                 /* Fed Pilot blue       */
+  --brand-deep:#295F86;                            /* Fed Pilot deep blue  */
+  --brand-ink:oklch(0.400 0.090 248);              /* #184A75 text-contrast */
+  --brand-soft:oklch(0.583 0.127 247 / 0.10);
+  --brand-bord:oklch(0.583 0.127 247 / 0.32);
+  /* dark navigation ground */
+  --nav-bg:oklch(0.270 0.050 250);                 /* #12283E              */
+  --nav-bg-2:oklch(0.330 0.048 250);
+  --nav-line:oklch(1 0 0 / 0.15);
+  --nav-ink:oklch(0.985 0.006 250);
+  --nav-ink-2:oklch(0.840 0.020 250);
+  --nav-ink-3:oklch(0.700 0.024 250);
+  /* semantic only — never decorative */
+  --amber:oklch(0.66 0.17 60); --amber-ink:oklch(0.52 0.13 50);
+  --amber-soft:oklch(0.62 0.13 50 / 0.09); --amber-bord:oklch(0.62 0.13 50 / 0.40);
+  --danger:#BD434A;                                /* Fed Pilot red        */
+  --accent:var(--brand);                           /* single brand accent  */
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-sans:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+  --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
+  --radius:12px; --rail:248px;
+  --shadow:0 1px 2px oklch(0.30 0.03 250/0.05),0 10px 26px oklch(0.30 0.03 250/0.05);
+  --ease-out:cubic-bezier(.2,.6,.25,1); --dur:160ms;
+}
+.dark{
+  --background:oklch(0.170 0.020 250); --surface:oklch(0.222 0.024 250);
+  --wash:oklch(0.198 0.022 250);
+  --ink-1:oklch(0.960 0.010 250); --ink-2:oklch(0.825 0.014 250);
+  --ink-3:oklch(0.660 0.016 250); --ink-4:oklch(0.500 0.018 250);
+  --line-1:oklch(0.660 0.030 250 / 0.34); --line-2:oklch(0.660 0.030 250 / 0.18);
+  --brand:oklch(0.720 0.110 247); --brand-deep:oklch(0.620 0.110 247);
+  --brand-ink:oklch(0.780 0.100 247);
+  --brand-soft:oklch(0.720 0.110 247 / 0.16); --brand-bord:oklch(0.720 0.110 247 / 0.38);
+  --nav-bg:oklch(0.205 0.030 250); --nav-bg-2:oklch(0.262 0.032 250);
+  --amber:oklch(0.84 0.17 70); --amber-ink:oklch(0.84 0.15 55);
+  --amber-soft:oklch(0.84 0.15 55 / 0.12); --amber-bord:oklch(0.84 0.15 55 / 0.35);
+  --danger:oklch(0.75 0.15 25);
+  --shadow:0 1px 2px oklch(0 0 0/0.34),0 8px 24px oklch(0 0 0/0.30);
+}
+
+/* ── dark navigation ground (rail + mobile topbar) ─────────────────────── */
+.rail,.topbar{
+  --surface:var(--nav-bg-2); --wash:var(--nav-bg-2);
+  --ink-1:var(--nav-ink); --ink-2:var(--nav-ink-2);
+  --ink-3:var(--nav-ink-3); --ink-4:var(--nav-ink-3);
+  --line-1:var(--nav-line); --line-2:oklch(1 0 0 / 0.08);
+  background:var(--nav-bg); color:var(--nav-ink);
+}
+.rail{border-right:1px solid oklch(1 0 0 / 0.10)}
+.topbar{border-bottom:1px solid oklch(1 0 0 / 0.10)}
+.rail .btn,.topbar .iconbtn,.rail .iconbtn{background:oklch(1 0 0 / 0.07)}
+.rail .btn:hover,.topbar .iconbtn:hover,.rail .iconbtn:hover{background:oklch(1 0 0 / 0.15)}
+.rail .identity{background:oklch(1 0 0 / 0.07)}
+.rail .identity:hover{background:oklch(1 0 0 / 0.15)}
+.railnav a:hover{background:oklch(1 0 0 / 0.09)}
+.railnav a[aria-current="page"]{background:oklch(1 0 0 / 0.13)}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--background); color:var(--ink-1);
+  font-family:var(--font-sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.02em; font-style:normal; margin:0;
+  overflow-wrap:anywhere; min-width:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
+button{font:inherit}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.shell{display:grid; grid-template-columns:minmax(0,1fr); min-height:100vh}
+@media(min-width:1024px){.shell{grid-template-columns:var(--rail) minmax(0,1fr)}}
+
+/* side rail — same chrome as the Console overview */
+.rail{background:var(--nav-bg); display:flex; flex-direction:column;
+  gap:var(--space-5); padding:var(--space-5) var(--space-4); position:fixed; inset:0 auto 0 0;
+  width:min(300px,84vw); z-index:50; transform:translateX(-101%); transition:transform 200ms var(--ease-out)}
+.rail.open{transform:none; box-shadow:0 0 60px oklch(0.17 0.02 250 / .3)}
+@media(min-width:1024px){.rail{position:sticky; top:0; height:100vh; width:auto; transform:none; box-shadow:none}}
+.rail__brand{display:flex; align-items:center; gap:10px; text-decoration:none}
+.rail__mark{width:34px; height:34px; border-radius:9px; flex:none}
+.rail__name{font-family:var(--font-display); font-weight:600; font-size:15px}
+.railnav{display:flex; flex-direction:column; gap:2px}
+.railnav a{display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:9px; font-size:13.5px;
+  color:var(--ink-3); text-decoration:none; white-space:nowrap;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.railnav a:hover{background:var(--wash); color:var(--ink-1)}
+.railnav a[aria-current="page"]{background:var(--wash); color:var(--ink-1); font-weight:600;
+  box-shadow:inset 3px 0 0 var(--accent)}
+.railnav svg{width:16px; height:16px; flex:none; opacity:.85}
+.rail__foot{margin-top:auto; display:flex; flex-direction:column; gap:var(--space-3);
+  border-top:1px solid var(--line-2); padding-top:var(--space-4)}
+.identity{display:flex; align-items:center; gap:9px; width:100%; text-align:left; min-width:0;
+  border:1px solid var(--line-1); border-radius:999px; background:var(--surface); padding:5px 12px 5px 5px;
+  cursor:pointer; transition:background var(--dur) var(--ease-out)}
+.identity:hover{background:var(--wash)}
+.identity__avatar{display:grid; place-items:center; width:28px; height:28px; flex:none; border-radius:50%;
+  background:linear-gradient(135deg,var(--brand),var(--brand-deep));
+  color:#fff; font-family:var(--font-display); font-weight:700; font-size:11px}
+.identity__meta{min-width:0}
+.identity__email{font-size:12px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.identity__role{font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--brand)}
+.rail__actions{display:flex; gap:var(--space-2)}
+
+.topbar{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:var(--space-3);
+  padding:11px var(--space-4)}
+@media(min-width:1024px){.topbar{display:none}}
+.scrim{position:fixed; inset:0; background:oklch(0.17 0.02 250 / .45); z-index:45; opacity:0;
+  pointer-events:none; transition:opacity 200ms var(--ease-out)}
+.scrim.show{opacity:1; pointer-events:auto}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-2);
+  font-size:13px; font-weight:500; padding:7px 12px; cursor:pointer; text-decoration:none;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.btn:hover{background:var(--wash); color:var(--ink-1)}
+.btn:active{transform:translateY(1px)}
+.btn--solid{background:var(--brand-deep); border-color:var(--brand-deep); color:#fff}
+.btn--solid:hover{background:var(--brand-ink); border-color:var(--brand-ink); color:#fff}
+.btn--wide{width:100%}
+.btn--sm{padding:5px 10px; font-size:12px}
+.iconbtn{display:grid; place-items:center; width:34px; height:34px; flex:none; border:1px solid var(--line-1);
+  border-radius:9px; background:var(--surface); color:var(--ink-3); cursor:pointer;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.iconbtn:hover{background:var(--wash); color:var(--ink-1)}
+
+/* work area */
+.work{padding:var(--space-6) var(--space-4) var(--space-10); min-width:0}
+@media(min-width:768px){.work{padding:var(--space-8) var(--space-8) var(--space-10)}}
+.crumb{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-3)}
+.crumb a{text-decoration:none}.crumb a:hover{color:var(--ink-1)}
+.workhead{margin-top:var(--space-4); padding-bottom:var(--space-5); border-bottom:1px solid var(--line-1);
+  display:flex; gap:var(--space-5); flex-wrap:wrap; align-items:flex-start}
+.workhead__main{flex:1 1 320px; min-width:0}
+.workhead h1{font-size:clamp(23px,4vw,31px); font-weight:600; line-height:1.12; letter-spacing:-.025em}
+.workhead h1 .topic{font-size:.62em; font-weight:400; color:var(--ink-3)}
+.meta{margin-top:11px; display:flex; flex-wrap:wrap; gap:5px 18px; font-family:var(--font-mono); font-size:12px}
+.meta__k{color:var(--ink-4); text-transform:uppercase; letter-spacing:.06em; margin-right:6px}
+.meta__v{color:var(--ink-2); font-weight:500}
+.samplechip{display:inline-flex; align-items:center; gap:7px; border:1px dashed var(--line-1);
+  border-radius:999px; padding:5px 12px; font-size:12px; color:var(--ink-3); background:var(--wash)}
+.samplechip strong{color:var(--ink-2); font-weight:600}
+
+.cols{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-6); margin-top:var(--space-6)}
+@media(min-width:1240px){.cols{grid-template-columns:minmax(0,1fr) 300px; align-items:start}}
+
+/* kpis */
+.kpis{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1000px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); padding:14px 15px 13px; box-shadow:var(--shadow)}
+.kpi--key{border-color:var(--brand-bord); background:linear-gradient(to bottom,var(--brand-soft),var(--surface))}
+.kpi--key::after{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(to bottom,var(--brand),var(--brand-deep))}
+.kpi--2::after{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--brand-deep); opacity:.55}
+.kpi__label{display:flex; align-items:center; gap:7px; font-size:11.5px; text-transform:uppercase;
+  letter-spacing:.04em; color:var(--ink-3)}
+.kpi--key .kpi__label{color:var(--brand-ink)}
+.keytag{border-radius:999px; background:var(--brand-soft); padding:1px 6px; font-family:var(--font-mono);
+  font-size:9px; font-weight:600; letter-spacing:.08em; color:var(--brand-ink)}
+.kpi__value{margin-top:9px; font-family:var(--font-display); font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums; font-size:30px; color:var(--ink-2)}
+.kpi--key .kpi__value{font-size:44px; color:var(--brand-ink)}
+.kpi--2 .kpi__value{font-size:36px; color:var(--ink-1)}
+.kpi__hint{margin-top:9px; font-size:11.5px; color:var(--ink-3)}
+
+/* panels */
+.panel{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); margin-top:var(--space-6)}
+.panel__accent{position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent)}
+.panel__head{display:flex; align-items:center; gap:10px; padding:14px 18px 12px; flex-wrap:wrap}
+.panel__eyebrow{width:100%; font-family:var(--font-mono); font-size:10px; text-transform:uppercase;
+  letter-spacing:.16em; color:var(--ink-4)}
+.panel__head h2{font-size:16px; font-weight:600}
+.panel__body{padding:0 18px 18px}
+.pill{display:inline-flex; align-items:center; border:1px solid var(--line-1); background:var(--wash);
+  border-radius:999px; padding:1px 9px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+.helpbtn{display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%;
+  border:1px solid var(--line-1); background:transparent; color:var(--ink-3); font-size:10.5px;
+  font-weight:700; cursor:pointer; line-height:1}
+.helpbtn:hover{border-color:var(--ink-3); background:var(--wash); color:var(--ink-1)}
+.panel__act{margin-left:auto; display:flex; gap:var(--space-2); flex-wrap:wrap}
+
+/* rating + quotes */
+.rating{display:flex; flex-wrap:wrap; align-items:center; gap:10px 26px; border:1px solid var(--brand-bord);
+  border-radius:var(--radius); padding:16px 20px; position:relative; overflow:hidden;
+  background:linear-gradient(to right,var(--brand-soft),transparent)}
+.rating::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(to bottom,var(--brand),var(--brand-deep))}
+.rating__num{font-family:var(--font-display); font-size:46px; font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.rating__den{font-size:19px; color:var(--ink-3); margin-left:5px}
+.stars{color:var(--amber); letter-spacing:.06em; line-height:1}
+.stars .s-half{opacity:.6} .stars .s-off{opacity:.25}
+.rating__cap{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--ink-3); margin-top:7px}
+.quotes{margin-top:var(--space-4); display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:700px){.quotes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1500px){.quotes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.quote{position:relative; overflow:hidden; display:flex; flex-direction:column; min-height:150px;
+  border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  padding:15px 17px 16px; text-align:left; cursor:pointer; color:inherit;
+  transition:background var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out)}
+.quote:hover{background:var(--surface); box-shadow:var(--shadow)}
+.quote::before{content:""; position:absolute; left:0; top:0; bottom:0; width:2px;
+  background:linear-gradient(to bottom,var(--brand),var(--brand-deep)); opacity:.6}
+.quote__mark{font-family:var(--font-display); font-size:18px; font-weight:700; line-height:1;
+  color:var(--brand); opacity:.4; margin-bottom:6px}
+.quote__text{flex:1; font-size:14px; line-height:1.55; color:var(--ink-1); text-wrap:pretty}
+.quote__by{margin-top:13px; border-top:1px solid var(--line-2); padding-top:11px;
+  font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+.note{margin:var(--space-3) 0 0; font-size:11.5px; color:var(--ink-3)}
+
+/* engagement + retention */
+.split{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-4)}
+@media(min-width:900px){.split{grid-template-columns:minmax(0,300px) minmax(0,1fr)}}
+.subcard{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface); padding:15px 17px}
+.sublabel{font-family:var(--font-mono); font-size:11px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.12em; color:var(--ink-3); display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  margin-bottom:var(--space-4)}
+.engrow{display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);
+  border:1px solid var(--line-1); border-radius:10px; background:var(--surface); padding:11px 15px;
+  margin-bottom:10px}
+.engrow__k{font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--ink-3)}
+.engrow__v{font-family:var(--font-display); font-size:26px; font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block; width:100%; min-width:380px; height:auto}
+
+/* follow-up */
+.signals{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:980px){.signals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sig{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface); padding:14px 16px 8px}
+.sig__head{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:10px}
+.sig__head h3{font-size:14px; font-weight:600}
+.list{list-style:none; margin:0; padding:0}
+.list__row{width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:4px 12px; padding:9px 0; border-bottom:1px solid var(--line-2); background:none; border-left:0;
+  border-right:0; border-top:0; text-align:left; cursor:pointer; color:inherit;
+  transition:background var(--dur) var(--ease-out)}
+.list__row:hover{background:var(--surface)}
+.list__name{display:flex; align-items:center; gap:7px; font-size:13px; font-weight:500; color:var(--ink-1)}
+.list__mail{font-family:var(--font-mono); font-size:11px; color:var(--ink-4)}
+.list__detail{font-family:var(--font-mono); font-size:11px; color:var(--brand-ink)}
+.list__sub{flex-basis:100%; font-size:11.5px; color:var(--ink-3)}
+.src{display:inline-flex; align-items:center; border-radius:999px; border:1px solid var(--line-2);
+  background:var(--surface); color:var(--ink-4); padding:1px 6px; font-size:9.5px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.04em; flex:none}
+.src--eval{border-color:var(--amber-bord); background:var(--amber-soft); color:var(--amber-ink)}
+.worries{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3); margin-top:var(--space-3)}
+@media(min-width:700px){.worries{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1500px){.worries{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.worry{display:flex; flex-direction:column; height:100%; border:1px solid var(--line-1); border-radius:10px;
+  background:var(--surface); padding:13px 15px; text-align:left; cursor:pointer; color:inherit;
+  transition:background var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out)}
+.worry:hover{background:var(--surface); box-shadow:var(--shadow)}
+.worry__q{font-size:13px; font-style:italic; line-height:1.45; color:var(--amber-ink); margin-bottom:12px;
+  text-wrap:pretty}
+.worry__by{margin-top:auto; border-top:1px solid var(--line-2); padding-top:10px}
+.worry__nm{display:flex; align-items:center; gap:7px; font-size:13px; font-weight:500; color:var(--ink-1)}
+
+/* tables */
+.tablewrap{overflow-x:auto; border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface)}
+.tablescroll{max-height:26rem; overflow-y:auto}
+table{width:100%; border-collapse:separate; border-spacing:0; font-size:13px; min-width:560px}
+th{position:sticky; top:0; background:var(--wash); border-bottom:1px solid var(--line-1);
+  font-family:var(--font-mono); font-size:10.5px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); text-align:left; padding:10px 16px; white-space:nowrap; z-index:1}
+th.num{text-align:right}
+th button{display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; color:inherit;
+  cursor:pointer; font:inherit; text-transform:inherit; letter-spacing:inherit}
+th button:hover{color:var(--ink-1)}
+th .hint{text-transform:none; letter-spacing:0; color:var(--ink-4)}
+td{border-bottom:1px solid var(--line-2); padding:11px 16px; color:var(--ink-2); vertical-align:top}
+tbody tr{cursor:pointer; transition:background var(--dur) var(--ease-out)}
+tbody tr:hover{background:var(--wash)}
+td.num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums}
+.person{display:flex; align-items:center; gap:11px; min-width:0}
+.person__av{display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:50%;
+  color:#fff; font-family:var(--font-display); font-size:11px; font-weight:600}
+.person__nm{font-weight:500; color:var(--ink-1)}
+.person__em{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-4)}
+.agency{display:inline-flex; align-items:center; border-radius:5px; border:1px solid var(--line-1);
+  background:var(--wash); color:var(--ink-2); padding:2px 8px; font-family:var(--font-mono); font-size:11px}
+.agency--gov{border-color:var(--brand-bord); background:var(--brand-soft); color:var(--brand-ink)}
+.eng{display:inline-flex; align-items:center; gap:9px; justify-content:flex-end; font-family:var(--font-mono);
+  font-weight:600; color:var(--ink-1)}
+.eng .den{font-weight:400; color:var(--ink-4)}
+.eng i{display:inline-block; height:4px; border-radius:2px;
+  background:linear-gradient(to right,var(--brand),var(--brand-deep))}
+.foot-note{padding:12px 16px; font-size:11.5px; color:var(--ink-4); border-top:1px solid var(--line-2)}
+.foot-note b{color:var(--ink-2); font-weight:500}
+
+/* right rail */
+.side{display:flex; flex-direction:column; gap:var(--space-4)}
+@media(min-width:1240px){.side{position:sticky; top:var(--space-6)}}
+.sidecard{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  box-shadow:var(--shadow); padding:15px 17px}
+.sidecard h2{font-family:var(--font-mono); font-size:10.5px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.14em; color:var(--ink-4); margin-bottom:var(--space-3)}
+.sidecard .btn{width:100%; margin-bottom:var(--space-2)}
+.glance{list-style:none; margin:0; padding:0}
+.glance li{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:8px 0;
+  border-bottom:1px solid var(--line-2); font-size:12.5px; color:var(--ink-3)}
+.glance li:last-child{border-bottom:none}
+.glance b{font-family:var(--font-display); font-size:17px; font-weight:600; color:var(--ink-1);
+  font-variant-numeric:tabular-nums}
+.jump{list-style:none; margin:0; padding:0}
+.jump a{display:block; padding:7px 0; border-bottom:1px solid var(--line-2); font-size:13px;
+  color:var(--ink-2); text-decoration:none}
+.jump li:last-child a{border-bottom:none}
+.jump a:hover{color:var(--ink-1)}
+
+/* dialogs + toast */
+dialog{border:1px solid var(--line-1); border-radius:14px; background:var(--surface); color:var(--ink-1);
+  padding:0; width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:oklch(0.17 0.02 250 / .45)}
+.dlg__body{padding:var(--space-6)}
+.dlg__body h2{font-size:18px; font-weight:600}
+.helpblock{margin-top:var(--space-4); border:1px solid var(--line-1); border-radius:10px;
+  background:var(--surface); padding:13px 15px}
+.helpblock--accent{border-color:var(--brand-bord); background:var(--brand-soft)}
+.helpblock__k{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--ink-3); margin-bottom:5px}
+.helpblock--accent .helpblock__k{color:var(--brand-ink)}
+.helpblock__b{font-size:13.5px; color:var(--ink-2); line-height:1.5}
+.dlg__foot{display:flex; justify-content:flex-end; gap:var(--space-2); margin-top:var(--space-5)}
+.pdet{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-3); margin-top:var(--space-5)}
+.pdet div{border:1px solid var(--line-1); border-radius:10px; background:var(--surface); padding:11px 13px}
+.pdet dt{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-4)}
+.pdet dd{margin:5px 0 0; font-size:14px; font-weight:500; color:var(--ink-1)}
+/* ─── empty-state appendix ─────────────────────────────────────────────── */
+.states{margin-top:var(--space-6); border-top:1px dashed var(--line-1); padding-top:var(--space-5)}
+.states h2{font-size:15px; font-weight:600}
+.states__note{font-size:12.5px; color:var(--ink-3); margin:6px 0 var(--space-5)}
+.statecard{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  box-shadow:var(--shadow); padding:16px 18px; margin-bottom:var(--space-3)}
+.statecard__cap{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); margin-bottom:10px}
+
+.pdesc{margin:6px 0 0; font-family:var(--font-mono); font-size:12px; color:var(--ink-3)}
+.chips{display:flex; flex-wrap:wrap; gap:var(--space-2); margin-top:var(--space-5)}
+.mchip{display:flex; align-items:center; gap:8px; border:1px solid var(--line-1); border-radius:10px;
+  background:var(--surface); padding:7px 12px}
+.mchip b{font-family:var(--font-display); font-size:18px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums}
+.mchip span{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-3)}
+.msec{margin-top:var(--space-5)}
+.msec h4{font-family:var(--font-display); font-size:13px; font-weight:600; margin:0 0 var(--space-3)}
+.mrow{border:1px solid var(--line-2); border-radius:8px; background:var(--surface); padding:8px 12px;
+  margin-bottom:6px; font-size:12.5px; color:var(--ink-2)}
+.mrow .rep{margin-left:8px; font-size:10.5px; color:var(--ink-4)}
+.mrow .ans{margin:6px 0 0; border-top:1px solid var(--line-2); padding-top:6px; font-size:11.5px; color:var(--ink-3)}
+.mrow .ans i{font-style:normal; color:var(--ink-4)}
+.mnone{font-size:12.5px; color:var(--ink-3); margin:0}
+.evaltbl{border:1px solid var(--line-2); border-radius:8px; overflow:hidden}
+.evaltbl > div{display:grid; grid-template-columns:40% 60%; gap:8px; padding:6px 12px; font-size:12.5px;
+  border-top:1px solid var(--line-2)}
+.evaltbl > div:first-child{border-top:0}
+.evaltbl dt{color:var(--ink-4)} .evaltbl dd{margin:0; color:var(--ink-2)}
+th .info{cursor:help; color:var(--ink-4)}
+th button i{font-style:normal; color:var(--ink-4)}
+th button[aria-sort] i{color:var(--ink-1)}
+.qlist{margin:var(--space-5) 0 0; padding:0; list-style:none}
+.qlist li{border-top:1px solid var(--line-2); padding:10px 0; font-size:13.5px; color:var(--ink-2)}
+.field{margin-bottom:var(--space-4)}
+.field label{display:block; font-size:13px; font-weight:500; margin-bottom:6px}
+.field input{width:100%; padding:9px 11px; font:inherit; font-size:14px; color:var(--ink-1);
+  background:var(--background); border:1px solid var(--line-1); border-radius:9px}
+.field .help{margin:6px 0 0; font-size:11.5px; color:var(--ink-3)}
+.dlg__msg{min-height:20px; font-size:12.5px; margin:0 0 var(--space-3)}
+.dlg__msg.err{color:var(--danger)} .dlg__msg.ok{color:var(--brand)}
+.toast{position:fixed; right:16px; bottom:16px; z-index:60; max-width:min(380px,calc(100vw - 32px));
+  border:1px solid var(--line-1); border-radius:11px; background:var(--surface); color:var(--ink-2);
+  padding:11px 14px; font-size:12.5px; box-shadow:0 8px 28px oklch(0.17 0.02 250 / .18);
+  opacity:0; transform:translateY(8px); pointer-events:none;
+  transition:opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out)}
+.toast.show{opacity:1; transform:none}
+.toast code{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-1)}
+@media(prefers-reduced-motion:reduce){*{animation:none !important; transition-duration:120ms !important}
+  .rail{transition:none} .toast{transform:none} .btn:active{transform:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="rail" id="rail" aria-label="Primary">
+    <a class="rail__brand" href="/">
+      <svg class="rail__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+        <g transform="translate(20,20) scale(0.6)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+          <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+          <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+          <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+        </g>
+      </svg>
+      <span class="rail__name">Fed Navigator</span>
+    </a>
+    <nav class="railnav" aria-label="Dashboard sections">
+      <a href="/dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Overview</a>
+      <a href="/dashboard/workshops" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v4"/></svg>Workshops</a>
+      <a href="/dashboard/leads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 20v-1a4 4 0 0 0-8 0v1"/><circle cx="12" cy="8" r="3.5"/></svg>Leads</a>
+      <a href="/dashboard/guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/></svg>Guide</a>
+      <a href="/dashboard/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Settings</a>
+    </nav>
+    <div class="rail__foot">
+      <button class="identity" id="chipBtn" type="button" title="Change password">
+        <span class="identity__avatar">DR</span>
+        <span class="identity__meta">
+          <span class="identity__email">dana.reyes@feducatedmv.com</span>
+          <span class="identity__role">Advisor</span>
+        </span>
+      </button>
+      <div class="rail__actions">
+        <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch to dark mode">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="btn btn--wide" type="button" data-preview="POST /auth/sign-out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div style="min-width:0">
+    <div class="topbar">
+      <button class="iconbtn" id="railBtn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="rail">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <a href="/" style="display:flex;align-items:center;gap:9px;text-decoration:none;min-width:0">
+        <svg style="width:26px;height:26px;border-radius:7px;flex:none" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+          <g transform="translate(20,20) scale(0.6)">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+            <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+            <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+            <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+          </g>
+        </svg>
+        <span style="font-family:var(--font-display);font-weight:600;font-size:14px;white-space:nowrap">Fed Navigator</span>
+      </a>
+    </div>
+
+    <main class="work">
+      <div class="crumb">
+        <a href="/dashboard/workshops">← Workshops</a>
+        <span style="color:var(--ink-4)">/</span>
+        <span style="color:var(--ink-2)">May 20, 2026</span>
+      </div>
+
+      <div class="workhead">
+        <div class="workhead__main">
+          <h1>Your TSP in 2026: What Federal Employees Need to Know
+            <span class="topic">· TSP &amp; Retirement Income</span></h1>
+          <div class="meta">
+            <span><span class="meta__k">Workshop</span><b class="meta__v">May 20, 2026</b></span>
+            <span><span class="meta__k">Presenter</span><b class="meta__v">Marcus Whitfield</b></span>
+            <span><span class="meta__k">Duration</span><b class="meta__v">60 min</b></span>
+          </div>
+        </div>
+        <span class="samplechip"><strong>Sample data</strong> — layout review only</span>
+      </div>
+
+      <div class="cols">
+        <div style="min-width:0">
+
+          <section class="kpis" aria-label="Attendance">
+            <div class="kpi kpi--key">
+              <div class="kpi__label">Attended (live) <span class="keytag">KEY</span></div>
+              <div class="kpi__value">268</div>
+              <div class="kpi__hint">Participation = Live</div>
+            </div>
+            <div class="kpi kpi--2">
+              <div class="kpi__label">% Attended</div>
+              <div class="kpi__value">65%</div>
+              <div class="kpi__hint">Live ÷ registered</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi__label">Registered</div>
+              <div class="kpi__value">412</div>
+              <div class="kpi__hint">Total CSV rows ingested</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi__label">Engaged</div>
+              <div class="kpi__value">143</div>
+              <div class="kpi__hint">≥ 1 chat, question, or reaction</div>
+            </div>
+          </section>
+
+          <!-- what attendees said -->
+          <section class="panel" id="said" aria-labelledby="saidH">
+            <span class="panel__accent" aria-hidden="true"></span>
+            <div class="panel__head">
+              <span class="panel__eyebrow">Social proof</span>
+              <h2 id="saidH">What attendees said</h2>
+              <button class="helpbtn" type="button" aria-label="About “What attendees said”" data-help="said">?</button>
+              <span class="pill">11 quoted</span>
+              <span class="panel__act"><a class="btn btn--sm" href="#" data-preview="GET /api/evals/export?workshopId=ws-01">↓ Download evaluations</a></span>
+            </div>
+            <div class="panel__body">
+              <div class="rating">
+                <div><span class="rating__num">4.7</span><span class="rating__den">/ 5</span></div>
+                <div>
+                  <div class="stars" style="font-size:22px" aria-label="4.7 out of 5 stars">
+                    <span>★</span><span>★</span><span>★</span><span>★</span><span class="s-half">★</span>
+                  </div>
+                  <div class="rating__cap">Average rating · 61 responses</div>
+                </div>
+              </div>
+              <div class="quotes">
+                <button class="quote" data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5" title="View this person's details">
+                  <div class="quote__mark">“</div>
+                  <div class="quote__text">I've sat through four of these over the years and this is the first one where the TSP withdrawal rules finally clicked.</div>
+                  <div class="quote__by">— Angela Ruiz, Dept. of Veterans Affairs</div>
+                </button>
+                <button class="quote" data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2" title="View this person's details">
+                  <div class="quote__mark">“</div>
+                  <div class="quote__text">Clear, specific, and no sales pitch. The example with the 62-year-old FERS employee was exactly my situation.</div>
+                  <div class="quote__by">— Dale Hutchins, USDA</div>
+                </button>
+                <button class="quote" data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1" title="View this person's details">
+                  <div class="quote__mark">“</div>
+                  <div class="quote__text">I wish I'd seen this five years ago. Please send the slides.</div>
+                  <div class="quote__by">— Priya Natarajan, Dept. of Homeland Security</div>
+                </button>
+                <button class="quote" data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9" title="View this person's details">
+                  <div class="quote__mark">“</div>
+                  <div class="quote__text">Honestly a lot to take in, but I left with a list of three things to check on my LES.</div>
+                  <div class="quote__by">— Robert Kim, IRS</div>
+                </button>
+                <div class="quote" style="cursor:default">
+                  <div class="quote__mark">“</div>
+                  <div class="quote__text">The survivor benefit section answered a question my wife and I have argued about for two years.</div>
+                  <div class="quote__by">— Anonymous</div>
+                </div>
+                <button class="quote" data-person="Teresa Alvarado" data-email="t.alvarado@ed.gov" data-agency="ed.gov" data-time="44" data-eng="5.1" title="View this person's details">
+                  <div class="quote__mark">“</div>
+                  <div class="quote__text">Best hour I've spent on retirement planning. Signing up for the one-on-one.</div>
+                  <div class="quote__by">— Teresa Alvarado, Dept. of Education</div>
+                </button>
+              </div>
+              <p class="note">Showing 6 of 11. Download evaluations for the full set.</p>
+            </div>
+          </section>
+
+          <!-- engagement & retention -->
+          <section class="panel" id="participation" aria-labelledby="engH">
+            <span class="panel__accent" aria-hidden="true"></span>
+            <div class="panel__head">
+              <span class="panel__eyebrow">Participation</span>
+              <h2 id="engH">Engagement &amp; retention</h2>
+            </div>
+            <div class="panel__body">
+              <div class="split">
+                <div class="subcard">
+                  <div class="sublabel">Engagement breakdown <span class="pill">Totals · 268 live</span></div>
+                  <div class="engrow"><span class="engrow__k">Chats</span><span class="engrow__v" style="color:var(--brand)">214</span></div>
+                  <div class="engrow"><span class="engrow__k">Questions</span><span class="engrow__v" style="color:var(--brand-deep)">8</span></div>
+                  <div class="engrow"><span class="engrow__k">Reactions</span><span class="engrow__v" style="color:var(--amber)">96</span></div>
+                  <p class="note">Totals across all live attendees.</p>
+                </div>
+                <div class="subcard">
+                  <div class="sublabel">Retention curve <span class="pill">60 min session</span></div>
+                  <div class="chartbox">
+                    <svg viewBox="0 0 600 200" role="img" aria-label="Retention curve: 268 attendees at the start, 181 at 60 minutes">
+                      <defs><linearGradient id="retB" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.28"/>
+                        <stop offset="100%" stop-color="var(--brand)" stop-opacity="0"/></linearGradient></defs>
+                      <g stroke="var(--line-2)" stroke-dasharray="3 3">
+                        <line x1="36" y1="170" x2="584" y2="170"/><line x1="36" y1="115" x2="584" y2="115"/>
+                        <line x1="36" y1="60" x2="584" y2="60"/><line x1="36" y1="20" x2="584" y2="20"/>
+                      </g>
+                      <path fill="url(#retB)" d="M36,26.4 L81.7,28.6 L127.3,31.2 L173,35.5 L218.7,39.3 L264.3,42.5 L310,46.2 L355.7,48.9 L401.3,52.7 L447,57 L492.7,61.2 L538.3,67.1 L584,73 L584,170 L36,170 Z"/>
+                      <path fill="none" stroke="var(--brand)" stroke-width="1.75"
+                        d="M36,26.4 L81.7,28.6 L127.3,31.2 L173,35.5 L218.7,39.3 L264.3,42.5 L310,46.2 L355.7,48.9 L401.3,52.7 L447,57 L492.7,61.2 L538.3,67.1 L584,73"/>
+                      <g fill="var(--ink-3)" font-family="var(--font-mono)" font-size="11">
+                        <text x="36" y="190">0m</text><text x="173" y="190">15m</text><text x="310" y="190">30m</text>
+                        <text x="447" y="190">45m</text><text x="566" y="190">60m</text>
+                        <text x="0" y="174">0</text><text x="0" y="63">140</text><text x="0" y="24">280</text>
+                      </g>
+                    </svg>
+                  </div>
+                  <p class="note">Attendees still in the session, sampled every 5 minutes.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- buying signals -->
+          <section class="panel" id="signals" aria-labelledby="sigH">
+            <span class="panel__accent" aria-hidden="true"></span>
+            <div class="panel__head">
+              <span class="panel__eyebrow">Follow-up</span>
+              <h2 id="sigH">Buying signals</h2>
+              <span class="pill">12 flagged</span>
+            </div>
+            <div class="panel__body">
+              <div class="signals">
+                <div class="sig">
+                  <div class="sig__head">
+                    <h3>Retiring within the next 12 months</h3>
+                    <button class="helpbtn" type="button" aria-label="About “Retiring within the next 12 months”" data-help="retiring">?</button>
+                    <span class="pill">5 people</span>
+                  </div>
+                  <ul class="list">
+                    <li><button class="list__row" data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5">
+                      <span class="list__name">Angela Ruiz <span class="src src--eval" title="From a post-workshop evaluation comment">Eval</span></span>
+                      <span class="list__mail">angela.ruiz@va.gov</span><span class="list__detail">September 2026</span></button></li>
+                    <li><button class="list__row" data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2">
+                      <span class="list__name">Dale Hutchins <span class="src" title="From the live chat / Q&amp;A">Chat</span></span>
+                      <span class="list__mail">d.hutchins@usda.gov</span><span class="list__detail">Within 12 months</span></button></li>
+                    <li><button class="list__row" data-person="Karen Boyd" data-email="karen.boyd@gsa.gov" data-agency="gsa.gov" data-time="58" data-eng="8.9">
+                      <span class="list__name">Karen Boyd <span class="src" title="From the live chat / Q&amp;A">Chat + Q&amp;A</span></span>
+                      <span class="list__mail">karen.boyd@gsa.gov</span><span class="list__detail">Within 12 months</span></button></li>
+                    <li><button class="list__row" data-person="Marcus Lee" data-email="m.lee@dhs.gov" data-agency="dhs.gov" data-time="48" data-eng="6.1">
+                      <span class="list__name">Marcus Lee <span class="src" title="From the live chat / Q&amp;A">Q&amp;A</span></span>
+                      <span class="list__mail">m.lee@dhs.gov</span><span class="list__detail">8 weeks</span></button></li>
+                    <li><button class="list__row" data-person="Teresa Alvarado" data-email="t.alvarado@ed.gov" data-agency="ed.gov" data-time="44" data-eng="5.1">
+                      <span class="list__name">Teresa Alvarado <span class="src src--eval" title="From a post-workshop evaluation comment">Eval</span></span>
+                      <span class="list__mail">t.alvarado@ed.gov</span><span class="list__detail">January 2027</span></button></li>
+                  </ul>
+                </div>
+
+                <div class="sig">
+                  <div class="sig__head">
+                    <h3>Cliff notes requested</h3>
+                    <button class="helpbtn" type="button" aria-label="About “Cliff notes requested”" data-help="cliff">?</button>
+                    <span class="pill">3 requests</span>
+                  </div>
+                  <ul class="list">
+                    <li><button class="list__row" data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1">
+                      <span class="list__name">Priya Natarajan <span class="src" title="From the live chat / Q&amp;A">Q&amp;A</span></span>
+                      <span class="list__mail">p.natarajan@dhs.gov</span>
+                      <span class="list__sub">Asked for the slides and the withdrawal-rules summary</span></button></li>
+                    <li><button class="list__row" data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9">
+                      <span class="list__name">Robert Kim <span class="src" title="From the live chat / Q&amp;A">Chat</span></span>
+                      <span class="list__mail">robert.kim@irs.gov</span>
+                      <span class="list__sub">Left an email address for the written recap</span></button></li>
+                    <li><button class="list__row" data-person="Sandra Oyelaran" data-email="s.oyelaran@va.gov" data-agency="va.gov" data-time="41" data-eng="4.9">
+                      <span class="list__name">Sandra Oyelaran <span class="src src--eval" title="From a post-workshop evaluation comment">Eval</span></span>
+                      <span class="list__mail">s.oyelaran@va.gov</span>
+                      <span class="list__sub">Requested the cliff notes in her evaluation</span></button></li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="sig" style="margin-top:var(--space-3)">
+                <div class="sig__head">
+                  <h3>Worried about current situation</h3>
+                  <button class="helpbtn" type="button" aria-label="About “Worried about current situation”" data-help="worried">?</button>
+                  <span class="pill">4 people</span>
+                </div>
+                <div class="worries">
+                  <button class="worry" data-person="Denise Farrow" data-email="d.farrow@peraton.com" data-agency="usda.gov" data-time="39" data-eng="4.6">
+                    <div class="worry__q">“Feels like a roller coaster trying to get to retirement.”</div>
+                    <div class="worry__by"><div class="worry__nm">Denise Farrow <span class="src" title="From the live chat / Q&amp;A">Chat</span></div>
+                      <div class="list__mail">d.farrow@peraton.com</div></div>
+                  </button>
+                  <button class="worry" data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9">
+                    <div class="worry__q">“Clear as mud before today, honestly.”</div>
+                    <div class="worry__by"><div class="worry__nm">Robert Kim <span class="src" title="From the live chat / Q&amp;A">Chat</span></div>
+                      <div class="list__mail">robert.kim@irs.gov</div></div>
+                  </button>
+                  <button class="worry" data-person="Gerald Nunez" data-email="g.nunez@va.gov" data-agency="va.gov" data-time="54" data-eng="7.6">
+                    <div class="worry__q">“Amen.”</div>
+                    <div class="worry__by"><div class="worry__nm">Gerald Nunez <span class="src" title="From the live chat / Q&amp;A">Chat</span></div>
+                      <div class="list__mail">g.nunez@va.gov</div></div>
+                  </button>
+                  <button class="worry" data-person="Michelle Trent" data-email="m.trent@ssa.gov" data-agency="ssa.gov" data-time="51" data-eng="6.4">
+                    <div class="worry__q">“It's a lot to take in and I'm not sure where to start.”</div>
+                    <div class="worry__by"><div class="worry__nm">Michelle Trent <span class="src src--eval" title="From a post-workshop evaluation comment">Eval</span></div>
+                      <div class="list__mail">m.trent@ssa.gov</div></div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Q&A -->
+          <section class="panel" id="qa" aria-labelledby="qaH">
+            <span class="panel__accent" aria-hidden="true"></span>
+            <div class="panel__head">
+              <span class="panel__eyebrow">Transcript</span>
+              <h2 id="qaH">Q&amp;A</h2>
+              <button class="helpbtn" type="button" aria-label="About “Q&A”" data-help="qa">?</button>
+              <span class="pill">8 questions</span>
+            </div>
+            <div class="panel__body">
+              <div class="tablewrap"><div class="tablescroll">
+                <table>
+                  <thead><tr><th scope="col">Question</th><th scope="col" style="width:220px">Asked by</th></tr></thead>
+                  <tbody>
+                    <tr data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5" title="View this person's details">
+                      <td>If I retire at 62 with 30 years, does the FERS supplement stop at 62 or continue?</td>
+                      <td><div class="person__nm">Angela Ruiz</div><div class="person__em">angela.ruiz@va.gov</div></td></tr>
+                    <tr data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2" title="View this person's details">
+                      <td>Can I roll a traditional TSP into a Roth IRA without a tax hit?</td>
+                      <td><div class="person__nm">Dale Hutchins</div><div class="person__em">d.hutchins@usda.gov</div></td></tr>
+                    <tr data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1" title="View this person's details">
+                      <td>What happens to my FEHB premium once I'm on Medicare Part B?</td>
+                      <td><div class="person__nm">Priya Natarajan</div><div class="person__em">p.natarajan@dhs.gov</div></td></tr>
+                    <tr data-person="Karen Boyd" data-email="karen.boyd@gsa.gov" data-agency="gsa.gov" data-time="58" data-eng="8.9" title="View this person's details">
+                      <td>Is the G Fund still the right place if I'm five years out?</td>
+                      <td><div class="person__nm">Karen Boyd</div><div class="person__em">karen.boyd@gsa.gov</div></td></tr>
+                    <tr data-person="Gerald Nunez" data-email="g.nunez@va.gov" data-agency="va.gov" data-time="54" data-eng="7.6" title="View this person's details">
+                      <td>How is the survivor annuity election calculated if I remarry?</td>
+                      <td><div class="person__nm">Gerald Nunez</div><div class="person__em">g.nunez@va.gov</div></td></tr>
+                    <tr data-person="Marcus Lee" data-email="m.lee@dhs.gov" data-agency="dhs.gov" data-time="48" data-eng="6.1" title="View this person's details">
+                      <td>Do unused sick leave hours count toward the 30-year mark?</td>
+                      <td><div class="person__nm">Marcus Lee</div><div class="person__em">m.lee@dhs.gov</div></td></tr>
+                    <tr data-person="Michelle Trent" data-email="m.trent@ssa.gov" data-agency="ssa.gov" data-time="51" data-eng="6.4" title="View this person's details">
+                      <td>What's the deadline to change my TSP allocation before separation?</td>
+                      <td><div class="person__nm">Michelle Trent</div><div class="person__em">m.trent@ssa.gov</div></td></tr>
+                    <tr data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9" title="View this person's details">
+                      <td>If I take the lump-sum annual leave payout, does that push me into a higher bracket?</td>
+                      <td><div class="person__nm">Robert Kim</div><div class="person__em">robert.kim@irs.gov</div></td></tr>
+                  </tbody>
+                </table>
+              </div></div>
+              <p class="note">↕ Scroll to see all 8 questions.</p>
+            </div>
+          </section>
+
+          <!-- live attendees -->
+          <section class="panel" id="attendees" aria-labelledby="attH">
+            <span class="panel__accent" aria-hidden="true"></span>
+            <div class="panel__head">
+              <span class="panel__eyebrow">Directory</span>
+              <h2 id="attH">Live attendees</h2>
+              <button class="helpbtn" type="button" aria-label="About “Live attendees”" data-help="attendees">?</button>
+              <span class="pill">268</span>
+              <span class="panel__act">
+                <a class="btn btn--sm" href="#" data-preview="GET /api/leads/export?workshopId=ws-01&amp;preset=all">↓ Export All</a>
+                <a class="btn btn--sm btn--solid" href="#" data-preview="GET /api/leads/export?workshopId=ws-01&amp;preset=live">↓ Export Attendees</a>
+              </span>
+            </div>
+            <div class="panel__body">
+              <div class="tablewrap">
+                <table>
+                  <thead><tr>
+                    <th scope="col"><button type="button" data-sort="name">Name <i>⇅</i></button></th>
+                    <th scope="col"><button type="button" data-sort="agency">Agency <i>⇅</i></button></th>
+                    <th scope="col" class="num"><button type="button" data-sort="time">Time <span class="hint">(min)</span> <i>⇅</i></button></th>
+                    <th scope="col" class="num"><button type="button" data-sort="eng" aria-sort="descending">Engagement <span class="hint">(0–10)</span> <span class="info" title="Workshop Engagement Index (0–10): (time in session ÷ scheduled) × 7, +1.5 if chats > 5, +1.5 if questions > 3.">ⓘ</span> <i>⇅</i></button></th>
+                  </tr></thead>
+                  <tbody id="attBody"></tbody>
+                </table>
+                <p class="foot-note">Showing the first 10 of 268 in this preview — the live table shows 200. Export CSV for the full list.
+                  <b>Engagement</b> is a 0–10 index: (time ÷ scheduled) × 7, plus 1.5 if chats &gt; 5, plus 1.5 if
+                  questions &gt; 3. Click any attendee to see their chats, questions, time &amp; evaluation.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- empty states — shown for review because the sample data is populated -->
+          <section class="states" aria-labelledby="stH">
+            <h2 id="stH">Empty states</h2>
+            <p class="states__note">Every module's no-data variant. In the live report each replaces its own
+              section; none of them can render here because the sample workshop has data.</p>
+
+            <div class="statecard">
+              <div class="statecard__cap">What attendees said — nothing linked yet</div>
+              <p style="font-size:13px;color:var(--ink-3);margin:0">No eval responses linked to this workshop yet.
+                They'll appear here once attendees fill out the evaluation form and the date in the sheet falls
+                within 7 days after the workshop date. Click <b style="color:var(--ink-2)">Re-fetch evals</b> to retry.</p>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Retention curve — no timing data</div>
+              <p style="font-size:13px;color:var(--ink-3);margin:0">Needs join/exit timestamps + scheduled length on the workshop.</p>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Buying signals — nothing detected</div>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0 0 6px">No retirement intent detected.</p>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0 0 6px">No cliff-notes requests detected.</p>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0">No worried / confused signals detected.</p>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Q&amp;A — nothing submitted</div>
+              <p style="font-size:13px;color:var(--ink-3);margin:0">No Q&amp;A submitted.</p>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Live attendees — none</div>
+              <div class="tablewrap">
+                <table>
+                  <thead><tr><th scope="col">Name</th><th scope="col">Agency</th>
+                    <th scope="col" class="num">Time <span class="hint">(min)</span></th>
+                    <th scope="col" class="num">Engagement <span class="hint">(0–10)</span></th></tr></thead>
+                  <tbody><tr><td colspan="4" style="text-align:center;color:var(--ink-3);padding:24px">No live attendees yet.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Attendee modal — the three lookup states</div>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0 0 6px">No chat transcript was uploaded for this workshop.</p>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0 0 6px">No evaluations sheet configured for this client.</p>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0">Couldn't load evaluation: {message}</p>
+            </div>
+          </section>
+        </div>
+
+        <!-- right rail -->
+        <aside class="side">
+          <div class="sidecard">
+            <h2>Report actions</h2>
+            <a class="btn btn--solid" href="#" data-preview="GET /api/leads/export?workshopId=ws-01&amp;preset=live">↓ Export Attendees</a>
+            <a class="btn" href="#" data-preview="GET /api/leads/export?workshopId=ws-01&amp;preset=all">↓ Export All</a>
+            <a class="btn" href="#" data-preview="GET /api/evals/export?workshopId=ws-01">↓ Download evaluations</a>
+          </div>
+          <div class="sidecard">
+            <h2>At a glance</h2>
+            <ul class="glance">
+              <li>Average rating <b>4.7</b></li>
+              <li>Buying signals <b>12</b></li>
+              <li>Questions asked <b>8</b></li>
+              <li>Live attendees <b>268</b></li>
+              <li>Evaluations quoted <b>11</b></li>
+            </ul>
+          </div>
+          <div class="sidecard">
+            <h2>Jump to</h2>
+            <ul class="jump">
+              <li><a href="#said">What attendees said</a></li>
+              <li><a href="#participation">Engagement &amp; retention</a></li>
+              <li><a href="#signals">Buying signals</a></li>
+              <li><a href="#qa">Q&amp;A</a></li>
+              <li><a href="#attendees">Live attendees</a></li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<dialog id="helpDlg"><div class="dlg__body">
+  <h2 id="helpTitle">Section</h2>
+  <div class="helpblock"><div class="helpblock__k">What it is</div><div class="helpblock__b" id="helpA"></div></div>
+  <div class="helpblock"><div class="helpblock__k">What to click — and what you'll see</div><div class="helpblock__b" id="helpB"></div></div>
+  <div class="helpblock helpblock--accent"><div class="helpblock__k">Use it to book more appointments</div><div class="helpblock__b" id="helpC"></div></div>
+  <div class="dlg__foot"><button class="btn" type="button" data-close>Close</button></div>
+</div></dialog>
+
+<dialog id="personDlg"><div class="dlg__body">
+  <h2 id="pName">Attendee</h2>
+  <p class="pdesc" id="pDesc"></p>
+  <div class="chips" id="pChips"></div>
+  <section class="msec"><h4 id="pChatH">Chat messages (0)</h4><div id="pChats"></div></section>
+  <section class="msec"><h4 id="pQH">Questions asked (0)</h4><div id="pQs"></div></section>
+  <section class="msec"><h4>Evaluation</h4><div id="pEval"></div></section>
+  <div class="dlg__foot"><button class="btn" type="button" data-close>Close</button></div>
+</div></dialog>
+
+<dialog id="pwDlg"><form class="dlg__body" id="pwForm" novalidate>
+  <h2>Change password</h2>
+  <p style="margin:6px 0 var(--space-5);font-size:13.5px;color:var(--ink-3)">Signed in as dana.reyes@feducatedmv.com. Enter your current password, then choose a new one.</p>
+  <div class="field"><label for="cp-current">Current password</label><input id="cp-current" type="password" autocomplete="current-password" required></div>
+  <div class="field"><label for="cp-new">New password</label><input id="cp-new" type="password" autocomplete="new-password" required minlength="8"><p class="help">At least 8 characters.</p></div>
+  <div class="field"><label for="cp-confirm">Confirm new password</label><input id="cp-confirm" type="password" autocomplete="new-password" required minlength="8"></div>
+  <p class="dlg__msg" id="pwMsg" role="status" aria-live="polite"></p>
+  <div class="dlg__foot"><button class="btn" type="button" data-close>Cancel</button>
+    <button class="btn btn--solid" type="submit" id="pwSubmit">Update password</button></div>
+</form></dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* attendee rows, rendered from data so the table stays in one place */
+var ATT=[
+ ['Angela Ruiz','angela.ruiz@va.gov','va.gov',60,9.5,'#3080C2'],
+ ['Dale Hutchins','d.hutchins@usda.gov','usda.gov',59,9.2,'#295F86'],
+ ['Karen Boyd','karen.boyd@gsa.gov','gsa.gov',58,8.9,'#5F87A4'],
+ ['Priya Natarajan','p.natarajan@dhs.gov','dhs.gov',57,8.1,'#1F4E77'],
+ ['Robert Kim','robert.kim@irs.gov','irs.gov',55,7.9,'#4C90C9'],
+ ['Gerald Nunez','g.nunez@va.gov','va.gov',54,7.6,'#38708F'],
+ ['Michelle Trent','m.trent@ssa.gov','ssa.gov',51,6.4,'#26618E'],
+ ['Marcus Lee','m.lee@dhs.gov','dhs.gov',48,6.1,'#6A9BC0'],
+ ['Teresa Alvarado','t.alvarado@ed.gov','ed.gov',44,5.1,'#2F5F7E'],
+ ['Denise Farrow','d.farrow@peraton.com','peraton.com',39,4.6,'#417FA8']
+];
+/* federal domains get their own tint, same rule as attendees-table.tsx */
+var FED=['.gov','.mil','.fed.us'];
+var isFed=function(d){return FED.some(function(t){return d.endsWith(t)})};
+
+function renderAtt(rows){
+  document.getElementById('attBody').innerHTML=rows.map(function(a){
+    var ini=a[0].split(' ').map(function(p){return p[0];}).join('');
+    return '<tr data-person="'+a[0]+'" data-email="'+a[1]+'" data-agency="'+a[2]+'" data-time="'+a[3]+'" data-eng="'+a[4]+
+      '" title="Click for this attendee\'s chats, questions, time &amp; evaluation">'+
+      '<td><span class="person"><span class="person__av" style="background:'+a[5]+'">'+ini+'</span>'+
+      '<span><span class="person__nm">'+a[0]+'</span><br><span class="person__em">'+a[1]+'</span></span></span></td>'+
+      '<td><span class="agency'+(isFed(a[2])?' agency--gov':'')+'">'+a[2]+'</span></td>'+
+      '<td class="num">'+a[3]+' <span style="color:var(--ink-4)">/ 60</span></td>'+
+      '<td class="num"><span class="eng">'+a[4].toFixed(1)+' <span class="den">/ 10</span>'+
+      '<i style="width:'+(a[4]*9.6).toFixed(0)+'px"></i></span></td></tr>';
+  }).join('');
+}
+renderAtt(ATT);
+
+/* real sorting — name/agency default ascending, time/engagement descending */
+(function(){
+  var key='eng', dir='desc';
+  document.querySelector('#attendees thead').addEventListener('click',function(e){
+    var b=e.target.closest('[data-sort]'); if(!b) return;
+    var next=b.dataset.sort;
+    if(next===key) dir = dir==='asc'?'desc':'asc';
+    else { key=next; dir = (next==='name'||next==='agency') ? 'asc' : 'desc'; }
+    document.querySelectorAll('#attendees thead [data-sort]').forEach(function(x){x.removeAttribute('aria-sort')});
+    b.setAttribute('aria-sort', dir==='asc'?'ascending':'descending');
+    var i = {name:0, agency:2, time:3, eng:4}[key];
+    var rows=ATT.slice().sort(function(x,y){
+      var c = (i<3) ? String(x[i]).toLowerCase().localeCompare(String(y[i]).toLowerCase()) : x[i]-y[i];
+      return c * (dir==='asc'?1:-1);
+    });
+    renderAtt(rows);
+  });
+})();
+
+/* theme */
+(function(){var btn=document.getElementById('themeBtn'),icon=document.getElementById('themeIcon');
+var SUN='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>';
+var MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+function sync(){var d=document.documentElement.classList.contains('dark');icon.innerHTML=d?SUN:MOON;
+  btn.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');}
+sync();btn.addEventListener('click',function(){var d=document.documentElement.classList.toggle('dark');
+  try{localStorage.setItem('fednav-theme',d?'dark':'light');}catch(e){}sync();});})();
+
+/* off-canvas rail */
+(function(){var rail=document.getElementById('rail'),scrim=document.getElementById('scrim'),btn=document.getElementById('railBtn');
+function set(o){rail.classList.toggle('open',o);scrim.classList.toggle('show',o);btn.setAttribute('aria-expanded',String(o));}
+btn.addEventListener('click',function(){set(!rail.classList.contains('open'));});
+scrim.addEventListener('click',function(){set(false);});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();
+
+var HELP={
+ said:{t:'What attendees said',
+  a:'Attendees’ own evaluation comments and star ratings for this workshop, pulled live from your evaluations sheet.',
+  b:'Click any comment to open that person’s full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” to export them all.',
+  c:'Their own words are your best opener. Reach out referencing a specific comment (“you mentioned … in your feedback”) and quote the rating (“attendees rated this 4.7/5”) to make the ask feel earned.'},
+ retiring:{t:'Retiring within the next 12 months',
+  a:'Attendees who signaled that they plan to retire within the next 12 months, with a “soon” date or phrase when they gave one. Auto-detected from the live transcript and post-workshop evaluation comments.',
+  b:'Click anyone to open their profile — their questions, chats, time in session, eval, and the timing they mentioned.',
+  c:'This is your #1 call list. Phone anyone retiring within ~6 months in the next 48 hours, and lead with their stated timeline plus the exact question they asked — that’s a warm, specific reason to talk now.'},
+ cliff:{t:'Cliff notes requested',
+  a:'Attendees who asked for the cliff notes / written summary / materials, or left an email to receive them. Auto-detected from the live chat, Q&A, and post-workshop evaluation comments.',
+  b:'Click anyone to open their full profile and see exactly what they asked for.',
+  c:'These people raised their hand. Send what they asked for the same day — and use that email as your opener to offer a quick, no-obligation review of their numbers.'},
+ worried:{t:'Worried about current situation',
+  a:'Attendees who signaled they feel worried, apprehensive, overwhelmed, or confused about their benefits — most say so when the presenter asks if they feel like they’re on a roller coaster trying to reach retirement, plus anyone who calls the material a lot to take in or “clear as mud.” Auto-detected from the live transcript and from post-workshop evaluation comments.',
+  b:'Click anyone to open their full profile — their questions, chats, time in session, and evaluation — with the exact words they used.',
+  c:'This is a warm call list: they’ve admitted they’re overwhelmed and need help making sense of it. Lead with reassurance and their own words to book a one-on-one.'},
+ qa:{t:'Q&A',
+  a:'Every question attendees asked during the session, alongside who asked it.',
+  b:'Click any row to open that person’s profile — their other questions, chats, time in session, and evaluation.',
+  c:'A question is a stated concern in their own words. Open your call or email with it (“you asked about survivor benefits — let’s put your real numbers to it”) for an instant, relevant reason to connect.'},
+ attendees:{t:'Live attendees',
+  a:'Everyone who attended live, with their engagement score and time in the session.',
+  b:'Click any name to open their profile — chats, questions, time in session, and evaluation in one place. “Export All” downloads the whole list with every field for your CRM.',
+  c:'Work the list by heat: people who stayed to the end or asked questions are your warmest leads. Open each person’s profile to personalize the outreach, and export to tag the hot ones for follow-up.'}
+};
+var helpDlg=document.getElementById('helpDlg');
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-help]'); if(!b) return;
+  var h=HELP[b.dataset.help]; if(!h) return;
+  document.getElementById('helpTitle').textContent=h.t;
+  document.getElementById('helpA').textContent=h.a;
+  document.getElementById('helpB').textContent=h.b;
+  document.getElementById('helpC').textContent=h.c;
+  helpDlg.showModal();
+});
+
+/* per-person transcript + evaluation. `evaluation:null` = looked up, none found. */
+var PEOPLE={
+ 'Angela Ruiz':{
+   chats:['Been putting this off for years, glad I finally sat down for it.',
+          {t:'Same question as Dale — does the supplement get reduced if I work part time?',reply:true}],
+   qs:[{q:'If I retire at 62 with 30 years, does the FERS supplement stop at 62 or continue?',
+        a:'It ends at 62 — the supplement bridges the gap until Social Security eligibility.'}],
+   evaluation:[['Overall rating','5 / 5'],['Most useful part','The TSP withdrawal-order walkthrough'],
+               ['Planning to retire','September 2026'],['Would like a one-on-one','Yes']]},
+ 'Dale Hutchins':{
+   chats:['The 62-year-old FERS example is basically my situation.','Thanks — very clear.'],
+   qs:[{q:'Can I roll a traditional TSP into a Roth IRA without a tax hit?',
+        a:'No — a traditional-to-Roth conversion is taxable in the year you convert.'}],
+   evaluation:[['Overall rating','5 / 5'],['Most useful part','Roth conversion math'],
+               ['Planning to retire','Within 12 months']]},
+ 'Priya Natarajan':{chats:['Please send the slides.'],
+   qs:[{q:'What happens to my FEHB premium once I’m on Medicare Part B?',a:null}],
+   evaluation:[['Overall rating','5 / 5'],['Requested','Cliff notes + slides']]},
+ 'Karen Boyd':{chats:[],qs:[{q:'Is the G Fund still the right place if I’m five years out?',a:null}],evaluation:null},
+ 'Gerald Nunez':{chats:['Amen.'],
+   qs:[{q:'How is the survivor annuity election calculated if I remarry?',a:null}],evaluation:null},
+ 'Marcus Lee':{chats:[],qs:[{q:'Do unused sick leave hours count toward the 30-year mark?',
+        a:'Sick leave adds to your annuity computation, not to your service-eligibility date.'}],evaluation:null},
+ 'Michelle Trent':{chats:['It’s a lot to take in and I’m not sure where to start.'],
+   qs:[{q:'What’s the deadline to change my TSP allocation before separation?',a:null}],
+   evaluation:[['Overall rating','4 / 5'],['Comment','It’s a lot to take in and I’m not sure where to start.']]},
+ 'Robert Kim':{chats:['Clear as mud before today, honestly.','Ok that helps.'],
+   qs:[{q:'If I take the lump-sum annual leave payout, does that push me into a higher bracket?',a:null}],
+   evaluation:[['Overall rating','4 / 5'],['Most useful part','The three LES items to check']]},
+ 'Teresa Alvarado':{chats:[],qs:[],evaluation:[['Overall rating','5 / 5'],['Comment','Signing up for the one-on-one.']]},
+ 'Denise Farrow':{chats:['Feels like a roller coaster trying to get to retirement.'],qs:[],evaluation:null},
+ 'Sandra Oyelaran':{chats:[],qs:[],evaluation:[['Overall rating','5 / 5'],['Requested','The cliff notes']]}
+};
+var personDlg=document.getElementById('personDlg'), evalTimer;
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-person]'); if(!el) return;
+  var d=el.dataset, p=PEOPLE[d.person]||{chats:[],qs:[],evaluation:null};
+  var isLive = !!d.time;
+
+  document.getElementById('pName').textContent = d.person || 'Attendee';
+  document.getElementById('pDesc').textContent = (d.email||'—') + (d.agency ? ' · '+d.agency : '');
+
+  document.getElementById('pChips').innerHTML =
+    (isLive
+      ? '<div class="mchip"><span aria-hidden="true">⏱</span><b>'+d.time+'/60</b><span>min</span></div>'
+      : '<div class="mchip"><span aria-hidden="true">⏱</span><b>—</b><span>not a live attendee</span></div>')
+    + '<div class="mchip"><span aria-hidden="true">💬</span><b>'+p.chats.length+'</b><span>'+(p.chats.length===1?'chat':'chats')+'</span></div>'
+    + '<div class="mchip"><span aria-hidden="true">❓</span><b>'+p.qs.length+'</b><span>'+(p.qs.length===1?'question':'questions')+'</span></div>'
+    + (d.eng ? '<div class="mchip"><span aria-hidden="true">📊</span><b>'+d.eng+'/10</b><span>engagement</span></div>' : '');
+
+  document.getElementById('pChatH').textContent = 'Chat messages ('+p.chats.length+')';
+  document.getElementById('pChats').innerHTML = p.chats.length
+    ? p.chats.map(function(c){
+        var txt = typeof c==='string' ? c : c.t;
+        var rep = (typeof c!=='string' && c.reply) ? '<span class="rep">(reply)</span>' : '';
+        return '<div class="mrow">'+txt+rep+'</div>';
+      }).join('')
+    : '<p class="mnone">No chat messages from this person.</p>';
+
+  document.getElementById('pQH').textContent = 'Questions asked ('+p.qs.length+')';
+  document.getElementById('pQs').innerHTML = p.qs.length
+    ? p.qs.map(function(q){
+        return '<div class="mrow">'+q.q + (q.a ? '<p class="ans"><i>Answer:</i> '+q.a+'</p>' : '')+'</div>';
+      }).join('')
+    : '<p class="mnone">No questions from this person.</p>';
+
+  // the live modal fetches /api/evals/attendee on open — show the same three states
+  var evalBox=document.getElementById('pEval');
+  evalBox.innerHTML='<p class="mnone">Looking up evaluation…</p>';
+  clearTimeout(evalTimer);
+  evalTimer=setTimeout(function(){
+    evalBox.innerHTML = p.evaluation
+      ? '<div class="evaltbl">'+p.evaluation.map(function(f){
+          return '<div><dt>'+f[0]+'</dt><dd>'+f[1]+'</dd></div>';}).join('')+'</div>'
+      : '<p class="mnone">No evaluation found for this person (matched by email, then name).</p>';
+  },450);
+
+  personDlg.showModal();
+});
+
+/* change password */
+(function(){
+  var dlg=document.getElementById('pwDlg'),msg=document.getElementById('pwMsg'),
+      form=document.getElementById('pwForm'),submit=document.getElementById('pwSubmit');
+  document.getElementById('chipBtn').addEventListener('click',function(){msg.textContent='';dlg.showModal();});
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var cur=document.getElementById('cp-current').value,nw=document.getElementById('cp-new').value,
+        cf=document.getElementById('cp-confirm').value;
+    function err(t){msg.className='dlg__msg err';msg.textContent=t;}
+    if(nw.length<8) return err('New password must be at least 8 characters');
+    if(nw!==cf) return err('New passwords don’t match');
+    if(nw===cur) return err('New password must be different from the current one');
+    submit.disabled=true;submit.textContent='Saving…';
+    setTimeout(function(){submit.disabled=false;submit.textContent='Update password';
+      msg.className='dlg__msg ok';
+      msg.textContent='Preview only — the live dialog answers "Current password is incorrect" or "Password updated".';},600);
+  });
+})();
+
+document.addEventListener('click',function(e){
+  if(e.target.closest('[data-close]')){var d=e.target.closest('dialog'); if(d) d.close();}
+});
+
+var toastEl=document.getElementById('toast'),toastT;
+function toast(html){toastEl.innerHTML=html;toastEl.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},3200);}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-preview], a[href^="/"]'); if(!t) return;
+  e.preventDefault();
+  var d=t.getAttribute('data-preview')||t.getAttribute('href');
+  toast('Preview build — <code>'+d.replace(/&/g,'&amp;')+'</code>');
+});
+</script>
+</body>
+</html>

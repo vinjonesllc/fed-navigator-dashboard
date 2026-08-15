@@ -1,0 +1,632 @@
+<!doctype html>
+<!-- Hallmark · macrostructure: Stat-Led ("Brief") · nav: N9 inline pills in band + fixed bottom tab bar < 768px · footer: Ft5 statement
+     genre: modern-minimal · theme: locked Fed Navigator brand (Space Grotesk / IBM Plex Sans / JetBrains Mono)
+     tone: luxury-institutional · pre-emit critique: P5 H5 E4 S5 R4 V5
+     Redesign of /dashboard — Direction C. Original files untouched. Sample data. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fed Navigator — Overview (Direction C · Brief)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){try{var m=localStorage.getItem('fednav-theme');
+  if(!m)m=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+</script>
+<style>
+/* ─── tokens: lifted verbatim from src/app/globals.css ─────────────────── */
+:root{
+  --background:oklch(0.985 0.003 260); --foreground:oklch(0.205 0.020 260);
+  --surface:oklch(1 0 0); --bg-2:oklch(0.970 0.004 260);
+  --ink-1:oklch(0.205 0.020 260); --ink-2:oklch(0.345 0.018 260);
+  --ink-3:oklch(0.505 0.016 260); --ink-4:oklch(0.640 0.012 260);
+  --line-1:oklch(0.500 0.020 260 / 0.18); --line-2:oklch(0.500 0.020 260 / 0.10);
+  --lime:oklch(0.62 0.18 142); --lime-soft:oklch(0.62 0.18 142 / 0.12); --lime-bord:oklch(0.62 0.18 142 / 0.30);
+  --amber:oklch(0.66 0.17 60); --rose:oklch(0.58 0.20 22);
+  --cyan:oklch(0.55 0.13 230); --ring:oklch(0.62 0.18 142 / 0.4);
+  /* brand assets — the mark's own colours, used as the band ground */
+  --brand-navy:#0E2A52; --brand-red:#C8102E; --brand-white:#FFFFFF;
+  --band:#0E2A52; --band-ink:#FFFFFF;
+  --band-ink-2:rgba(255,255,255,.74); --band-ink-3:rgba(255,255,255,.56);
+  --band-line:rgba(255,255,255,.16);
+  --accent:#C8102E;
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-sans:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px;
+  --space-6:24px; --space-8:32px; --space-10:40px; --space-12:48px;
+  --radius:14px;
+  --shadow:0 1px 2px oklch(0.20 0.02 260/0.04),0 8px 24px oklch(0.20 0.02 260/0.05);
+  --ease-out:cubic-bezier(.2,.6,.25,1); --dur:160ms;
+}
+.dark{
+  --background:oklch(0.165 0.012 260); --foreground:oklch(0.965 0.008 260);
+  --surface:oklch(0.215 0.014 260); --bg-2:oklch(0.195 0.013 260);
+  --ink-1:oklch(0.965 0.008 260); --ink-2:oklch(0.820 0.012 260);
+  --ink-3:oklch(0.650 0.014 260); --ink-4:oklch(0.490 0.016 260);
+  --line-1:oklch(0.300 0.018 260 / 0.55); --line-2:oklch(0.300 0.018 260 / 0.30);
+  --lime:oklch(0.86 0.18 130); --lime-soft:oklch(0.86 0.18 130 / 0.14); --lime-bord:oklch(0.86 0.18 130 / 0.35);
+  --amber:oklch(0.84 0.17 70); --rose:oklch(0.75 0.17 25); --cyan:oklch(0.82 0.10 220);
+  --ring:oklch(0.86 0.18 130 / 0.4);
+  --band:#0A1E3C;
+  --shadow:0 1px 2px oklch(0 0 0/0.30),0 8px 24px oklch(0 0 0/0.28);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--background); color:var(--ink-1);
+  font-family:var(--font-sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  padding-bottom:64px}
+@media(min-width:768px){body{padding-bottom:0}}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.02em; font-style:normal; margin:0;
+  overflow-wrap:anywhere; min-width:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--lime); outline-offset:2px; border-radius:6px}
+button{font:inherit}
+.wrap{max-width:1180px; margin:0 auto; padding:0 var(--space-4)}
+@media(min-width:768px){.wrap{padding:0 var(--space-8)}}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ─── slim top bar ─────────────────────────────────────────────────────── */
+.topbar{position:sticky; top:0; z-index:40; background:var(--surface);
+  border-bottom:1px solid var(--line-1)}
+.topbar__in{display:flex; align-items:center; gap:var(--space-3); padding:10px 0; min-width:0}
+.brand{display:flex; align-items:center; gap:9px; text-decoration:none; flex:none}
+.brand__mark{width:30px; height:30px; border-radius:8px}
+.brand__name{font-family:var(--font-display); font-weight:600; font-size:14.5px; white-space:nowrap}
+.slash{color:var(--ink-4); flex:none}
+.cobrand{display:flex; align-items:center; gap:8px; min-width:0}
+.cobrand__logo{width:26px; height:26px; border-radius:6px; object-fit:contain; flex:none}
+.cobrand__name{font-family:var(--font-display); font-size:13.5px; font-weight:500;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.topnav{margin-left:auto; display:none; gap:4px}
+@media(min-width:768px){.topnav{display:flex}}
+.topnav a{padding:6px 12px; border-radius:999px; font-size:13px; color:var(--ink-3);
+  text-decoration:none; white-space:nowrap; transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.topnav a:hover{background:var(--bg-2); color:var(--ink-1)}
+.topnav a[aria-current="page"]{background:var(--bg-2); color:var(--ink-1); font-weight:600;
+  box-shadow:inset 0 0 0 1px var(--line-1)}
+.iconbtn{display:grid; place-items:center; width:34px; height:34px; flex:none; margin-left:auto;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-3);
+  cursor:pointer; transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+@media(min-width:768px){.iconbtn{margin-left:var(--space-2)}}
+.iconbtn:hover{background:var(--bg-2); color:var(--ink-1)}
+
+/* ─── navy band ────────────────────────────────────────────────────────── */
+.band{background:var(--band); color:var(--band-ink); padding:var(--space-6) 0 var(--space-8)}
+.band__id{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding-bottom:var(--space-6); border-bottom:1px solid var(--band-line)}
+.idchip{display:flex; align-items:center; gap:9px; min-width:0; border:1px solid var(--band-line);
+  border-radius:999px; background:rgba(255,255,255,.06); padding:4px 13px 4px 5px; cursor:pointer;
+  color:var(--band-ink); transition:background var(--dur) var(--ease-out)}
+.idchip:hover{background:rgba(255,255,255,.13)}
+.idchip__avatar{display:grid; place-items:center; width:26px; height:26px; flex:none; border-radius:50%;
+  background:linear-gradient(135deg,oklch(0.55 0.18 142),oklch(0.50 0.14 230));
+  color:#fff; font-family:var(--font-display); font-weight:700; font-size:11px}
+.idchip__email{font-size:12.5px; color:var(--band-ink-2); white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; max-width:46vw}
+.idchip__role{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--band-ink); background:rgba(255,255,255,.14); border:1px solid var(--band-line);
+  border-radius:4px; padding:1px 6px; flex:none}
+.band__signout{margin-left:auto; border:1px solid var(--band-line); border-radius:9px;
+  background:rgba(255,255,255,.06); color:var(--band-ink); font-size:13px; font-weight:500;
+  padding:7px 13px; cursor:pointer; transition:background var(--dur) var(--ease-out)}
+.band__signout:hover{background:rgba(255,255,255,.14)}
+
+.band__title{margin-top:var(--space-6); display:flex; align-items:flex-end; gap:var(--space-4); flex-wrap:wrap}
+.band__title h1{font-size:clamp(32px,7vw,46px); font-weight:600; line-height:1.02; letter-spacing:-.03em}
+.band__title p{margin:6px 0 0; color:var(--band-ink-2); font-size:15px}
+.samplechip{display:inline-flex; align-items:center; gap:7px; border:1px dashed var(--band-line);
+  border-radius:999px; padding:5px 12px; font-size:12px; color:var(--band-ink-2);
+  background:rgba(255,255,255,.05)}
+.samplechip strong{color:var(--band-ink); font-weight:600}
+
+.band__kpis{margin-top:var(--space-8); display:grid; grid-template-columns:minmax(0,1fr); gap:0}
+@media(min-width:560px){.band__kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:940px){.band__kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.bkpi{padding:var(--space-5) 0; border-top:1px solid var(--band-line)}
+@media(min-width:560px){
+  .bkpi{padding:var(--space-4) var(--space-6); border-top:none; border-left:1px solid var(--band-line)}
+  .bkpi:nth-child(2n+1){border-left:none; padding-left:0}
+}
+@media(min-width:940px){
+  .bkpi:nth-child(2n+1){border-left:1px solid var(--band-line); padding-left:var(--space-6)}
+  .bkpi:first-child{border-left:none; padding-left:0}
+}
+.bkpi__label{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--band-ink-3)}
+.bkpi__value{margin-top:10px; font-family:var(--font-display); font-size:clamp(38px,7vw,52px);
+  font-weight:600; line-height:1; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.bkpi__unit{font-size:20px; font-weight:500; color:var(--band-ink-3); margin-left:5px}
+.bkpi__hint{margin-top:11px; font-size:12.5px; color:var(--band-ink-3)}
+.stars{margin-top:10px; font-size:19px; line-height:1; letter-spacing:.04em; color:var(--amber)}
+.stars .s-half{opacity:.6} .stars .s-off{opacity:.25}
+
+/* ─── next workshops strip ─────────────────────────────────────────────── */
+.section{margin-top:var(--space-10)}
+.section__head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:var(--space-4)}
+.eyebrow{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-3)}
+.section__head h2{font-size:19px; font-weight:600}
+.pill{display:inline-flex; align-items:center; border:1px solid var(--line-1); background:var(--bg-2);
+  border-radius:999px; padding:1px 9px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+.section__note{margin-left:auto; font-size:11.5px; color:var(--ink-3)}
+
+.strip{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); padding:var(--space-5)}
+.strip__accent{position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent)}
+.tiles{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-4)}
+@media(min-width:680px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-4);
+  border:1px solid var(--line-1); border-radius:12px; background:var(--bg-2); padding:var(--space-4)}
+.tile__when{min-width:0; flex:1 1 150px}
+.tile__date{font-family:var(--font-display); font-size:21px; font-weight:600; letter-spacing:-.02em; line-height:1.2}
+.tile__time{margin-top:2px; min-height:20px; font-size:14.5px; font-weight:500; color:var(--ink-2)}
+.tile__count{display:flex; align-items:baseline; gap:7px; flex:none}
+.tile__num{font-family:var(--font-display); font-size:26px; font-weight:600; line-height:1;
+  font-variant-numeric:tabular-nums}
+.tile__unit{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3)}
+.tile .btn{flex:1 1 100%}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-2);
+  font-size:13px; font-weight:500; padding:8px 13px; cursor:pointer; text-decoration:none;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.btn:hover{background:var(--bg-2); color:var(--ink-1)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.5; cursor:not-allowed; transform:none}
+.btn--solid{background:var(--ink-1); border-color:var(--ink-1); color:var(--background)}
+.btn--solid:hover{background:var(--ink-2); border-color:var(--ink-2); color:var(--background)}
+
+/* ─── workshop cards ───────────────────────────────────────────────────── */
+.cards{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); padding:var(--space-5); cursor:pointer;
+  transition:background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)}
+.card:hover{background:var(--bg-2); border-color:var(--line-1)}
+.card__accent{position:absolute; left:0; right:0; top:0; height:2px;
+  background:linear-gradient(to right,transparent,var(--accent),transparent)}
+.card__lbl{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-4)}
+.card__date{margin-top:4px; font-family:var(--font-mono); font-size:13px; color:var(--ink-2)}
+.card__title{margin-top:5px; font-family:var(--font-display); font-size:18px; font-weight:600;
+  line-height:1.3; color:var(--ink-1)}
+.card__title a{text-decoration:none}
+.card:hover .card__title a{text-decoration:underline; text-underline-offset:3px}
+.card__figs{margin-top:var(--space-5); display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--space-3); border-top:1px solid var(--line-2); padding-top:var(--space-4)}
+.fig__label{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--ink-4); line-height:1.3; min-height:26px}
+.fig__value{margin-top:5px; font-family:var(--font-display); font-size:22px; font-weight:600;
+  font-variant-numeric:tabular-nums; line-height:1}
+.card__go{margin-top:var(--space-4); font-size:12.5px; color:var(--ink-3)}
+.card__go span{color:var(--ink-2); font-weight:500}
+
+/* table fallback header row for card list is not used — labels live on each card */
+
+.empty{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  padding:28px; text-align:center; color:var(--ink-3); box-shadow:var(--shadow)}
+
+/* ─── empty states ─────────────────────────────────────────────────────── */
+.states{margin-top:var(--space-10); border-top:1px dashed var(--line-1); padding-top:var(--space-5)}
+.states h2{font-size:17px; font-weight:600}
+.states__note{font-size:12.5px; color:var(--ink-3); margin:6px 0 var(--space-5)}
+.statecard{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  padding:var(--space-5); margin-bottom:var(--space-3)}
+.statecard__cap{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); margin-bottom:10px}
+.statecard h3{font-size:21px; font-weight:600; line-height:1.3}
+.statecard p{margin:8px 0 0; font-size:14.5px; font-weight:500; color:var(--ink-2)}
+.statecard a.inline{font-weight:700; color:var(--ink-1); text-decoration:underline; text-underline-offset:2px}
+.statecard .fig__value{font-size:40px; letter-spacing:-.03em}
+
+/* ─── footer ───────────────────────────────────────────────────────────── */
+.foot{margin-top:var(--space-12); border-top:1px solid var(--line-1); padding:var(--space-6) 0 var(--space-10);
+  display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap; font-size:12.5px; color:var(--ink-3)}
+.foot__mark{width:22px; height:22px; border-radius:6px; flex:none}
+
+/* ─── mobile tab bar ───────────────────────────────────────────────────── */
+.tabbar{position:fixed; left:0; right:0; bottom:0; z-index:45; display:flex;
+  background:var(--surface); border-top:1px solid var(--line-1);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+@media(min-width:768px){.tabbar{display:none}}
+.tabbar a{flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:5px 2px; text-decoration:none; color:var(--ink-3); font-size:10.5px; white-space:nowrap}
+.tabbar a[aria-current="page"]{color:var(--ink-1); font-weight:600}
+.tabbar svg{width:18px; height:18px}
+
+/* ─── dialog + toast ───────────────────────────────────────────────────── */
+dialog{border:1px solid var(--line-1); border-radius:14px; background:var(--surface); color:var(--ink-1);
+  padding:0; width:min(440px,calc(100vw - 32px))}
+dialog::backdrop{background:oklch(0.2 0.02 260/.5)}
+.dlg__body{padding:var(--space-6)}
+.dlg h2{font-size:18px; font-weight:600}
+.dlg__desc{margin:6px 0 var(--space-5); font-size:13.5px; color:var(--ink-3)}
+.field{margin-bottom:var(--space-4)}
+.field label{display:block; font-size:13px; font-weight:500; margin-bottom:6px}
+.field input{width:100%; padding:9px 11px; font:inherit; font-size:14px; color:var(--ink-1);
+  background:var(--background); border:1px solid var(--line-1); border-radius:9px}
+.field .help{margin:6px 0 0; font-size:11.5px; color:var(--ink-3)}
+.dlg__msg{min-height:20px; font-size:12.5px; margin:0 0 var(--space-3)}
+.dlg__msg.err{color:var(--rose)} .dlg__msg.ok{color:var(--lime)}
+.dlg__foot{display:flex; justify-content:flex-end; gap:var(--space-2)}
+.toast{position:fixed; right:16px; bottom:76px; z-index:60; max-width:min(380px,calc(100vw - 32px));
+  border:1px solid var(--line-1); border-radius:11px; background:var(--surface); color:var(--ink-2);
+  padding:11px 14px; font-size:12.5px; box-shadow:0 8px 28px oklch(0.2 0.02 260/.18);
+  opacity:0; transform:translateY(8px); pointer-events:none;
+  transition:opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out)}
+@media(min-width:768px){.toast{bottom:16px}}
+.toast.show{opacity:1; transform:none}
+.toast code{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-1)}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none !important; transition-duration:120ms !important}
+  .toast{transform:none} .btn:active{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ slim top bar ══ -->
+<header class="topbar">
+  <div class="wrap topbar__in">
+    <a class="brand" href="/">
+      <svg class="brand__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+        <g transform="translate(20,20) scale(0.6)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+          <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+          <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+          <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+        </g>
+      </svg>
+      <span class="brand__name">Fed Navigator</span>
+    </a>
+    <span class="slash" aria-hidden="true">/</span>
+    <div class="cobrand">
+      <img class="cobrand__logo" alt="Feducate DMV"
+        src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23C8102E'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='30' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+      <span class="cobrand__name">Feducate DMV</span>
+    </div>
+
+    <nav class="topnav" aria-label="Dashboard sections">
+      <a href="/dashboard" aria-current="page">Overview</a>
+      <a href="/dashboard/workshops">Workshops</a>
+      <a href="/dashboard/leads">Leads</a>
+      <a href="/dashboard/guide">Guide</a>
+      <a href="/dashboard/settings">Settings</a>
+    </nav>
+
+    <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch to dark mode">
+      <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ══ navy band ══ -->
+<section class="band">
+  <div class="wrap">
+    <div class="band__id">
+      <button class="idchip" id="chipBtn" type="button" title="Change password">
+        <span class="idchip__avatar">DR</span>
+        <span class="idchip__email">dana.reyes@feducatedmv.com</span>
+        <span class="idchip__role">Advisor</span>
+      </button>
+      <button class="band__signout" type="button" data-preview="POST /auth/sign-out">Sign out</button>
+    </div>
+
+    <div class="band__title">
+      <div>
+        <h1>Overview</h1>
+        <p>All-time totals across your workshops.</p>
+      </div>
+      <span class="samplechip" style="margin-left:auto"><strong>Sample data</strong> — layout review only</span>
+    </div>
+
+    <div class="band__kpis">
+      <div class="bkpi">
+        <div class="bkpi__label">Workshops</div>
+        <div class="bkpi__value">6</div>
+      </div>
+      <div class="bkpi">
+        <div class="bkpi__label">Total attendees</div>
+        <div class="bkpi__value">1,090</div>
+        <div class="bkpi__hint">1,780 registered</div>
+      </div>
+      <div class="bkpi">
+        <div class="bkpi__label">Average attendance</div>
+        <div class="bkpi__value">61%</div>
+        <div class="bkpi__hint">Live ÷ registered</div>
+      </div>
+      <div class="bkpi">
+        <div class="bkpi__label">Average rating</div>
+        <div class="bkpi__value">4.7<span class="bkpi__unit">/ 5</span></div>
+        <div class="stars" aria-label="4.7 out of 5 stars">
+          <span>★</span><span>★</span><span>★</span><span>★</span><span class="s-half">★</span>
+        </div>
+        <div class="bkpi__hint">Across 5 rated workshops</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <!-- ══ next workshops ══ -->
+  <section class="section" aria-labelledby="nextHead">
+    <div class="section__head">
+      <span class="eyebrow" id="nextHead">Next workshops</span>
+      <span class="section__note">Soonest first · past dates drop off</span>
+    </div>
+    <div class="strip">
+      <span class="strip__accent" aria-hidden="true"></span>
+      <div class="tiles">
+        <div class="tile">
+          <div class="tile__when">
+            <div class="tile__date">Friday, June 5</div>
+            <div class="tile__time">10am Central</div>
+          </div>
+          <div class="tile__count"><span class="tile__num">138</span><span class="tile__unit">registered</span></div>
+          <a class="btn" href="/api/registrations/export?clientId=demo&amp;w=0" data-preview="GET /api/registrations/export?clientId=…&amp;w=0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg>
+            Download registrations
+          </a>
+        </div>
+        <div class="tile">
+          <div class="tile__when">
+            <div class="tile__date">Thursday, June 18</div>
+            <div class="tile__time">1pm Eastern</div>
+          </div>
+          <div class="tile__count"><span class="tile__num">92</span><span class="tile__unit">registered</span></div>
+          <a class="btn" href="/api/registrations/export?clientId=demo&amp;w=1" data-preview="GET /api/registrations/export?clientId=…&amp;w=1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg>
+            Download registrations
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ workshops ══ -->
+  <section class="section" aria-labelledby="wsHead">
+    <div class="section__head">
+      <h2 id="wsHead">Workshops</h2>
+      <span class="pill">6</span>
+      <span class="section__note">Select a card to open the workshop</span>
+    </div>
+
+    <div class="cards" id="wsCards">
+      <article class="card" data-href="/dashboard/workshops/ws-01" title="Click to view this workshop">
+        <span class="card__accent" aria-hidden="true"></span>
+        <div class="card__lbl">Date</div>
+        <div class="card__date">May 20, 2026</div>
+        <div class="card__lbl" style="margin-top:14px">Title</div>
+        <h3 class="card__title"><a href="/dashboard/workshops/ws-01">Your TSP in 2026: What Federal Employees Need to Know</a></h3>
+        <div class="card__figs">
+          <div><div class="fig__label">Registered</div><div class="fig__value">412</div></div>
+          <div><div class="fig__label">Attended (live)</div><div class="fig__value">268</div></div>
+          <div><div class="fig__label">% Attended</div><div class="fig__value">65%</div></div>
+        </div>
+        <div class="card__go"><span>View workshop →</span></div>
+      </article>
+
+      <article class="card" data-href="/dashboard/workshops/ws-02" title="Click to view this workshop">
+        <span class="card__accent" aria-hidden="true"></span>
+        <div class="card__lbl">Date</div>
+        <div class="card__date">April 15, 2026</div>
+        <div class="card__lbl" style="margin-top:14px">Title</div>
+        <h3 class="card__title"><a href="/dashboard/workshops/ws-02">FERS Retirement Readiness Workshop</a></h3>
+        <div class="card__figs">
+          <div><div class="fig__label">Registered</div><div class="fig__value">356</div></div>
+          <div><div class="fig__label">Attended (live)</div><div class="fig__value">214</div></div>
+          <div><div class="fig__label">% Attended</div><div class="fig__value">60%</div></div>
+        </div>
+        <div class="card__go"><span>View workshop →</span></div>
+      </article>
+
+      <article class="card" data-href="/dashboard/workshops/ws-03" title="Click to view this workshop">
+        <span class="card__accent" aria-hidden="true"></span>
+        <div class="card__lbl">Date</div>
+        <div class="card__date">March 11, 2026</div>
+        <div class="card__lbl" style="margin-top:14px">Title</div>
+        <h3 class="card__title"><a href="/dashboard/workshops/ws-03">Survivor Benefits &amp; FEGLI Decisions</a></h3>
+        <div class="card__figs">
+          <div><div class="fig__label">Registered</div><div class="fig__value">289</div></div>
+          <div><div class="fig__label">Attended (live)</div><div class="fig__value">161</div></div>
+          <div><div class="fig__label">% Attended</div><div class="fig__value">56%</div></div>
+        </div>
+        <div class="card__go"><span>View workshop →</span></div>
+      </article>
+
+      <article class="card" data-href="/dashboard/workshops/ws-04" title="Click to view this workshop">
+        <span class="card__accent" aria-hidden="true"></span>
+        <div class="card__lbl">Date</div>
+        <div class="card__date">February 12, 2026</div>
+        <div class="card__lbl" style="margin-top:14px">Title</div>
+        <h3 class="card__title"><a href="/dashboard/workshops/ws-04">Federal Retirement Benefits Workshop</a></h3>
+        <div class="card__figs">
+          <div><div class="fig__label">Registered</div><div class="fig__value">341</div></div>
+          <div><div class="fig__label">Attended (live)</div><div class="fig__value">233</div></div>
+          <div><div class="fig__label">% Attended</div><div class="fig__value">68%</div></div>
+        </div>
+        <div class="card__go"><span>View workshop →</span></div>
+      </article>
+
+      <article class="card" data-href="/dashboard/workshops/ws-05" title="Click to view this workshop">
+        <span class="card__accent" aria-hidden="true"></span>
+        <div class="card__lbl">Date</div>
+        <div class="card__date">January 21, 2026</div>
+        <div class="card__lbl" style="margin-top:14px">Title</div>
+        <h3 class="card__title"><a href="/dashboard/workshops/ws-05">Medicare &amp; FEHB at Retirement</a></h3>
+        <div class="card__figs">
+          <div><div class="fig__label">Registered</div><div class="fig__value">208</div></div>
+          <div><div class="fig__label">Attended (live)</div><div class="fig__value">118</div></div>
+          <div><div class="fig__label">% Attended</div><div class="fig__value">57%</div></div>
+        </div>
+        <div class="card__go"><span>View workshop →</span></div>
+      </article>
+
+      <article class="card" data-href="/dashboard/workshops/ws-06" title="Click to view this workshop">
+        <span class="card__accent" aria-hidden="true"></span>
+        <div class="card__lbl">Date</div>
+        <div class="card__date">December 10, 2025</div>
+        <div class="card__lbl" style="margin-top:14px">Title</div>
+        <h3 class="card__title"><a href="/dashboard/workshops/ws-06">Year-End TSP Moves for Feds</a></h3>
+        <div class="card__figs">
+          <div><div class="fig__label">Registered</div><div class="fig__value">174</div></div>
+          <div><div class="fig__label">Attended (live)</div><div class="fig__value">96</div></div>
+          <div><div class="fig__label">% Attended</div><div class="fig__value">55%</div></div>
+        </div>
+        <div class="card__go"><span>View workshop →</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ empty states ══ -->
+  <section class="states" aria-labelledby="stHead">
+    <h2 id="stHead">Empty states</h2>
+    <p class="states__note">Shown for review because the sample data above is populated. In the live dashboard
+      each replaces its own module.</p>
+
+    <div class="statecard">
+      <div class="statecard__cap">Next workshop — nothing scheduled</div>
+      <div class="eyebrow" style="margin-bottom:8px">Next workshop</div>
+      <h3>No next workshop scheduled yet.</h3>
+      <p>Contact <a class="inline" href="mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date">Kelly</a> to schedule your next workshop.</p>
+    </div>
+
+    <div class="statecard">
+      <div class="statecard__cap">Average rating — no ratings</div>
+      <div class="fig__label" style="min-height:0">Average rating</div>
+      <div class="fig__value" style="color:var(--ink-3)">—</div>
+      <p style="font-size:12.5px;font-weight:400;color:var(--ink-3)">No ratings yet</p>
+    </div>
+
+    <div class="statecard">
+      <div class="statecard__cap">Workshops list — no rows</div>
+      <div class="empty">No workshops yet.</div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <svg class="foot__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+      <g transform="translate(20,20) scale(0.6)">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+        <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+        <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+        <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+      </g>
+    </svg>
+    <span>Fed Navigator · workshop attendance and engagement reporting.</span>
+    <span style="margin-left:auto">Direction C — Brief</span>
+  </footer>
+</main>
+
+<!-- ══ mobile tab bar ══ -->
+<nav class="tabbar" aria-label="Dashboard sections">
+  <a href="/dashboard" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    Overview</a>
+  <a href="/dashboard/workshops">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v4"/></svg>
+    Workshops</a>
+  <a href="/dashboard/leads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 20v-1a4 4 0 0 0-8 0v1"/><circle cx="12" cy="8" r="3.5"/></svg>
+    Leads</a>
+  <a href="/dashboard/guide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/></svg>
+    Guide</a>
+  <a href="/dashboard/settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>
+    Settings</a>
+</nav>
+
+<!-- change-password dialog -->
+<dialog id="pwDlg" class="dlg" aria-labelledby="pwTitle">
+  <form class="dlg__body" id="pwForm" novalidate>
+    <h2 id="pwTitle">Change password</h2>
+    <p class="dlg__desc">Signed in as dana.reyes@feducatedmv.com. Enter your current password, then choose a new one.</p>
+    <div class="field">
+      <label for="cp-current">Current password</label>
+      <input id="cp-current" type="password" autocomplete="current-password" required>
+    </div>
+    <div class="field">
+      <label for="cp-new">New password</label>
+      <input id="cp-new" type="password" autocomplete="new-password" required minlength="8">
+      <p class="help">At least 8 characters.</p>
+    </div>
+    <div class="field">
+      <label for="cp-confirm">Confirm new password</label>
+      <input id="cp-confirm" type="password" autocomplete="new-password" required minlength="8">
+    </div>
+    <p class="dlg__msg" id="pwMsg" role="status" aria-live="polite"></p>
+    <div class="dlg__foot">
+      <button class="btn" type="button" id="pwCancel">Cancel</button>
+      <button class="btn btn--solid" type="submit" id="pwSubmit">Update password</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* theme toggle */
+(function(){
+  var btn=document.getElementById('themeBtn'), icon=document.getElementById('themeIcon');
+  var SUN='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>';
+  var MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  function sync(){var d=document.documentElement.classList.contains('dark');
+    icon.innerHTML=d?SUN:MOON; btn.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');}
+  sync();
+  btn.addEventListener('click',function(){
+    var d=document.documentElement.classList.toggle('dark');
+    try{localStorage.setItem('fednav-theme',d?'dark':'light');}catch(e){}
+    sync();
+  });
+})();
+
+/* clickable cards */
+document.getElementById('wsCards').addEventListener('click',function(e){
+  var card=e.target.closest('.card[data-href]'); if(!card) return;
+  e.preventDefault();
+  toast('Opens the workshop detail page — <code>'+card.dataset.href+'</code>');
+});
+
+/* change-password dialog */
+(function(){
+  var dlg=document.getElementById('pwDlg'), msg=document.getElementById('pwMsg'),
+      form=document.getElementById('pwForm'), submit=document.getElementById('pwSubmit');
+  document.getElementById('chipBtn').addEventListener('click',function(){msg.textContent='';dlg.showModal();});
+  document.getElementById('pwCancel').addEventListener('click',function(){dlg.close();});
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var cur=document.getElementById('cp-current').value,
+        nw=document.getElementById('cp-new').value,
+        cf=document.getElementById('cp-confirm').value;
+    function err(t){msg.className='dlg__msg err';msg.textContent=t;}
+    if(nw.length<8) return err('New password must be at least 8 characters');
+    if(nw!==cf) return err('New passwords don’t match');
+    if(nw===cur) return err('New password must be different from the current one');
+    submit.disabled=true; submit.textContent='Saving…';
+    setTimeout(function(){
+      submit.disabled=false; submit.textContent='Update password';
+      msg.className='dlg__msg ok';
+      msg.textContent='Preview only — the live dialog answers "Current password is incorrect" or "Password updated".';
+    },600);
+  });
+})();
+
+/* preview toast */
+var toastEl=document.getElementById('toast'), toastT;
+function toast(html){toastEl.innerHTML=html; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){toastEl.classList.remove('show');},3200);}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-preview], a[href^="/"]');
+  if(!t) return;
+  e.preventDefault();
+  var d=t.getAttribute('data-preview')||t.getAttribute('href');
+  toast('Preview build — this navigates to <code>'+d.replace(/&/g,'&amp;')+'</code>');
+});
+</script>
+</body>
+</html>
