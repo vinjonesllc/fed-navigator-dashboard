@@ -159,15 +159,16 @@ API ingest is captured as a future task (#9) — when Fed Pilot stands up a stan
 - Fed Navigator branded only. The header is the Fed Navigator mark + wordmark; no client logo and no client name.
 - No per-client accent colour. The accent strips and tile hairlines use the single brand blue `#3080C2`, exposed as the `--brand` CSS token in `src/app/globals.css`.
 
-## Theme clustering
+## Theme clustering — REMOVED
 
-On each CSV ingest, if the workshop has a `registration_question` column with free-text:
-1. Collect all responses (deduped, trimmed)
-2. Send to Claude with a prompt like: "Cluster these federal-retirement workshop registration questions into 5–12 themes. Return JSON: `[{theme, count, example_quotes: [...]}, ...]`"
-3. Store the clusters in a `question_themes` table keyed to `workshop_id`
-4. Display as a card on the workshop detail page + an aggregate themes view on the client Overview
+Registration-question theme clustering was built (a Claude call per CSV upload
+writing a `question_themes` table) but the result was never rendered — the
+workshop report received it and discarded it. It was removed along with the
+table; see `supabase/migrations/0029_drop_question_themes.sql`.
 
-Use Claude Sonnet 4.6 (default) or Opus 4.7 for higher-quality clustering. Cost is minor (one call per workshop, ~150 questions).
+The source data is retained: themes were derived from
+`attendees.registration_question`, which stays. If the feature is ever wanted,
+it can be recomputed for every workshop from scratch.
 
 ## DB schema (sketch)
 
@@ -175,7 +176,6 @@ See `supabase/migrations/0001_init.sql`. Tables:
 - `clients` — id, slug, name, contact_email, created_at
 - `workshops` — id, client_id, title, date, presenter, topic, notes, scheduled_minutes, created_at
 - `attendees` — id, workshop_id, all 36 fixed CSV columns + text_opt_in (bool) + age (int) + registration_question (text) + custom_responses (jsonb) + computed agency (text) + engagement_score_local (float, our computed one if we want)
-- `question_themes` — id, workshop_id, theme_label, count, example_quotes (jsonb)
 - `agency_lookup` — id, domain (text, pk), agency_name (text)
 - `app_users` — id (= auth.uid()), client_id (nullable), role ('admin'|'client'), created_at
 
