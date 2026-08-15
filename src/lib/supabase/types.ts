@@ -43,9 +43,7 @@ export type Client = {
   id: string;
   slug: string;
   name: string;
-  logo_url: string | null;
   contact_email: string | null;
-  accent_color: string | null;
   eval_sheet_url: string | null;
   brand: ClientBrand;
   /** All upcoming workshops. Drives the multi-tile overview display. */

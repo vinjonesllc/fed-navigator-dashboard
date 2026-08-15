@@ -27,6 +27,7 @@
   --color-cyan: var(--cyan);
   --color-cyan-soft: var(--cyan-soft);
   --color-cyan-bord: var(--cyan-bord);
+  --color-brand: var(--brand);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
@@ -93,6 +94,10 @@
   --cyan: oklch(0.55 0.13 230);
   --cyan-soft: oklch(0.55 0.13 230 / 0.10);
   --cyan-bord: oklch(0.55 0.13 230 / 0.30);
+
+  /* Fed Navigator brand blue. Single product accent — the accent strips and
+     tile hairlines all point here. Not per-client; there is no co-branding. */
+  --brand: #3080C2;
 
   --card: var(--surface);
   --card-foreground: var(--ink-1);

@@ -11,7 +11,6 @@ import { listSheetTabs } from "@/lib/google-sheets";
 import { getNextWorkshops } from "@/lib/next-workshop";
 import { ClientOverview } from "@/components/client-overview";
 import { EditClientForm } from "./edit-client-form";
-import { LogoUpload } from "./logo-upload";
 
 export default async function ClientDetailPage({
   params,
@@ -57,13 +56,6 @@ export default async function ClientDetailPage({
             {client.name}
           </h1>
           <p className="mt-1.5 font-mono text-[12.5px] text-ink-4">{client.slug}</p>
-          {client.accent_color && (
-            <div
-              className="mt-2.5 h-1 w-14 rounded-full"
-              style={{ background: client.accent_color }}
-              aria-hidden
-            />
-          )}
         </div>
         {manager && (
           <Button
@@ -92,7 +84,6 @@ export default async function ClientDetailPage({
                 ? (w) => `/api/registrations/export?clientId=${id}&w=${w}`
                 : undefined
             }
-            accentColor={client.accent_color}
           />
         </TabsContent>
 
@@ -105,14 +96,6 @@ export default async function ClientDetailPage({
                 </CardHeader>
                 <CardContent>
                   <EditClientForm client={client} sheetTabs={sheetTabs} />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Logo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LogoUpload client={client} />
                 </CardContent>
               </Card>
             </div>

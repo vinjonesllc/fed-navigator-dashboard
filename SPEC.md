@@ -153,11 +153,11 @@ API ingest is captured as a future task (#9) — when Fed Pilot stands up a stan
    - **Registered no-shows** — registered but no participation
    - **Custom** — pick any fields and conditions
    - Export: CSV with name, email, phone, agency, duration, engagement score, text-opt-in, custom responses
-5. **Settings** — team members (invite/remove), branding (logo upload)
+5. **Settings** — team members (invite/remove)
 
 ### Branding
-- Co-branded: Fed Pilot logo on the left of the header, client name + their logo on the right
-- Client-level color accent (optional, post-MVP)
+- Fed Navigator branded only. The header is the Fed Navigator mark + wordmark; no client logo and no client name.
+- No per-client accent colour. The accent strips and tile hairlines use the single brand blue `#3080C2`, exposed as the `--brand` CSS token in `src/app/globals.css`.
 
 ## Theme clustering
 
@@ -172,7 +172,7 @@ Use Claude Sonnet 4.6 (default) or Opus 4.7 for higher-quality clustering. Cost 
 ## DB schema (sketch)
 
 See `supabase/migrations/0001_init.sql`. Tables:
-- `clients` — id, slug, name, logo_url, contact_email, created_at
+- `clients` — id, slug, name, contact_email, created_at
 - `workshops` — id, client_id, title, date, presenter, topic, notes, scheduled_minutes, created_at
 - `attendees` — id, workshop_id, all 36 fixed CSV columns + text_opt_in (bool) + age (int) + registration_question (text) + custom_responses (jsonb) + computed agency (text) + engagement_score_local (float, our computed one if we want)
 - `question_themes` — id, workshop_id, theme_label, count, example_quotes (jsonb)

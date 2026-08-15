@@ -3,17 +3,15 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FedNavLogo } from "@/components/fed-nav-logo";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
-import { ROLE_LABELS, type AppRole, type Client } from "@/lib/supabase/types";
+import { ROLE_LABELS, type AppRole } from "@/lib/supabase/types";
 
 export function AppHeader({
   email,
   role,
-  client,
   nav,
 }: {
   email: string;
   role: AppRole;
-  client?: Pick<Client, "name" | "logo_url"> | null;
   nav?: React.ReactNode;
 }) {
   const roleLabel = ROLE_LABELS[role] ?? role;
@@ -35,23 +33,6 @@ export function AppHeader({
             <div className="font-display text-[15px] font-semibold text-ink-1">Fed Navigator</div>
           </div>
         </Link>
-
-        {client && (
-          <>
-            <span className="text-ink-4">/</span>
-            <div className="flex items-center gap-2">
-              {client.logo_url && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={client.logo_url}
-                  alt={client.name}
-                  className="h-7 w-7 rounded object-contain"
-                />
-              )}
-              <span className="font-display text-sm font-medium text-ink-1">{client.name}</span>
-            </div>
-          </>
-        )}
 
         {nav && <nav className="ml-2 flex gap-1.5">{nav}</nav>}
 
