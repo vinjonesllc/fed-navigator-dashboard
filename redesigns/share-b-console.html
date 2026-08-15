@@ -1,0 +1,531 @@
+<!doctype html>
+<!-- Hallmark · macrostructure: Workbench ("Console") · nav: N3 side-rail, identity-only (public page has no destinations)
+     genre: modern-minimal · theme: Fed Pilot palette (#3080C2 brand blue, #295F86 deep, navy nav) · tone: utilitarian
+     Public share page /share/workshops/[wid] — Direction B. Original files untouched. Sample data. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workshop summary — Fed Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){try{var m=localStorage.getItem('fednav-theme');
+  if(!m)m=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+</script>
+<style>
+/* ─── tokens: Fed Navigator structure, Fed Pilot palette ──────────────── */
+:root{
+  /* ── Fed Pilot palette ────────────────────────────────────────────────
+     Anchor hue 247, taken from the Fed Pilot logo: #3080C2 brand blue,
+     #295F86 deep blue, #BD434A red (kept for errors only). Page is white,
+     navigation sits on a deep Fed Pilot navy. No neutral greys — every
+     neutral carries the anchor's blue tint.                              */
+  --background:oklch(1 0 0);                       /* page — white, no tint */
+  --surface:oklch(1 0 0);                          /* cards                */
+  --wash:oklch(0.975 0.008 248);                   /* #F4F8FC hovers + table heads only */
+  --ink-1:oklch(0.225 0.028 250);                  /* #111D28              */
+  --ink-2:oklch(0.360 0.022 250);
+  --ink-3:oklch(0.520 0.018 250);
+  --ink-4:oklch(0.655 0.014 250);
+  --line-1:oklch(0.480 0.034 248 / 0.42);   /* card edge */
+  --line-2:oklch(0.480 0.034 248 / 0.20);   /* inner rules */
+  /* brand */
+  --brand:#3080C2;                                 /* Fed Pilot blue       */
+  --brand-deep:#295F86;                            /* Fed Pilot deep blue  */
+  --brand-ink:oklch(0.400 0.090 248);              /* #184A75 text-contrast */
+  --brand-soft:oklch(0.583 0.127 247 / 0.10);
+  --brand-bord:oklch(0.583 0.127 247 / 0.32);
+  /* dark navigation ground */
+  --nav-bg:oklch(0.270 0.050 250);                 /* #12283E              */
+  --nav-bg-2:oklch(0.330 0.048 250);
+  --nav-line:oklch(1 0 0 / 0.15);
+  --nav-ink:oklch(0.985 0.006 250);
+  --nav-ink-2:oklch(0.840 0.020 250);
+  --nav-ink-3:oklch(0.700 0.024 250);
+  /* semantic only — never decorative */
+  --amber:oklch(0.66 0.17 60); --amber-ink:oklch(0.52 0.13 50);
+  --amber-soft:oklch(0.62 0.13 50 / 0.09); --amber-bord:oklch(0.62 0.13 50 / 0.40);
+  --danger:#BD434A;                                /* Fed Pilot red        */
+  --accent:var(--brand);                           /* per-client accent    */
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-sans:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+  --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
+  --radius:12px; --rail:248px;
+  --shadow:0 1px 2px oklch(0.30 0.03 250/0.05),0 10px 26px oklch(0.30 0.03 250/0.05);
+  --ease-out:cubic-bezier(.2,.6,.25,1); --dur:160ms;
+}
+.dark{
+  --background:oklch(0.170 0.020 250); --surface:oklch(0.222 0.024 250);
+  --wash:oklch(0.198 0.022 250);
+  --ink-1:oklch(0.960 0.010 250); --ink-2:oklch(0.825 0.014 250);
+  --ink-3:oklch(0.660 0.016 250); --ink-4:oklch(0.500 0.018 250);
+  --line-1:oklch(0.660 0.030 250 / 0.34); --line-2:oklch(0.660 0.030 250 / 0.18);
+  --brand:oklch(0.720 0.110 247); --brand-deep:oklch(0.620 0.110 247);
+  --brand-ink:oklch(0.780 0.100 247);
+  --brand-soft:oklch(0.720 0.110 247 / 0.16); --brand-bord:oklch(0.720 0.110 247 / 0.38);
+  --nav-bg:oklch(0.205 0.030 250); --nav-bg-2:oklch(0.262 0.032 250);
+  --amber:oklch(0.84 0.17 70); --amber-ink:oklch(0.84 0.15 55);
+  --amber-soft:oklch(0.84 0.15 55 / 0.12); --amber-bord:oklch(0.84 0.15 55 / 0.35);
+  --danger:oklch(0.75 0.15 25);
+  --shadow:0 1px 2px oklch(0 0 0/0.34),0 8px 24px oklch(0 0 0/0.30);
+}
+
+/* ── dark navigation ground (rail + mobile topbar) ─────────────────────── */
+.rail,.topbar{
+  --surface:var(--nav-bg-2); --wash:var(--nav-bg-2);
+  --ink-1:var(--nav-ink); --ink-2:var(--nav-ink-2);
+  --ink-3:var(--nav-ink-3); --ink-4:var(--nav-ink-3);
+  --line-1:var(--nav-line); --line-2:oklch(1 0 0 / 0.08);
+  background:var(--nav-bg); color:var(--nav-ink);
+}
+.rail{border-right:1px solid oklch(1 0 0 / 0.10)}
+.topbar{border-bottom:1px solid oklch(1 0 0 / 0.10)}
+.rail .btn,.topbar .iconbtn,.rail .iconbtn{background:oklch(1 0 0 / 0.07)}
+.rail .btn:hover,.topbar .iconbtn:hover,.rail .iconbtn:hover{background:oklch(1 0 0 / 0.15)}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--background); color:var(--ink-1);
+  font-family:var(--font-sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.02em; font-style:normal; margin:0;
+  overflow-wrap:anywhere; min-width:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
+button{font:inherit}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.shell{display:grid; grid-template-columns:minmax(0,1fr); min-height:100vh}
+@media(min-width:1024px){.shell{grid-template-columns:var(--rail) minmax(0,1fr)}}
+
+/* ─── rail — identity only: a public page has nowhere to navigate ─────── */
+.rail{display:none; flex-direction:column; gap:var(--space-5);
+  padding:var(--space-5) var(--space-4)}
+@media(min-width:1024px){.rail{display:flex; position:sticky; top:0; height:100vh}}
+.rail__brand{display:flex; align-items:center; gap:11px; text-decoration:none}
+.rail__mark{width:34px; height:34px; border-radius:9px; flex:none}
+.rail__name{font-family:var(--font-display); font-weight:600; font-size:15px; white-space:nowrap}
+.rail__kicker{margin-top:2px; font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--nav-ink-3)}
+.rail__note{border:1px solid var(--nav-line); border-left:3px solid var(--accent); border-radius:10px;
+  background:oklch(1 0 0 / 0.06); padding:11px 13px; font-size:12px; color:var(--nav-ink-2)}
+.rail__note b{display:block; margin-bottom:3px; font-family:var(--font-mono); font-size:10px;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--nav-ink)}
+.rail__foot{margin-top:auto; border-top:1px solid var(--nav-line); padding-top:var(--space-4);
+  display:flex; align-items:center; gap:var(--space-3)}
+.rail__foot span{font-size:11.5px; color:var(--nav-ink-3)}
+
+/* ─── mobile topbar ────────────────────────────────────────────────────── */
+.topbar{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:var(--space-3);
+  padding:11px var(--space-4)}
+@media(min-width:1024px){.topbar{display:none}}
+.topbar__brand{display:flex; align-items:center; gap:10px; text-decoration:none; min-width:0}
+
+.iconbtn{display:grid; place-items:center; width:34px; height:34px; flex:none; border:1px solid var(--line-1);
+  border-radius:9px; background:var(--surface); color:var(--ink-3); cursor:pointer;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.iconbtn:hover{background:var(--wash); color:var(--ink-1)}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-2);
+  font-size:13px; font-weight:500; padding:8px 14px; cursor:pointer; text-decoration:none;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.btn:hover{background:var(--wash); color:var(--ink-1)}
+.btn:active{transform:translateY(1px)}
+.btn--solid{background:var(--brand-deep); border-color:var(--brand-deep); color:#fff}
+.btn--solid:hover{background:var(--brand-ink); border-color:var(--brand-ink); color:#fff}
+
+/* ─── work area ────────────────────────────────────────────────────────── */
+.work{padding:var(--space-6) var(--space-4) var(--space-10); min-width:0; max-width:1180px}
+@media(min-width:768px){.work{padding:var(--space-8) var(--space-8) var(--space-12)}}
+.workhead{padding-bottom:var(--space-5); border-bottom:1px solid var(--line-1);
+  display:flex; gap:var(--space-5); flex-wrap:wrap; align-items:flex-start}
+.workhead__main{flex:1 1 320px; min-width:0}
+.workhead h1{font-size:clamp(24px,4.2vw,34px); font-weight:600; line-height:1.1; letter-spacing:-.025em}
+.workhead h1 .topic{font-size:.6em; font-weight:400; color:var(--ink-3)}
+.meta{margin-top:12px; display:flex; flex-wrap:wrap; gap:5px 20px; font-family:var(--font-mono); font-size:12.5px}
+.meta__k{color:var(--ink-4); text-transform:uppercase; letter-spacing:.06em; margin-right:6px}
+.meta__v{color:var(--ink-2); font-weight:500}
+.samplechip{display:inline-flex; align-items:center; gap:7px; border:1px dashed var(--line-1);
+  border-radius:999px; padding:5px 12px; font-size:12px; color:var(--ink-3); background:var(--wash)}
+.samplechip strong{color:var(--ink-2); font-weight:600}
+
+/* stat cards — Registered leads on the public summary */
+.stats{margin-top:var(--space-6); display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:640px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stat{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); padding:16px 18px 15px}
+.stat::before{content:""; position:absolute; inset:0 0 auto 0; height:2px;
+  background:linear-gradient(to right,transparent,var(--accent),transparent)}
+.stat--key{border-color:var(--brand-bord); background:linear-gradient(to bottom,var(--brand-soft),var(--surface))}
+.stat--key::after{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(to bottom,var(--brand),var(--brand-deep))}
+.stat__label{font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3)}
+.stat--key .stat__label{color:var(--brand-ink)}
+.stat__value{margin-top:10px; font-family:var(--font-display); font-size:44px; font-weight:600;
+  line-height:1; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.stat--key .stat__value{color:var(--brand-ink)}
+.stat__hint{margin-top:10px; font-size:12px; color:var(--ink-3)}
+
+/* sections */
+.section{margin-top:var(--space-8)}
+.section__head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:var(--space-4)}
+.section__head h2{font-size:18px; font-weight:600}
+.pill{display:inline-flex; align-items:center; border:1px solid var(--line-1); background:var(--wash);
+  border-radius:999px; padding:1px 9px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+
+/* quote wall + rating tile share one grid, as in the source */
+.wall{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:640px){.wall{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1180px){.wall{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.quote{position:relative; overflow:hidden; display:flex; flex-direction:column; min-height:188px;
+  border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  box-shadow:var(--shadow); padding:16px 18px 18px}
+.quote::before{content:""; position:absolute; left:0; top:0; bottom:0; width:2px;
+  background:linear-gradient(to bottom,var(--brand),var(--brand-deep)); opacity:.7}
+.quote__mark{font-family:var(--font-display); font-size:30px; font-weight:700; line-height:.7;
+  letter-spacing:-.04em; color:var(--brand); opacity:.8; margin-bottom:10px}
+.quote__text{flex:1; font-size:13px; line-height:1.55; color:var(--ink-2); text-wrap:pretty}
+.quote__by{margin-top:14px; border-top:1px solid var(--line-2); padding-top:12px;
+  font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--ink-3); display:flex; align-items:center; gap:9px}
+.quote__by i{font-style:normal; color:var(--ink-4)}
+.ratingtile{position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; min-height:188px; border:1px solid var(--brand-bord);
+  border-radius:var(--radius); box-shadow:var(--shadow); padding:20px;
+  background:linear-gradient(to bottom,var(--brand-soft),var(--surface))}
+.ratingtile__k{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-3)}
+.ratingtile__v{margin-top:8px; display:flex; align-items:baseline; gap:5px}
+.ratingtile__v b{font-family:var(--font-display); font-size:48px; font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.ratingtile__v span{font-size:18px; color:var(--ink-3)}
+.stars{margin-top:9px; font-size:22px; line-height:1; letter-spacing:.06em; color:var(--amber)}
+.stars .s-half{opacity:.6} .stars .s-off{opacity:.25}
+.ratingtile__n{margin-top:12px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+
+/* charts */
+.split{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:900px){.split{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  box-shadow:var(--shadow); padding:18px 20px 20px}
+.card__k{font-family:var(--font-mono); font-size:11px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.12em; color:var(--ink-3); margin-bottom:var(--space-4)}
+.engrow{display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);
+  border:1px solid var(--line-1); border-radius:10px; background:var(--wash); padding:11px 15px; margin-bottom:10px}
+.engrow__k{font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--ink-3)}
+.engrow__v{font-family:var(--font-display); font-size:26px; font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block; width:100%; min-width:380px; height:auto}
+.note{margin:var(--space-3) 0 0; font-size:11.5px; color:var(--ink-3)}
+
+/* next workshops */
+.agenda{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); padding:16px 18px 18px}
+.agenda__accent{position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent)}
+.agenda__eyebrow{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3);
+  margin-bottom:var(--space-4)}
+.tiles{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:680px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{border:1px solid var(--line-1); border-radius:10px; background:var(--wash); padding:14px 16px}
+.tile__date{font-family:var(--font-display); font-size:20px; font-weight:600; letter-spacing:-.02em; line-height:1.2}
+.tile__time{margin-top:2px; min-height:20px; font-size:14px; font-weight:500; color:var(--ink-2)}
+.tile__count{margin-top:12px; display:flex; align-items:baseline; gap:8px}
+.tile__num{font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1;
+  font-variant-numeric:tabular-nums}
+.tile__unit{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3)}
+
+/* footer CTA */
+.cta{margin-top:var(--space-10); border-top:1px solid var(--line-1); padding-top:var(--space-8);
+  display:flex; align-items:center; justify-content:center; gap:var(--space-4); flex-wrap:wrap; text-align:center}
+.cta p{margin:0; font-size:13px; color:var(--ink-3)}
+
+/* empty-state appendix */
+.states{margin-top:var(--space-10); border-top:1px dashed var(--line-1); padding-top:var(--space-5)}
+.states h2{font-size:15px; font-weight:600}
+.states__note{font-size:12.5px; color:var(--ink-3); margin:6px 0 var(--space-5)}
+.statecard{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  box-shadow:var(--shadow); padding:16px 18px; margin-bottom:var(--space-3)}
+.statecard__cap{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); margin-bottom:10px}
+.statecard h3{font-size:20px; font-weight:600; line-height:1.3}
+.statecard p{margin:8px 0 0; font-size:14px; color:var(--ink-2)}
+.statecard a.inline{font-weight:700; color:var(--ink-1); text-decoration:underline; text-underline-offset:2px}
+
+.toast{position:fixed; right:16px; bottom:16px; z-index:60; max-width:min(380px,calc(100vw - 32px));
+  border:1px solid var(--line-1); border-radius:11px; background:var(--surface); color:var(--ink-2);
+  padding:11px 14px; font-size:12.5px; box-shadow:0 8px 28px oklch(0.17 0.02 250 / .18);
+  opacity:0; transform:translateY(8px); pointer-events:none;
+  transition:opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out)}
+.toast.show{opacity:1; transform:none}
+.toast code{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-1)}
+@media(prefers-reduced-motion:reduce){*{animation:none !important; transition-duration:120ms !important}
+  .toast{transform:none} .btn:active{transform:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══ rail — brand + context only; a public page has no destinations ══ -->
+  <aside class="rail">
+    <a class="rail__brand" href="/">
+      <svg class="rail__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+        <g transform="translate(20,20) scale(0.6)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+          <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+          <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+          <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+        </g>
+      </svg>
+      <span>
+        <span class="rail__name">Fed Navigator</span>
+        <span class="rail__kicker">Workshop Summary</span>
+      </span>
+    </a>
+
+    <div class="rail__note">
+      <b>Public summary</b>
+      A shareable, read-only view of this workshop. Q&amp;A, the attendee directory and follow-up
+      lists stay behind sign-in.
+    </div>
+
+    <div class="rail__foot">
+      <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch to dark mode">
+        <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <span>Shared by Fed Navigator</span>
+    </div>
+  </aside>
+
+  <div style="min-width:0">
+    <!-- ══ mobile topbar ══ -->
+    <div class="topbar">
+      <a class="topbar__brand" href="/">
+        <svg style="width:28px;height:28px;border-radius:8px;flex:none" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+          <g transform="translate(20,20) scale(0.6)">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+            <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+            <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+            <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+          </g>
+        </svg>
+        <span style="min-width:0">
+          <span style="display:block;font-family:var(--font-display);font-weight:600;font-size:14px;white-space:nowrap">Fed Navigator</span>
+          <span style="display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--nav-ink-3)">Workshop Summary</span>
+        </span>
+      </a>
+      <button class="iconbtn" id="themeBtnM" type="button" aria-label="Switch to dark mode" style="margin-left:auto">
+        <svg id="themeIconM" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+
+    <main class="work">
+      <div class="workhead">
+        <div class="workhead__main">
+          <h1>Your TSP in 2026: What Federal Employees Need to Know
+            <span class="topic">· TSP &amp; Retirement Income</span></h1>
+          <div class="meta">
+            <span><span class="meta__k">Workshop</span><b class="meta__v">May 20, 2026</b></span>
+            <span><span class="meta__k">Presenter</span><b class="meta__v">Marcus Whitfield</b></span>
+          </div>
+        </div>
+        <span class="samplechip"><strong>Sample data</strong> — layout review only</span>
+      </div>
+
+      <!-- three stat cards; Registered is the accented one on the public view -->
+      <section class="stats" aria-label="Attendance">
+        <div class="stat stat--key">
+          <div class="stat__label">Registered</div>
+          <div class="stat__value">412</div>
+          <div class="stat__hint">Total registrants</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Attended (live)</div>
+          <div class="stat__value">268</div>
+          <div class="stat__hint">Joined the live session</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">% Attended</div>
+          <div class="stat__value">65%</div>
+          <div class="stat__hint">Live ÷ registered</div>
+        </div>
+      </section>
+
+      <!-- what attendees said -->
+      <section class="section" aria-labelledby="saidH">
+        <div class="section__head">
+          <h2 id="saidH">What attendees said</h2>
+          <span class="pill">7 of 11</span>
+        </div>
+        <div class="wall">
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">I've sat through four of these over the years and this is the first one where the TSP withdrawal rules finally clicked.</div>
+            <div class="quote__by"><i>—</i> Angela Ruiz, Dept. of Veterans Affairs</div></div>
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">Clear, specific, and no sales pitch. The example with the 62-year-old FERS employee was exactly my situation.</div>
+            <div class="quote__by"><i>—</i> Dale Hutchins, USDA</div></div>
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">I wish I'd seen this five years ago. Please send the slides.</div>
+            <div class="quote__by"><i>—</i> Priya Natarajan, Dept. of Homeland Security</div></div>
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">Honestly a lot to take in, but I left with a list of three things to check on my LES.</div>
+            <div class="quote__by"><i>—</i> Robert Kim, IRS</div></div>
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">The survivor benefit section answered a question my wife and I have argued about for two years.</div>
+            <div class="quote__by"><i>—</i> Anonymous</div></div>
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">Best hour I've spent on retirement planning. Signing up for the one-on-one.</div>
+            <div class="quote__by"><i>—</i> Teresa Alvarado, Dept. of Education</div></div>
+          <div class="quote"><div class="quote__mark">“</div>
+            <div class="quote__text">Straightforward and worth the time. I've already forwarded it to two colleagues in my office.</div>
+            <div class="quote__by"><i>—</i> Karen Boyd, GSA</div></div>
+
+          <div class="ratingtile">
+            <p class="ratingtile__k">Average rating</p>
+            <div class="ratingtile__v"><b>4.7</b><span>/ 5</span></div>
+            <div class="stars" aria-label="4.7 out of 5 stars">
+              <span>★</span><span>★</span><span>★</span><span>★</span><span class="s-half">★</span>
+            </div>
+            <p class="ratingtile__n">From 61 responses</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- charts -->
+      <section class="section" aria-label="Engagement and retention">
+        <div class="split">
+          <div class="card">
+            <div class="card__k">Engagement breakdown</div>
+            <div class="engrow"><span class="engrow__k">Chats</span><span class="engrow__v" style="color:var(--brand)">214</span></div>
+            <div class="engrow"><span class="engrow__k">Questions</span><span class="engrow__v" style="color:var(--brand-deep)">8</span></div>
+            <div class="engrow"><span class="engrow__k">Reactions</span><span class="engrow__v" style="color:var(--amber)">96</span></div>
+          </div>
+          <div class="card">
+            <div class="card__k">Retention curve</div>
+            <div class="chartbox">
+              <svg viewBox="0 0 600 200" role="img" aria-label="Retention curve: 268 attendees at the start, 181 at 60 minutes">
+                <defs><linearGradient id="retS" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.28"/>
+                  <stop offset="100%" stop-color="var(--brand)" stop-opacity="0"/></linearGradient></defs>
+                <g stroke="var(--line-2)" stroke-dasharray="3 3">
+                  <line x1="36" y1="170" x2="584" y2="170"/><line x1="36" y1="115" x2="584" y2="115"/>
+                  <line x1="36" y1="60" x2="584" y2="60"/><line x1="36" y1="20" x2="584" y2="20"/>
+                </g>
+                <path fill="url(#retS)" d="M36,26.4 L81.7,28.6 L127.3,31.2 L173,35.5 L218.7,39.3 L264.3,42.5 L310,46.2 L355.7,48.9 L401.3,52.7 L447,57 L492.7,61.2 L538.3,67.1 L584,73 L584,170 L36,170 Z"/>
+                <path fill="none" stroke="var(--brand)" stroke-width="1.75"
+                  d="M36,26.4 L81.7,28.6 L127.3,31.2 L173,35.5 L218.7,39.3 L264.3,42.5 L310,46.2 L355.7,48.9 L401.3,52.7 L447,57 L492.7,61.2 L538.3,67.1 L584,73"/>
+                <g fill="var(--ink-3)" font-family="var(--font-mono)" font-size="11">
+                  <text x="36" y="190">0m</text><text x="173" y="190">15m</text><text x="310" y="190">30m</text>
+                  <text x="447" y="190">45m</text><text x="566" y="190">60m</text>
+                  <text x="0" y="174">0</text><text x="0" y="63">140</text><text x="0" y="24">280</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- next workshops (no export button on the public view) -->
+      <section class="section" aria-labelledby="nextH">
+        <div class="agenda">
+          <span class="agenda__accent" aria-hidden="true"></span>
+          <div class="agenda__eyebrow" id="nextH">Next workshops</div>
+          <div class="tiles">
+            <div class="tile">
+              <div class="tile__date">Friday, June 5</div>
+              <div class="tile__time">10am Central</div>
+              <div class="tile__count"><span class="tile__num">138</span><span class="tile__unit">registered</span></div>
+            </div>
+            <div class="tile">
+              <div class="tile__date">Thursday, June 18</div>
+              <div class="tile__time">1pm Eastern</div>
+              <div class="tile__count"><span class="tile__num">92</span><span class="tile__unit">registered</span></div>
+            </div>
+          </div>
+          <p class="note">Soonest first. Past dates drop off automatically.</p>
+        </div>
+      </section>
+
+      <!-- footer CTA -->
+      <div class="cta">
+        <p>Want the full report — Q&amp;A, attendees, leads?</p>
+        <a class="btn btn--solid" href="/login?next=%2Fdashboard" data-preview="GET /login?next=%2Fdashboard">Sign in for full details →</a>
+      </div>
+
+      <!-- empty states -->
+      <section class="states" aria-labelledby="stH">
+        <h2 id="stH">Empty states</h2>
+        <p class="states__note">Shown for review because the sample workshop has data. In the live page each
+          replaces its own module.</p>
+
+        <div class="statecard">
+          <div class="statecard__cap">Retention curve — no timing data</div>
+          <p style="font-size:13px;color:var(--ink-3);margin:0">No timing data available.</p>
+        </div>
+
+        <div class="statecard">
+          <div class="statecard__cap">What attendees said — hidden entirely</div>
+          <p style="font-size:13px;color:var(--ink-3);margin:0">With no evaluation comments and no rating, the whole
+            section is omitted from the public page rather than showing an empty shell.</p>
+        </div>
+
+        <div class="statecard">
+          <div class="statecard__cap">Next workshop — nothing scheduled</div>
+          <div class="agenda__eyebrow" style="margin-bottom:8px">Next workshop</div>
+          <h3>No next workshop scheduled yet.</h3>
+          <p>Contact <a class="inline" href="mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date">Kelly</a> to schedule your next workshop.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* theme — one handler, both toggles (rail on desktop, topbar on mobile) */
+(function(){
+  var SUN='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>';
+  var MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  var pairs=[['themeBtn','themeIcon'],['themeBtnM','themeIconM']];
+  function sync(){
+    var d=document.documentElement.classList.contains('dark');
+    pairs.forEach(function(p){
+      var b=document.getElementById(p[0]), i=document.getElementById(p[1]);
+      if(!b||!i) return;
+      i.innerHTML=d?SUN:MOON;
+      b.setAttribute('aria-label', d?'Switch to light mode':'Switch to dark mode');
+    });
+  }
+  sync();
+  pairs.forEach(function(p){
+    var b=document.getElementById(p[0]); if(!b) return;
+    b.addEventListener('click',function(){
+      var d=document.documentElement.classList.toggle('dark');
+      try{localStorage.setItem('fednav-theme',d?'dark':'light');}catch(e){}
+      sync();
+    });
+  });
+})();
+
+/* preview toast */
+var toastEl=document.getElementById('toast'),toastT;
+function toast(html){toastEl.innerHTML=html;toastEl.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},3200);}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-preview], a[href^="/"]'); if(!t) return;
+  e.preventDefault();
+  var d=t.getAttribute('data-preview')||t.getAttribute('href');
+  toast('Preview build — <code>'+d.replace(/&/g,'&amp;')+'</code>');
+});
+</script>
+</body>
+</html>

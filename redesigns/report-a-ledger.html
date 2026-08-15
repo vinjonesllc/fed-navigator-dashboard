@@ -1,0 +1,839 @@
+<!doctype html>
+<!-- Hallmark · macrostructure: Long Document ("Ledger") · nav: N6 masthead + tab rail · footer: Ft6 colophon
+     genre: modern-minimal · theme: locked Fed Navigator brand · tone: austere-editorial
+     Report page (workshop detail) — Direction A. Original files untouched. Sample data. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workshop report — Fed Navigator (Direction A · Ledger)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){try{var m=localStorage.getItem('fednav-theme');
+  if(!m)m=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+</script>
+<style>
+:root{
+  --background:oklch(0.985 0.003 260); --surface:oklch(1 0 0); --bg-2:oklch(0.970 0.004 260);
+  --ink-1:oklch(0.205 0.020 260); --ink-2:oklch(0.345 0.018 260);
+  --ink-3:oklch(0.505 0.016 260); --ink-4:oklch(0.640 0.012 260);
+  --line-1:oklch(0.500 0.020 260 / 0.18); --line-2:oklch(0.500 0.020 260 / 0.10);
+  --lime:oklch(0.62 0.18 142); --lime-soft:oklch(0.62 0.18 142 / 0.12); --lime-bord:oklch(0.62 0.18 142 / 0.30);
+  --lime-ink:oklch(0.42 0.10 150);
+  --amber:oklch(0.66 0.17 60); --amber-ink:oklch(0.52 0.13 50); --amber-soft:oklch(0.62 0.13 50 / 0.09);
+  --amber-bord:oklch(0.62 0.13 50 / 0.40);
+  --rose:oklch(0.58 0.20 22); --cyan:oklch(0.55 0.13 230);
+  --brand-navy:#0E2A52; --brand-red:#C8102E; --accent:#C8102E;
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-sans:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+  --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
+  --radius:10px; --ease-out:cubic-bezier(.2,.6,.25,1); --dur:160ms;
+}
+.dark{
+  --background:oklch(0.165 0.012 260); --surface:oklch(0.215 0.014 260); --bg-2:oklch(0.195 0.013 260);
+  --ink-1:oklch(0.965 0.008 260); --ink-2:oklch(0.820 0.012 260);
+  --ink-3:oklch(0.650 0.014 260); --ink-4:oklch(0.490 0.016 260);
+  --line-1:oklch(0.300 0.018 260 / 0.55); --line-2:oklch(0.300 0.018 260 / 0.30);
+  --lime:oklch(0.86 0.18 130); --lime-soft:oklch(0.86 0.18 130 / 0.14); --lime-bord:oklch(0.86 0.18 130 / 0.35);
+  --lime-ink:oklch(0.86 0.18 130);
+  --amber:oklch(0.84 0.17 70); --amber-ink:oklch(0.84 0.15 55); --amber-soft:oklch(0.84 0.15 55 / 0.12);
+  --amber-bord:oklch(0.84 0.15 55 / 0.35);
+  --rose:oklch(0.75 0.17 25); --cyan:oklch(0.82 0.10 220);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--background); color:var(--ink-1);
+  font-family:var(--font-sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.02em; font-style:normal; margin:0;
+  overflow-wrap:anywhere; min-width:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--lime); outline-offset:2px; border-radius:4px}
+button{font:inherit}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* masthead — same chrome as the Ledger overview */
+.masthead{border-bottom:1px solid var(--line-1); background:var(--surface)}
+.masthead__top{max-width:1000px; margin:0 auto; padding:14px var(--space-5);
+  display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:10px; text-decoration:none}
+.brand__mark{width:32px; height:32px; flex:none; border-radius:8px}
+.brand__name{font-family:var(--font-display); font-weight:600; font-size:15px; white-space:nowrap}
+.slash{color:var(--ink-4)}
+.cobrand{display:flex; align-items:center; gap:8px; min-width:0}
+.cobrand__logo{width:28px; height:28px; border-radius:6px; object-fit:contain; flex:none;
+  background:var(--bg-2); border:1px solid var(--line-2)}
+.cobrand__name{font-family:var(--font-display); font-weight:500; font-size:14px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tools{margin-left:auto; display:flex; align-items:center; gap:var(--space-2)}
+.iconbtn{display:grid; place-items:center; width:34px; height:34px; flex:none;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-3);
+  cursor:pointer; transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.iconbtn:hover{background:var(--bg-2); color:var(--ink-1)}
+.chip{display:flex; align-items:center; gap:9px; padding:4px 12px 4px 5px; border:1px solid var(--line-1);
+  border-radius:999px; background:var(--surface); cursor:pointer; min-width:0}
+.chip:hover{background:var(--bg-2)}
+.chip__avatar{display:grid; place-items:center; width:26px; height:26px; flex:none; border-radius:50%;
+  background:linear-gradient(135deg,oklch(0.55 0.18 142),oklch(0.50 0.14 230));
+  color:#fff; font-family:var(--font-display); font-weight:700; font-size:11px}
+.chip__email{font-size:12.5px; color:var(--ink-2); white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; max-width:34vw}
+.chip__role{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--lime); background:var(--lime-soft); border:1px solid var(--lime-bord);
+  border-radius:4px; padding:1px 6px; flex:none}
+.tabs{border-top:1px solid var(--line-2); background:var(--surface)}
+.tabs__inner{max-width:1000px; margin:0 auto; padding:0 var(--space-5); display:flex; gap:var(--space-5);
+  overflow-x:auto; scrollbar-width:thin}
+.tab{padding:11px 2px 9px; font-size:13.5px; color:var(--ink-3); text-decoration:none;
+  border-bottom:2px solid transparent; white-space:nowrap}
+.tab:hover{color:var(--ink-1)}
+.tab[aria-current="page"]{color:var(--ink-1); font-weight:600; border-bottom-color:var(--accent)}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-2);
+  font-size:13px; font-weight:500; padding:7px 13px; cursor:pointer; text-decoration:none;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.btn:hover{background:var(--bg-2); color:var(--ink-1)}
+.btn:active{transform:translateY(1px)}
+.btn--solid{background:var(--brand-navy); border-color:var(--brand-navy); color:#fff}
+.btn--solid:hover{background:#0a2144; border-color:#0a2144; color:#fff}
+.btn--sm{padding:5px 10px; font-size:12px}
+
+/* document */
+.doc{max-width:1000px; margin:0 auto; padding:var(--space-8) var(--space-5) var(--space-16)}
+.crumb{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-3)}
+.crumb a{text-decoration:none}
+.crumb a:hover{color:var(--ink-1)}
+.dochead{margin-top:var(--space-5); padding-bottom:var(--space-5); border-bottom:1px solid var(--line-2);
+  display:flex; gap:var(--space-6); flex-wrap:wrap; align-items:flex-start}
+.dochead__main{flex:1 1 300px; min-width:0}
+.dochead h1{font-size:clamp(27px,5.5vw,38px); font-weight:600; line-height:1.08; letter-spacing:-.025em}
+.dochead h1 .topic{font-size:.6em; font-weight:400; color:var(--ink-3)}
+.meta{margin-top:12px; display:flex; flex-wrap:wrap; gap:6px 20px; font-family:var(--font-mono); font-size:12.5px}
+.meta__k{color:var(--ink-4); text-transform:uppercase; letter-spacing:.06em; margin-right:6px}
+.meta__v{color:var(--ink-2); font-weight:500}
+.dochead__acts{display:flex; gap:var(--space-2); flex-wrap:wrap}
+.samplebar{margin-top:var(--space-5); display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  border:1px dashed var(--line-1); border-radius:var(--radius); padding:9px 13px; font-size:12.5px;
+  color:var(--ink-3); background:var(--bg-2)}
+.samplebar strong{color:var(--ink-2); font-weight:600}
+
+.section{margin-top:var(--space-12); border-top:2px solid var(--ink-1); padding-top:var(--space-5)}
+.section__head{display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; margin-bottom:var(--space-5)}
+.section__num{font-family:var(--font-mono); font-size:11px; color:var(--ink-4); letter-spacing:.08em}
+.section__eyebrow{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.16em; color:var(--ink-4); width:100%; margin-bottom:2px}
+.section__title{font-size:21px; font-weight:600}
+.pill{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line-1); background:var(--bg-2);
+  border-radius:999px; padding:1px 9px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+.helpbtn{display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%;
+  border:1px solid var(--line-1); background:transparent; color:var(--ink-3); font-size:10.5px;
+  font-weight:700; cursor:pointer; line-height:1}
+.helpbtn:hover{border-color:var(--ink-3); background:var(--bg-2); color:var(--ink-1)}
+.section__act{margin-left:auto; display:flex; gap:var(--space-2); flex-wrap:wrap}
+
+/* figures — KPI row as ruled columns, ranked by weight */
+.figures{display:grid; grid-template-columns:minmax(0,1fr); gap:0}
+@media(min-width:600px){.figures{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:900px){.figures{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.figure{padding:var(--space-5) 0; border-bottom:1px solid var(--line-2)}
+@media(min-width:600px){
+  .figure{padding:var(--space-2) var(--space-5) var(--space-5); border-bottom:none;
+    border-left:1px solid var(--line-2)}
+  .figure:nth-child(2n+1){border-left:none; padding-left:0}
+}
+@media(min-width:900px){
+  .figure:nth-child(2n+1){border-left:1px solid var(--line-2); padding-left:var(--space-5)}
+  .figure:first-child{border-left:none; padding-left:0}
+}
+.figure--key{position:relative}
+.figure--key::before{content:""; position:absolute; left:0; top:6px; bottom:14px; width:3px;
+  background:linear-gradient(to bottom,var(--lime),var(--cyan)); border-radius:2px}
+@media(min-width:600px){.figure--key::before{left:-1px}}
+.figure--key{padding-left:14px}
+@media(min-width:600px){.figure--key{padding-left:14px}}
+.figure__label{display:flex; align-items:center; gap:7px; font-size:12px; text-transform:uppercase;
+  letter-spacing:.04em; color:var(--ink-3); margin-bottom:10px}
+.figure--key .figure__label{color:var(--lime-ink)}
+.keytag{border-radius:999px; background:var(--lime-soft); padding:1px 6px; font-family:var(--font-mono);
+  font-size:9px; font-weight:600; letter-spacing:.08em; color:var(--lime-ink)}
+.figure__value{font-family:var(--font-display); font-weight:600; line-height:1; letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums; font-size:36px; color:var(--ink-2)}
+.figure--key .figure__value{font-size:52px; color:var(--lime-ink)}
+.figure--2 .figure__value{font-size:44px; color:var(--ink-1)}
+.figure__hint{margin-top:10px; font-size:12px; color:var(--ink-3)}
+
+/* rating banner */
+.rating{display:flex; flex-wrap:wrap; align-items:center; gap:12px 28px; padding:var(--space-5) 0;
+  border-top:1px solid var(--line-2); border-bottom:1px solid var(--line-2)}
+.rating__num{font-family:var(--font-display); font-size:52px; font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.rating__den{font-size:20px; color:var(--ink-3); margin-left:6px}
+.stars{color:var(--amber); letter-spacing:.06em; line-height:1}
+.stars .s-half{opacity:.6} .stars .s-off{opacity:.25}
+.rating__cap{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--ink-3); margin-top:7px}
+
+/* quotes — pull-quote list, no cards */
+.quotes{list-style:none; margin:var(--space-5) 0 0; padding:0}
+.quote{border-left:2px solid var(--lime-bord); padding:var(--space-4) 0 var(--space-4) var(--space-5);
+  border-bottom:1px solid var(--line-2); cursor:pointer;
+  transition:background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)}
+.quote:hover{background:var(--bg-2); border-left-color:var(--lime)}
+.quote__text{font-size:15.5px; line-height:1.55; color:var(--ink-1); text-wrap:pretty}
+.quote__by{margin-top:9px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+.note{margin-top:var(--space-3); font-size:12px; color:var(--ink-3)}
+
+/* engagement + retention */
+.split{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-8)}
+@media(min-width:860px){.split{grid-template-columns:minmax(0,340px) minmax(0,1fr)}}
+.sublabel{font-family:var(--font-mono); font-size:11px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.12em; color:var(--ink-3); display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  margin-bottom:var(--space-4)}
+.engrow{display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);
+  padding:13px 0; border-bottom:1px solid var(--line-2)}
+.engrow__k{font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-3)}
+.engrow__v{font-family:var(--font-display); font-size:28px; font-weight:600; line-height:1;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.chartbox{width:100%; overflow-x:auto}
+.chartbox svg{display:block; width:100%; min-width:420px; height:auto}
+
+/* follow-up lists */
+.list{list-style:none; margin:0; padding:0}
+.list__row{width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:6px 14px; padding:11px 0; border-bottom:1px solid var(--line-2); background:none; border-left:0;
+  border-right:0; border-top:0; text-align:left; cursor:pointer; color:inherit;
+  transition:background var(--dur) var(--ease-out)}
+.list__row:hover{background:var(--bg-2)}
+.list__name{display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:500; color:var(--ink-1)}
+.list__mail{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-4)}
+.list__detail{font-family:var(--font-mono); font-size:11.5px; color:var(--lime-ink)}
+.list__sub{flex-basis:100%; font-size:11.5px; color:var(--ink-3); margin-top:-2px}
+.src{display:inline-flex; align-items:center; border-radius:999px; border:1px solid var(--line-2);
+  background:var(--bg-2); color:var(--ink-4); padding:1px 6px; font-size:9.5px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.04em; flex:none}
+.src--eval{border-color:var(--amber-bord); background:var(--amber-soft); color:var(--amber-ink)}
+.subhead{margin-top:var(--space-8); font-family:var(--font-display); font-size:15px; font-weight:600;
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:var(--space-3)}
+.worry{border-left:2px solid var(--amber-bord); padding:var(--space-4) 0 var(--space-4) var(--space-5);
+  border-bottom:1px solid var(--line-2); cursor:pointer; background:none; width:100%; text-align:left;
+  border-top:0; border-right:0; color:inherit; transition:background var(--dur) var(--ease-out)}
+.worry:hover{background:var(--bg-2)}
+.worry__q{font-size:14px; font-style:italic; color:var(--amber-ink); line-height:1.5; text-wrap:pretty}
+.worry__by{margin-top:9px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  font-size:13px; font-weight:500; color:var(--ink-1)}
+
+/* tables */
+.tablewrap{overflow-x:auto; border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface)}
+.tablescroll{max-height:26rem; overflow-y:auto}
+table{width:100%; border-collapse:separate; border-spacing:0; font-size:13px; min-width:560px}
+th{position:sticky; top:0; background:var(--bg-2); border-bottom:1px solid var(--line-1);
+  font-family:var(--font-mono); font-size:10.5px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); text-align:left; padding:10px 16px; white-space:nowrap; z-index:1}
+th.num{text-align:right}
+th button{display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0;
+  color:inherit; cursor:pointer; font:inherit; text-transform:inherit; letter-spacing:inherit}
+th button:hover{color:var(--ink-1)}
+th .hint{text-transform:none; letter-spacing:0; color:var(--ink-4)}
+td{border-bottom:1px solid var(--line-2); padding:11px 16px; color:var(--ink-2); vertical-align:top}
+tbody tr{cursor:pointer; transition:background var(--dur) var(--ease-out)}
+tbody tr:hover{background:var(--bg-2)}
+td.num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums}
+.person{display:flex; align-items:center; gap:11px; min-width:0}
+.person__av{display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:50%;
+  color:#fff; font-family:var(--font-display); font-size:11px; font-weight:600}
+.person__nm{font-weight:500; color:var(--ink-1)}
+.person__em{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-4)}
+.agency{display:inline-flex; align-items:center; border-radius:5px; border:1px solid var(--line-1);
+  background:var(--bg-2); color:var(--ink-2); padding:2px 8px; font-family:var(--font-mono); font-size:11px}
+.agency--gov{border-color:var(--lime-bord); background:var(--lime-soft); color:var(--lime-ink)}
+.eng{display:inline-flex; align-items:center; gap:9px; justify-content:flex-end;
+  font-family:var(--font-mono); font-weight:600; color:var(--ink-1)}
+.eng .den{font-weight:400; color:var(--ink-4)}
+.eng i{display:inline-block; height:4px; border-radius:2px;
+  background:linear-gradient(to right,var(--lime),var(--cyan))}
+.foot-note{padding:12px 16px; font-size:11.5px; color:var(--ink-4); border-top:1px solid var(--line-2)}
+.foot-note b{color:var(--ink-2); font-weight:500}
+.emptyline{padding:14px 0; font-size:12.5px; color:var(--ink-3)}
+
+.colophon{margin-top:var(--space-16); border-top:2px solid var(--ink-1); padding-top:var(--space-5);
+  display:flex; gap:var(--space-4); align-items:center; flex-wrap:wrap; font-size:12.5px; color:var(--ink-3)}
+.colophon__mark{width:22px; height:22px; border-radius:6px; flex:none}
+
+/* dialogs */
+dialog{border:1px solid var(--line-1); border-radius:14px; background:var(--surface); color:var(--ink-1);
+  padding:0; width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:oklch(0.2 0.02 260/.45)}
+.dlg__body{padding:var(--space-6)}
+.dlg h2{font-size:18px; font-weight:600}
+.helpblock{margin-top:var(--space-4); border:1px solid var(--line-1); border-radius:10px;
+  background:var(--bg-2); padding:13px 15px}
+.helpblock--accent{border-color:var(--lime-bord); background:var(--lime-soft)}
+.helpblock__k{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--ink-3); margin-bottom:5px}
+.helpblock--accent .helpblock__k{color:var(--lime-ink)}
+.helpblock__b{font-size:13.5px; color:var(--ink-2); line-height:1.5}
+.dlg__foot{display:flex; justify-content:flex-end; gap:var(--space-2); margin-top:var(--space-5)}
+.pdet{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-3); margin-top:var(--space-5)}
+.pdet div{border:1px solid var(--line-1); border-radius:10px; background:var(--bg-2); padding:11px 13px}
+.pdet dt{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--ink-4)}
+.pdet dd{margin:5px 0 0; font-size:14px; font-weight:500; color:var(--ink-1)}
+.qlist{margin:var(--space-5) 0 0; padding:0; list-style:none}
+.qlist li{border-top:1px solid var(--line-2); padding:10px 0; font-size:13.5px; color:var(--ink-2)}
+
+.toast{position:fixed; right:16px; bottom:16px; z-index:60; max-width:min(380px,calc(100vw - 32px));
+  border:1px solid var(--line-1); border-radius:11px; background:var(--surface); color:var(--ink-2);
+  padding:11px 14px; font-size:12.5px; box-shadow:0 8px 28px oklch(0.2 0.02 260/.18);
+  opacity:0; transform:translateY(8px); pointer-events:none;
+  transition:opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out)}
+.toast.show{opacity:1; transform:none}
+.toast code{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-1)}
+@media(prefers-reduced-motion:reduce){*{animation:none !important; transition-duration:120ms !important}
+  .toast{transform:none} .btn:active{transform:none}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead__top">
+    <a class="brand" href="/">
+      <svg class="brand__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+        <g transform="translate(20,20) scale(0.6)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+          <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+          <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+          <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+        </g>
+      </svg>
+      <span class="brand__name">Fed Navigator</span>
+    </a>
+    <span class="slash" aria-hidden="true">/</span>
+    <div class="cobrand">
+      <img class="cobrand__logo" alt="Feducate DMV"
+        src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23C8102E'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='30' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+      <span class="cobrand__name">Feducate DMV</span>
+    </div>
+    <div class="tools">
+      <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch to dark mode">
+        <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="chip" id="chipBtn" type="button" title="Change password">
+        <span class="chip__avatar">DR</span>
+        <span class="chip__email">dana.reyes@feducatedmv.com</span>
+        <span class="chip__role">Advisor</span>
+      </button>
+      <button class="btn" type="button" data-preview="POST /auth/sign-out">Sign out</button>
+    </div>
+  </div>
+  <nav class="tabs" aria-label="Dashboard sections">
+    <div class="tabs__inner">
+      <a class="tab" href="/dashboard">Overview</a>
+      <a class="tab" href="/dashboard/workshops" aria-current="page">Workshops</a>
+      <a class="tab" href="/dashboard/leads">Leads</a>
+      <a class="tab" href="/dashboard/guide">Guide</a>
+      <a class="tab" href="/dashboard/settings">Settings</a>
+    </div>
+  </nav>
+</header>
+
+<main class="doc">
+  <div class="crumb">
+    <a href="/dashboard/workshops">← Workshops</a>
+    <span style="color:var(--ink-4)">/</span>
+    <span style="color:var(--ink-2)">May 20, 2026</span>
+  </div>
+
+  <div class="dochead">
+    <div class="dochead__main">
+      <h1>Your TSP in 2026: What Federal Employees Need to Know
+        <span class="topic">· TSP &amp; Retirement Income</span></h1>
+      <div class="meta">
+        <span><span class="meta__k">Workshop</span><b class="meta__v">May 20, 2026</b></span>
+        <span><span class="meta__k">Presenter</span><b class="meta__v">Marcus Whitfield</b></span>
+        <span><span class="meta__k">Duration</span><b class="meta__v">60 min</b></span>
+      </div>
+    </div>
+    <div class="dochead__acts">
+      <a class="btn" href="#" data-preview="GET /api/evals/export?workshopId=ws-01">↓ Export All</a>
+      <a class="btn btn--solid" href="#" data-preview="GET /api/leads/export?workshopId=ws-01">↓ Export Attendees</a>
+    </div>
+  </div>
+
+  <div class="samplebar"><strong>Sample data</strong> — layout review only. Names, quotes, and figures are placeholders.</div>
+
+  <!-- 01 · results -->
+  <section class="section" aria-labelledby="s1">
+    <div class="section__head">
+      <span class="section__eyebrow">Results</span>
+      <span class="section__num">01</span>
+      <h2 class="section__title" id="s1">Attendance at a glance</h2>
+    </div>
+    <div class="figures">
+      <div class="figure figure--key">
+        <div class="figure__label">Attended (live) <span class="keytag">KEY</span></div>
+        <div class="figure__value">268</div>
+        <div class="figure__hint">Participation = Live</div>
+      </div>
+      <div class="figure figure--2">
+        <div class="figure__label">% Attended</div>
+        <div class="figure__value">65%</div>
+        <div class="figure__hint">Live ÷ registered</div>
+      </div>
+      <div class="figure">
+        <div class="figure__label">Registered</div>
+        <div class="figure__value">412</div>
+        <div class="figure__hint">Total CSV rows ingested</div>
+      </div>
+      <div class="figure">
+        <div class="figure__label">Engaged</div>
+        <div class="figure__value">143</div>
+        <div class="figure__hint">≥ 1 chat, question, or reaction</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 · what attendees said -->
+  <section class="section" aria-labelledby="s2">
+    <div class="section__head">
+      <span class="section__eyebrow">Social proof</span>
+      <span class="section__num">02</span>
+      <h2 class="section__title" id="s2">What attendees said</h2>
+      <button class="helpbtn" type="button" aria-label="About “What attendees said”"
+        data-help="said">?</button>
+      <span class="pill">11 quoted</span>
+      <span class="section__act">
+        <a class="btn btn--sm" href="#" data-preview="GET /api/evals/export?workshopId=ws-01">↓ Download evaluations</a>
+      </span>
+    </div>
+
+    <div class="rating">
+      <div>
+        <span class="rating__num">4.7</span><span class="rating__den">/ 5</span>
+      </div>
+      <div>
+        <div class="stars" style="font-size:24px" aria-label="4.7 out of 5 stars">
+          <span>★</span><span>★</span><span>★</span><span>★</span><span class="s-half">★</span>
+        </div>
+        <div class="rating__cap">Average rating · 61 responses</div>
+      </div>
+    </div>
+
+    <ul class="quotes" id="quoteList">
+      <li class="quote" data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5">
+        <div class="quote__text">“I've sat through four of these over the years and this is the first one where the TSP withdrawal rules finally clicked.”</div>
+        <div class="quote__by">— Angela Ruiz, Dept. of Veterans Affairs</div>
+      </li>
+      <li class="quote" data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2">
+        <div class="quote__text">“Clear, specific, and no sales pitch. The example with the 62-year-old FERS employee was exactly my situation.”</div>
+        <div class="quote__by">— Dale Hutchins, USDA</div>
+      </li>
+      <li class="quote" data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1">
+        <div class="quote__text">“I wish I'd seen this five years ago. Please send the slides.”</div>
+        <div class="quote__by">— Priya Natarajan, Dept. of Homeland Security</div>
+      </li>
+      <li class="quote" data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9">
+        <div class="quote__text">“Honestly a lot to take in, but I left with a list of three things to check on my LES.”</div>
+        <div class="quote__by">— Robert Kim, IRS</div>
+      </li>
+      <li class="quote">
+        <div class="quote__text">“The survivor benefit section answered a question my wife and I have argued about for two years.”</div>
+        <div class="quote__by">— Anonymous</div>
+      </li>
+      <li class="quote" data-person="Teresa Alvarado" data-email="t.alvarado@ed.gov" data-agency="ed.gov" data-time="44" data-eng="5.1">
+        <div class="quote__text">“Best hour I've spent on retirement planning. Signing up for the one-on-one.”</div>
+        <div class="quote__by">— Teresa Alvarado, Dept. of Education</div>
+      </li>
+    </ul>
+    <p class="note">Showing 6 of 11. Download evaluations for the full set.</p>
+  </section>
+
+  <!-- 03 · engagement & retention -->
+  <section class="section" aria-labelledby="s3">
+    <div class="section__head">
+      <span class="section__eyebrow">Participation</span>
+      <span class="section__num">03</span>
+      <h2 class="section__title" id="s3">Engagement &amp; retention</h2>
+    </div>
+    <div class="split">
+      <div>
+        <div class="sublabel">Engagement breakdown <span class="pill">Totals · 268 live</span></div>
+        <div class="engrow"><span class="engrow__k">Chats</span><span class="engrow__v" style="color:var(--lime)">214</span></div>
+        <div class="engrow"><span class="engrow__k">Questions</span><span class="engrow__v" style="color:var(--cyan)">8</span></div>
+        <div class="engrow"><span class="engrow__k">Reactions</span><span class="engrow__v" style="color:var(--amber)">96</span></div>
+        <p class="note">Totals across all live attendees.</p>
+      </div>
+      <div>
+        <div class="sublabel">Retention curve <span class="pill">60 min session</span></div>
+        <div class="chartbox">
+          <svg viewBox="0 0 600 200" role="img" aria-label="Retention curve: 268 attendees at the start, 181 at 60 minutes">
+            <defs>
+              <linearGradient id="retA" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="oklch(0.62 0.18 142)" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="oklch(0.62 0.18 142)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <g stroke="var(--line-2)" stroke-dasharray="3 3">
+              <line x1="36" y1="170" x2="584" y2="170"/><line x1="36" y1="115" x2="584" y2="115"/>
+              <line x1="36" y1="60" x2="584" y2="60"/><line x1="36" y1="20" x2="584" y2="20"/>
+            </g>
+            <path fill="url(#retA)" d="M36,26.4 L81.7,28.6 L127.3,31.2 L173,35.5 L218.7,39.3 L264.3,42.5 L310,46.2 L355.7,48.9 L401.3,52.7 L447,57 L492.7,61.2 L538.3,67.1 L584,73 L584,170 L36,170 Z"/>
+            <path fill="none" stroke="oklch(0.62 0.18 142)" stroke-width="1.75"
+              d="M36,26.4 L81.7,28.6 L127.3,31.2 L173,35.5 L218.7,39.3 L264.3,42.5 L310,46.2 L355.7,48.9 L401.3,52.7 L447,57 L492.7,61.2 L538.3,67.1 L584,73"/>
+            <g fill="var(--ink-3)" font-family="var(--font-mono)" font-size="11">
+              <text x="36" y="190">0m</text><text x="173" y="190">15m</text>
+              <text x="310" y="190">30m</text><text x="447" y="190">45m</text><text x="566" y="190">60m</text>
+              <text x="0" y="174">0</text><text x="0" y="63">140</text><text x="0" y="24">280</text>
+            </g>
+          </svg>
+        </div>
+        <p class="note">Attendees still in the session, sampled every 5 minutes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 · buying signals -->
+  <section class="section" aria-labelledby="s4">
+    <div class="section__head">
+      <span class="section__eyebrow">Follow-up</span>
+      <span class="section__num">04</span>
+      <h2 class="section__title" id="s4">Buying signals</h2>
+      <span class="pill">12 flagged</span>
+    </div>
+
+    <div class="subhead">Retiring within the next 12 months
+      <button class="helpbtn" type="button" aria-label="About “Retiring within the next 12 months”" data-help="retiring">?</button>
+      <span class="pill">5 people</span></div>
+    <ul class="list">
+      <li><button class="list__row" data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5">
+        <span class="list__name">Angela Ruiz <span class="src src--eval">Eval</span></span>
+        <span class="list__mail">angela.ruiz@va.gov</span><span class="list__detail">September 2026</span></button></li>
+      <li><button class="list__row" data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2">
+        <span class="list__name">Dale Hutchins <span class="src">Chat</span></span>
+        <span class="list__mail">d.hutchins@usda.gov</span><span class="list__detail">Within 12 months</span></button></li>
+      <li><button class="list__row" data-person="Karen Boyd" data-email="karen.boyd@gsa.gov" data-agency="gsa.gov" data-time="58" data-eng="8.9">
+        <span class="list__name">Karen Boyd <span class="src">Chat + Q&amp;A</span></span>
+        <span class="list__mail">karen.boyd@gsa.gov</span><span class="list__detail">Within 12 months</span></button></li>
+      <li><button class="list__row" data-person="Marcus Lee" data-email="m.lee@dhs.gov" data-agency="dhs.gov" data-time="48" data-eng="6.1">
+        <span class="list__name">Marcus Lee <span class="src">Q&amp;A</span></span>
+        <span class="list__mail">m.lee@dhs.gov</span><span class="list__detail">8 weeks</span></button></li>
+      <li><button class="list__row" data-person="Teresa Alvarado" data-email="t.alvarado@ed.gov" data-agency="ed.gov" data-time="44" data-eng="5.1">
+        <span class="list__name">Teresa Alvarado <span class="src src--eval">Eval</span></span>
+        <span class="list__mail">t.alvarado@ed.gov</span><span class="list__detail">January 2027</span></button></li>
+    </ul>
+
+    <div class="subhead">Cliff notes requested
+      <button class="helpbtn" type="button" aria-label="About “Cliff notes requested”" data-help="cliff">?</button>
+      <span class="pill">3 requests</span></div>
+    <ul class="list">
+      <li><button class="list__row" data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1">
+        <span class="list__name">Priya Natarajan <span class="src">Q&amp;A</span></span>
+        <span class="list__mail">p.natarajan@dhs.gov</span>
+        <span class="list__sub">Asked for the slides and the withdrawal-rules summary</span></button></li>
+      <li><button class="list__row" data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9">
+        <span class="list__name">Robert Kim <span class="src">Chat</span></span>
+        <span class="list__mail">robert.kim@irs.gov</span>
+        <span class="list__sub">Left an email address for the written recap</span></button></li>
+      <li><button class="list__row" data-person="Sandra Oyelaran" data-email="s.oyelaran@va.gov" data-agency="va.gov" data-time="41" data-eng="4.9">
+        <span class="list__name">Sandra Oyelaran <span class="src src--eval">Eval</span></span>
+        <span class="list__mail">s.oyelaran@va.gov</span>
+        <span class="list__sub">Requested the cliff notes in her evaluation</span></button></li>
+    </ul>
+
+    <div class="subhead">Worried about current situation
+      <button class="helpbtn" type="button" aria-label="About “Worried about current situation”" data-help="worried">?</button>
+      <span class="pill">4 people</span></div>
+    <div>
+      <button class="worry" data-person="Denise Farrow" data-email="d.farrow@usda.gov" data-agency="usda.gov" data-time="39" data-eng="4.6">
+        <div class="worry__q">“Feels like a roller coaster trying to get to retirement.”</div>
+        <div class="worry__by">Denise Farrow <span class="src">Chat</span>
+          <span class="list__mail">d.farrow@usda.gov</span></div>
+      </button>
+      <button class="worry" data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9">
+        <div class="worry__q">“Clear as mud before today, honestly.”</div>
+        <div class="worry__by">Robert Kim <span class="src">Chat</span>
+          <span class="list__mail">robert.kim@irs.gov</span></div>
+      </button>
+      <button class="worry" data-person="Gerald Nunez" data-email="g.nunez@va.gov" data-agency="va.gov" data-time="54" data-eng="7.6">
+        <div class="worry__q">“Amen.”</div>
+        <div class="worry__by">Gerald Nunez <span class="src">Chat</span>
+          <span class="list__mail">g.nunez@va.gov</span></div>
+      </button>
+      <button class="worry" data-person="Michelle Trent" data-email="m.trent@ssa.gov" data-agency="ssa.gov" data-time="51" data-eng="6.4">
+        <div class="worry__q">“It's a lot to take in and I'm not sure where to start.”</div>
+        <div class="worry__by">Michelle Trent <span class="src src--eval">Eval</span>
+          <span class="list__mail">m.trent@ssa.gov</span></div>
+      </button>
+    </div>
+  </section>
+
+  <!-- 05 · Q&A -->
+  <section class="section" aria-labelledby="s5">
+    <div class="section__head">
+      <span class="section__eyebrow">Transcript</span>
+      <span class="section__num">05</span>
+      <h2 class="section__title" id="s5">Q&amp;A</h2>
+      <button class="helpbtn" type="button" aria-label="About “Q&A”" data-help="qa">?</button>
+      <span class="pill">8 questions</span>
+    </div>
+    <div class="tablewrap"><div class="tablescroll">
+      <table>
+        <thead><tr><th scope="col">Question</th><th scope="col" style="width:220px">Asked by</th></tr></thead>
+        <tbody class="people">
+          <tr data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5" title="View this person's details">
+            <td>If I retire at 62 with 30 years, does the FERS supplement stop at 62 or continue?</td>
+            <td><div class="person__nm">Angela Ruiz</div><div class="person__em">angela.ruiz@va.gov</div></td></tr>
+          <tr data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2" title="View this person's details">
+            <td>Can I roll a traditional TSP into a Roth IRA without a tax hit?</td>
+            <td><div class="person__nm">Dale Hutchins</div><div class="person__em">d.hutchins@usda.gov</div></td></tr>
+          <tr data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1" title="View this person's details">
+            <td>What happens to my FEHB premium once I'm on Medicare Part B?</td>
+            <td><div class="person__nm">Priya Natarajan</div><div class="person__em">p.natarajan@dhs.gov</div></td></tr>
+          <tr data-person="Karen Boyd" data-email="karen.boyd@gsa.gov" data-agency="gsa.gov" data-time="58" data-eng="8.9" title="View this person's details">
+            <td>Is the G Fund still the right place if I'm five years out?</td>
+            <td><div class="person__nm">Karen Boyd</div><div class="person__em">karen.boyd@gsa.gov</div></td></tr>
+          <tr data-person="Gerald Nunez" data-email="g.nunez@va.gov" data-agency="va.gov" data-time="54" data-eng="7.6" title="View this person's details">
+            <td>How is the survivor annuity election calculated if I remarry?</td>
+            <td><div class="person__nm">Gerald Nunez</div><div class="person__em">g.nunez@va.gov</div></td></tr>
+          <tr data-person="Marcus Lee" data-email="m.lee@dhs.gov" data-agency="dhs.gov" data-time="48" data-eng="6.1" title="View this person's details">
+            <td>Do unused sick leave hours count toward the 30-year mark?</td>
+            <td><div class="person__nm">Marcus Lee</div><div class="person__em">m.lee@dhs.gov</div></td></tr>
+          <tr data-person="Michelle Trent" data-email="m.trent@ssa.gov" data-agency="ssa.gov" data-time="51" data-eng="6.4" title="View this person's details">
+            <td>What's the deadline to change my TSP allocation before separation?</td>
+            <td><div class="person__nm">Michelle Trent</div><div class="person__em">m.trent@ssa.gov</div></td></tr>
+          <tr data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9" title="View this person's details">
+            <td>If I take the lump-sum annual leave payout, does that push me into a higher bracket?</td>
+            <td><div class="person__nm">Robert Kim</div><div class="person__em">robert.kim@irs.gov</div></td></tr>
+        </tbody>
+      </table>
+    </div></div>
+    <p class="note">↕ Scroll to see all 8 questions.</p>
+  </section>
+
+  <!-- 06 · live attendees -->
+  <section class="section" aria-labelledby="s6">
+    <div class="section__head">
+      <span class="section__eyebrow">Directory</span>
+      <span class="section__num">06</span>
+      <h2 class="section__title" id="s6">Live attendees</h2>
+      <button class="helpbtn" type="button" aria-label="About “Live attendees”" data-help="attendees">?</button>
+      <span class="pill">268</span>
+      <span class="section__act">
+        <a class="btn btn--sm" href="#" data-preview="GET /api/evals/export?workshopId=ws-01">↓ Export All</a>
+        <a class="btn btn--sm btn--solid" href="#" data-preview="GET /api/leads/export?workshopId=ws-01">↓ Export Attendees</a>
+      </span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th scope="col"><button type="button" data-preview="sort by Name">Name ⇅</button></th>
+          <th scope="col"><button type="button" data-preview="sort by Agency">Agency ⇅</button></th>
+          <th scope="col" class="num"><button type="button" data-preview="sort by Time">Time <span class="hint">(min)</span> ⇅</button></th>
+          <th scope="col" class="num"><button type="button" data-preview="sort by Engagement">Engagement <span class="hint">(0–10)</span> ⓘ ⇅</button></th>
+        </tr></thead>
+        <tbody class="people">
+          <tr data-person="Angela Ruiz" data-email="angela.ruiz@va.gov" data-agency="va.gov" data-time="60" data-eng="9.5" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.55 0.18 142)">AR</span>
+              <span><span class="person__nm">Angela Ruiz</span><br><span class="person__em">angela.ruiz@va.gov</span></span></span></td>
+            <td><span class="agency agency--gov">va.gov</span></td>
+            <td class="num">60 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">9.5 <span class="den">/ 10</span><i style="width:91px"></i></span></td></tr>
+          <tr data-person="Dale Hutchins" data-email="d.hutchins@usda.gov" data-agency="usda.gov" data-time="59" data-eng="9.2" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.45 0.10 220)">DH</span>
+              <span><span class="person__nm">Dale Hutchins</span><br><span class="person__em">d.hutchins@usda.gov</span></span></span></td>
+            <td><span class="agency agency--gov">usda.gov</span></td>
+            <td class="num">59 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">9.2 <span class="den">/ 10</span><i style="width:88px"></i></span></td></tr>
+          <tr data-person="Karen Boyd" data-email="karen.boyd@gsa.gov" data-agency="gsa.gov" data-time="58" data-eng="8.9" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.55 0.16 60)">KB</span>
+              <span><span class="person__nm">Karen Boyd</span><br><span class="person__em">karen.boyd@gsa.gov</span></span></span></td>
+            <td><span class="agency agency--gov">gsa.gov</span></td>
+            <td class="num">58 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">8.9 <span class="den">/ 10</span><i style="width:85px"></i></span></td></tr>
+          <tr data-person="Priya Natarajan" data-email="p.natarajan@dhs.gov" data-agency="dhs.gov" data-time="57" data-eng="8.1" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.50 0.15 320)">PN</span>
+              <span><span class="person__nm">Priya Natarajan</span><br><span class="person__em">p.natarajan@dhs.gov</span></span></span></td>
+            <td><span class="agency agency--gov">dhs.gov</span></td>
+            <td class="num">57 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">8.1 <span class="den">/ 10</span><i style="width:78px"></i></span></td></tr>
+          <tr data-person="Robert Kim" data-email="robert.kim@irs.gov" data-agency="irs.gov" data-time="55" data-eng="7.9" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.55 0.18 22)">RK</span>
+              <span><span class="person__nm">Robert Kim</span><br><span class="person__em">robert.kim@irs.gov</span></span></span></td>
+            <td><span class="agency agency--gov">irs.gov</span></td>
+            <td class="num">55 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">7.9 <span class="den">/ 10</span><i style="width:76px"></i></span></td></tr>
+          <tr data-person="Gerald Nunez" data-email="g.nunez@va.gov" data-agency="va.gov" data-time="54" data-eng="7.6" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.50 0.12 180)">GN</span>
+              <span><span class="person__nm">Gerald Nunez</span><br><span class="person__em">g.nunez@va.gov</span></span></span></td>
+            <td><span class="agency agency--gov">va.gov</span></td>
+            <td class="num">54 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">7.6 <span class="den">/ 10</span><i style="width:73px"></i></span></td></tr>
+          <tr data-person="Michelle Trent" data-email="m.trent@ssa.gov" data-agency="ssa.gov" data-time="51" data-eng="6.4" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.50 0.14 280)">MT</span>
+              <span><span class="person__nm">Michelle Trent</span><br><span class="person__em">m.trent@ssa.gov</span></span></span></td>
+            <td><span class="agency agency--gov">ssa.gov</span></td>
+            <td class="num">51 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">6.4 <span class="den">/ 10</span><i style="width:61px"></i></span></td></tr>
+          <tr data-person="Marcus Lee" data-email="m.lee@dhs.gov" data-agency="dhs.gov" data-time="48" data-eng="6.1" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.55 0.17 110)">ML</span>
+              <span><span class="person__nm">Marcus Lee</span><br><span class="person__em">m.lee@dhs.gov</span></span></span></td>
+            <td><span class="agency agency--gov">dhs.gov</span></td>
+            <td class="num">48 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">6.1 <span class="den">/ 10</span><i style="width:59px"></i></span></td></tr>
+          <tr data-person="Teresa Alvarado" data-email="t.alvarado@ed.gov" data-agency="ed.gov" data-time="44" data-eng="5.1" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.55 0.16 40)">TA</span>
+              <span><span class="person__nm">Teresa Alvarado</span><br><span class="person__em">t.alvarado@ed.gov</span></span></span></td>
+            <td><span class="agency agency--gov">ed.gov</span></td>
+            <td class="num">44 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">5.1 <span class="den">/ 10</span><i style="width:49px"></i></span></td></tr>
+          <tr data-person="Denise Farrow" data-email="d.farrow@usda.gov" data-agency="usda.gov" data-time="39" data-eng="4.6" title="Click for this attendee's chats, questions, time &amp; evaluation">
+            <td><span class="person"><span class="person__av" style="background:oklch(0.45 0.13 240)">DF</span>
+              <span><span class="person__nm">Denise Farrow</span><br><span class="person__em">d.farrow@usda.gov</span></span></span></td>
+            <td><span class="agency agency--gov">usda.gov</span></td>
+            <td class="num">39 <span style="color:var(--ink-4)">/ 60</span></td>
+            <td class="num"><span class="eng">4.6 <span class="den">/ 10</span><i style="width:44px"></i></span></td></tr>
+        </tbody>
+      </table>
+      <p class="foot-note">Showing 10 of 268 in this preview. Export CSV for the full list.
+        <b>Engagement</b> is a 0–10 index: (time ÷ scheduled) × 7, plus 1.5 if chats &gt; 5, plus 1.5 if
+        questions &gt; 3. Click any attendee to see their chats, questions, time &amp; evaluation.</p>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <svg class="colophon__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+      <g transform="translate(20,20) scale(0.6)">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+        <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+        <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+        <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+      </g>
+    </svg>
+    <span>Fed Navigator · workshop report for Feducate DMV.</span>
+    <span style="margin-left:auto">Direction A — Ledger</span>
+  </footer>
+</main>
+
+<dialog id="helpDlg"><div class="dlg__body">
+  <h2 id="helpTitle">Section</h2>
+  <div class="helpblock"><div class="helpblock__k">What it is</div><div class="helpblock__b" id="helpA"></div></div>
+  <div class="helpblock"><div class="helpblock__k">What to click — and what you'll see</div><div class="helpblock__b" id="helpB"></div></div>
+  <div class="helpblock helpblock--accent"><div class="helpblock__k">Use it to book more appointments</div><div class="helpblock__b" id="helpC"></div></div>
+  <div class="dlg__foot"><button class="btn" type="button" data-close>Close</button></div>
+</div></dialog>
+
+<dialog id="personDlg"><div class="dlg__body">
+  <h2 id="pName">Attendee</h2>
+  <p style="margin:6px 0 0;font-family:var(--font-mono);font-size:12px;color:var(--ink-3)" id="pEmail"></p>
+  <dl class="pdet">
+    <div><dt>Agency</dt><dd id="pAgency">—</dd></div>
+    <div><dt>Time in session</dt><dd id="pTime">—</dd></div>
+    <div><dt>Engagement</dt><dd id="pEng">—</dd></div>
+    <div><dt>Participation</dt><dd>Live</dd></div>
+  </dl>
+  <ul class="qlist" id="pQs"></ul>
+  <div class="dlg__foot"><button class="btn" type="button" data-close>Close</button></div>
+</div></dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* theme */
+(function(){var btn=document.getElementById('themeBtn'),icon=document.getElementById('themeIcon');
+var SUN='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>';
+var MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+function sync(){var d=document.documentElement.classList.contains('dark');icon.innerHTML=d?SUN:MOON;
+  btn.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');}
+sync();btn.addEventListener('click',function(){var d=document.documentElement.classList.toggle('dark');
+  try{localStorage.setItem('fednav-theme',d?'dark':'light');}catch(e){}sync();});})();
+
+/* section help — copy lifted from SectionHelp props in workshop-detail.tsx */
+var HELP={
+ said:{t:'What attendees said',
+  a:'Attendees’ own evaluation comments and star ratings for this workshop, pulled live from your evaluations sheet.',
+  b:'Click any comment to open that person’s full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” to export them all.',
+  c:'Their own words are your best opener. Reach out referencing a specific comment (“you mentioned … in your feedback”) and quote the rating (“attendees rated this 4.7/5”) to make the ask feel earned.'},
+ retiring:{t:'Retiring within the next 12 months',
+  a:'Attendees who signaled that they plan to retire within the next 12 months, with a “soon” date or phrase when they gave one. Auto-detected from the live transcript and post-workshop evaluation comments.',
+  b:'Click anyone to open their profile — their questions, chats, time in session, eval, and the timing they mentioned.',
+  c:'This is your #1 call list. Phone anyone retiring within ~6 months in the next 48 hours, and lead with their stated timeline plus the exact question they asked — that’s a warm, specific reason to talk now.'},
+ cliff:{t:'Cliff notes requested',
+  a:'Attendees who asked for the cliff notes / written summary / materials, or left an email to receive them. Auto-detected from the live chat, Q&A, and post-workshop evaluation comments.',
+  b:'Click anyone to open their full profile and see exactly what they asked for.',
+  c:'These people raised their hand. Send what they asked for the same day — and use that email as your opener to offer a quick, no-obligation review of their numbers.'},
+ worried:{t:'Worried about current situation',
+  a:'Attendees who signaled they feel worried, apprehensive, overwhelmed, or confused about their benefits — most say so when the presenter asks if they feel like they’re on a roller coaster trying to reach retirement, plus anyone who calls the material a lot to take in or “clear as mud.” Auto-detected from the live transcript and from post-workshop evaluation comments.',
+  b:'Click anyone to open their full profile — their questions, chats, time in session, and evaluation — with the exact words they used.',
+  c:'This is a warm call list: they’ve admitted they’re overwhelmed and need help making sense of it. Lead with reassurance and their own words to book a one-on-one.'},
+ qa:{t:'Q&A',
+  a:'Every question attendees asked during the session, alongside who asked it.',
+  b:'Click any row to open that person’s profile — their other questions, chats, time in session, and evaluation.',
+  c:'A question is a stated concern in their own words. Open your call or email with it (“you asked about survivor benefits — let’s put your real numbers to it”) for an instant, relevant reason to connect.'},
+ attendees:{t:'Live attendees',
+  a:'Everyone who attended live, with their engagement score and time in the session.',
+  b:'Click any name to open their profile — chats, questions, time in session, and evaluation in one place. “Export All” downloads the whole list with every field for your CRM.',
+  c:'Work the list by heat: people who stayed to the end or asked questions are your warmest leads. Open each person’s profile to personalize the outreach, and export to tag the hot ones for follow-up.'}
+};
+var helpDlg=document.getElementById('helpDlg');
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-help]'); if(!b) return;
+  var h=HELP[b.dataset.help]; if(!h) return;
+  document.getElementById('helpTitle').textContent=h.t;
+  document.getElementById('helpA').textContent=h.a;
+  document.getElementById('helpB').textContent=h.b;
+  document.getElementById('helpC').textContent=h.c;
+  helpDlg.showModal();
+});
+
+/* attendee detail modal */
+var QS={
+ 'Angela Ruiz':['If I retire at 62 with 30 years, does the FERS supplement stop at 62 or continue?'],
+ 'Dale Hutchins':['Can I roll a traditional TSP into a Roth IRA without a tax hit?'],
+ 'Priya Natarajan':['What happens to my FEHB premium once I’m on Medicare Part B?'],
+ 'Karen Boyd':['Is the G Fund still the right place if I’m five years out?'],
+ 'Gerald Nunez':['How is the survivor annuity election calculated if I remarry?'],
+ 'Marcus Lee':['Do unused sick leave hours count toward the 30-year mark?'],
+ 'Michelle Trent':['What’s the deadline to change my TSP allocation before separation?'],
+ 'Robert Kim':['If I take the lump-sum annual leave payout, does that push me into a higher bracket?']
+};
+var personDlg=document.getElementById('personDlg');
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-person]'); if(!el) return;
+  var d=el.dataset;
+  document.getElementById('pName').textContent=d.person;
+  document.getElementById('pEmail').textContent=d.email||'';
+  document.getElementById('pAgency').textContent=d.agency||'—';
+  document.getElementById('pTime').textContent=(d.time||'—')+' / 60 min';
+  document.getElementById('pEng').textContent=(d.eng||'—')+' / 10';
+  var qs=QS[d.person]||[];
+  document.getElementById('pQs').innerHTML = qs.length
+    ? '<li style="border:0;padding-bottom:0;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-4)">Questions asked</li>'
+      + qs.map(function(q){return '<li>'+q+'</li>';}).join('')
+    : '<li style="border:0;color:var(--ink-3)">No questions submitted by this attendee.</li>';
+  personDlg.showModal();
+});
+document.addEventListener('click',function(e){
+  if(e.target.closest('[data-close]')){var d=e.target.closest('dialog'); if(d) d.close();}
+});
+
+/* preview toast */
+var toastEl=document.getElementById('toast'),toastT;
+function toast(html){toastEl.innerHTML=html;toastEl.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},3200);}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-preview], a[href^="/"]'); if(!t) return;
+  e.preventDefault();
+  var d=t.getAttribute('data-preview')||t.getAttribute('href');
+  toast('Preview build — <code>'+d.replace(/&/g,'&amp;')+'</code>');
+});
+</script>
+</body>
+</html>

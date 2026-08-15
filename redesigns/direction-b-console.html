@@ -1,0 +1,651 @@
+<!doctype html>
+<!-- Hallmark · macrostructure: Workbench ("Console") · nav: N3 side-rail (+ off-canvas drawer < 1024px) · footer: Ft7 rail-pinned utility
+     genre: modern-minimal · theme: Fed Pilot palette (#3080C2 brand blue, #295F86 deep, navy nav) · type locked (Space Grotesk / IBM Plex Sans / JetBrains Mono)
+     tone: utilitarian · pre-emit critique: P5 H5 E5 S4 R5 V5
+     Redesign of /dashboard — Direction B. Original files untouched. Sample data. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fed Navigator — Overview (Direction B · Console)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){try{var m=localStorage.getItem('fednav-theme');
+  if(!m)m=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+</script>
+<style>
+/* ─── tokens: Fed Navigator structure, Fed Pilot palette ──────────────── */
+:root{
+  /* ── Fed Pilot palette ────────────────────────────────────────────────
+     Anchor hue 247, taken from the Fed Pilot logo: #3080C2 brand blue,
+     #295F86 deep blue, #BD434A red (kept for errors only). Page is white,
+     navigation sits on a deep Fed Pilot navy. No neutral greys — every
+     neutral carries the anchor's blue tint.                              */
+  --background:oklch(1 0 0);                       /* page — white, no tint */
+  --surface:oklch(1 0 0);                          /* cards                */
+  --wash:oklch(0.975 0.008 248);                   /* #F4F8FC hovers + table heads only */
+  --ink-1:oklch(0.225 0.028 250);                  /* #111D28              */
+  --ink-2:oklch(0.360 0.022 250);
+  --ink-3:oklch(0.520 0.018 250);
+  --ink-4:oklch(0.655 0.014 250);
+  --line-1:oklch(0.480 0.034 248 / 0.42);   /* card edge */
+  --line-2:oklch(0.480 0.034 248 / 0.20);   /* inner rules */
+  /* brand */
+  --brand:#3080C2;                                 /* Fed Pilot blue       */
+  --brand-deep:#295F86;                            /* Fed Pilot deep blue  */
+  --brand-ink:oklch(0.400 0.090 248);              /* #184A75 text-contrast */
+  --brand-soft:oklch(0.583 0.127 247 / 0.10);
+  --brand-bord:oklch(0.583 0.127 247 / 0.32);
+  /* dark navigation ground */
+  --nav-bg:oklch(0.270 0.050 250);                 /* #12283E              */
+  --nav-bg-2:oklch(0.330 0.048 250);
+  --nav-line:oklch(1 0 0 / 0.15);
+  --nav-ink:oklch(0.985 0.006 250);
+  --nav-ink-2:oklch(0.840 0.020 250);
+  --nav-ink-3:oklch(0.700 0.024 250);
+  /* semantic only — never decorative */
+  --amber:oklch(0.66 0.17 60); --amber-ink:oklch(0.52 0.13 50);
+  --amber-soft:oklch(0.62 0.13 50 / 0.09); --amber-bord:oklch(0.62 0.13 50 / 0.40);
+  --danger:#BD434A;                                /* Fed Pilot red        */
+  --accent:var(--brand);                           /* single brand accent  */
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-sans:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+  --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
+  --radius:12px; --rail:248px;
+  --shadow:0 1px 2px oklch(0.30 0.03 250/0.05),0 10px 26px oklch(0.30 0.03 250/0.05);
+  --ease-out:cubic-bezier(.2,.6,.25,1); --dur:160ms;
+}
+.dark{
+  --background:oklch(0.170 0.020 250); --surface:oklch(0.222 0.024 250);
+  --wash:oklch(0.198 0.022 250);
+  --ink-1:oklch(0.960 0.010 250); --ink-2:oklch(0.825 0.014 250);
+  --ink-3:oklch(0.660 0.016 250); --ink-4:oklch(0.500 0.018 250);
+  --line-1:oklch(0.660 0.030 250 / 0.34); --line-2:oklch(0.660 0.030 250 / 0.18);
+  --brand:oklch(0.720 0.110 247); --brand-deep:oklch(0.620 0.110 247);
+  --brand-ink:oklch(0.780 0.100 247);
+  --brand-soft:oklch(0.720 0.110 247 / 0.16); --brand-bord:oklch(0.720 0.110 247 / 0.38);
+  --nav-bg:oklch(0.205 0.030 250); --nav-bg-2:oklch(0.262 0.032 250);
+  --amber:oklch(0.84 0.17 70); --amber-ink:oklch(0.84 0.15 55);
+  --amber-soft:oklch(0.84 0.15 55 / 0.12); --amber-bord:oklch(0.84 0.15 55 / 0.35);
+  --danger:oklch(0.75 0.15 25);
+  --shadow:0 1px 2px oklch(0 0 0/0.34),0 8px 24px oklch(0 0 0/0.30);
+}
+
+/* ── dark navigation ground (rail + mobile topbar) ─────────────────────── */
+.rail,.topbar{
+  --surface:var(--nav-bg-2); --wash:var(--nav-bg-2);
+  --ink-1:var(--nav-ink); --ink-2:var(--nav-ink-2);
+  --ink-3:var(--nav-ink-3); --ink-4:var(--nav-ink-3);
+  --line-1:var(--nav-line); --line-2:oklch(1 0 0 / 0.08);
+  background:var(--nav-bg); color:var(--nav-ink);
+}
+.rail{border-right:1px solid oklch(1 0 0 / 0.10)}
+.topbar{border-bottom:1px solid oklch(1 0 0 / 0.10)}
+.rail .btn,.topbar .iconbtn,.rail .iconbtn{background:oklch(1 0 0 / 0.07)}
+.rail .btn:hover,.topbar .iconbtn:hover,.rail .iconbtn:hover{background:oklch(1 0 0 / 0.15)}
+.rail .identity{background:oklch(1 0 0 / 0.07)}
+.rail .identity:hover{background:oklch(1 0 0 / 0.15)}
+.railnav a:hover{background:oklch(1 0 0 / 0.09)}
+.railnav a[aria-current="page"]{background:oklch(1 0 0 / 0.13)}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--background); color:var(--ink-1);
+  font-family:var(--font-sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.02em; font-style:normal; margin:0;
+  overflow-wrap:anywhere; min-width:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
+button{font:inherit}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ─── shell ────────────────────────────────────────────────────────────── */
+.shell{display:grid; grid-template-columns:minmax(0,1fr); min-height:100vh}
+@media(min-width:1024px){.shell{grid-template-columns:var(--rail) minmax(0,1fr)}}
+
+/* ─── side rail ────────────────────────────────────────────────────────── */
+.rail{
+  background:var(--nav-bg);
+  display:flex; flex-direction:column; gap:var(--space-5);
+  padding:var(--space-5) var(--space-4);
+  position:fixed; inset:0 auto 0 0; width:min(300px,84vw); z-index:50;
+  transform:translateX(-101%); transition:transform 200ms var(--ease-out);
+}
+.rail.open{transform:none; box-shadow:0 0 60px oklch(0.17 0.02 250 / .3)}
+@media(min-width:1024px){
+  .rail{position:sticky; top:0; height:100vh; width:auto; transform:none; box-shadow:none}
+}
+.rail__brand{display:flex; align-items:center; gap:10px; text-decoration:none}
+.rail__mark{width:34px; height:34px; border-radius:9px; flex:none}
+.rail__name{font-family:var(--font-display); font-weight:600; font-size:15px}
+
+.railnav{display:flex; flex-direction:column; gap:2px}
+.railnav a{
+  display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:9px;
+  font-size:13.5px; color:var(--ink-3); text-decoration:none; white-space:nowrap;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.railnav a:hover{background:var(--wash); color:var(--ink-1)}
+.railnav a[aria-current="page"]{background:var(--wash); color:var(--ink-1); font-weight:600;
+  box-shadow:inset 3px 0 0 var(--accent)}
+.railnav svg{width:16px; height:16px; flex:none; opacity:.85}
+
+.rail__foot{margin-top:auto; display:flex; flex-direction:column; gap:var(--space-3);
+  border-top:1px solid var(--line-2); padding-top:var(--space-4)}
+.identity{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:left; min-width:0;
+  border:1px solid var(--line-1); border-radius:999px; background:var(--surface);
+  padding:5px 12px 5px 5px; cursor:pointer; transition:background var(--dur) var(--ease-out);
+}
+.identity:hover{background:var(--wash)}
+.identity__avatar{display:grid; place-items:center; width:28px; height:28px; flex:none; border-radius:50%;
+  background:linear-gradient(135deg,var(--brand),var(--brand-deep));
+  color:#fff; font-family:var(--font-display); font-weight:700; font-size:11px}
+.identity__meta{min-width:0}
+.identity__email{font-size:12px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.identity__role{font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--brand)}
+.rail__actions{display:flex; gap:var(--space-2)}
+
+/* ─── topbar (mobile) ──────────────────────────────────────────────────── */
+.topbar{
+  position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:var(--space-3);
+  padding:11px var(--space-4); background:var(--nav-bg);
+}
+@media(min-width:1024px){.topbar{display:none}}
+.topbar__brand{display:flex; align-items:center; gap:9px; min-width:0; text-decoration:none}
+.scrim{position:fixed; inset:0; background:oklch(0.17 0.02 250 / .45); z-index:45; opacity:0;
+  pointer-events:none; transition:opacity 200ms var(--ease-out)}
+.scrim.show{opacity:1; pointer-events:auto}
+@media(min-width:1024px){.scrim{display:none}}
+
+/* ─── buttons ──────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-2);
+  font-size:13px; font-weight:500; padding:7px 12px; cursor:pointer; text-decoration:none;
+  transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.btn:hover{background:var(--wash); color:var(--ink-1)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.5; cursor:not-allowed; transform:none}
+.btn--solid{background:var(--brand-deep); border-color:var(--brand-deep); color:#fff}
+.btn--solid:hover{background:var(--brand-ink); border-color:var(--brand-ink); color:#fff}
+.btn--wide{flex:1}
+.iconbtn{display:grid; place-items:center; width:34px; height:34px; flex:none;
+  border:1px solid var(--line-1); border-radius:9px; background:var(--surface); color:var(--ink-3);
+  cursor:pointer; transition:background var(--dur) var(--ease-out), color var(--dur) var(--ease-out)}
+.iconbtn:hover{background:var(--wash); color:var(--ink-1)}
+
+/* ─── work area ────────────────────────────────────────────────────────── */
+.work{padding:var(--space-6) var(--space-4) var(--space-10); min-width:0}
+@media(min-width:768px){.work{padding:var(--space-8) var(--space-8) var(--space-10)}}
+.work__head{display:flex; align-items:flex-end; gap:var(--space-4); flex-wrap:wrap;
+  padding-bottom:var(--space-5); border-bottom:1px solid var(--line-1)}
+.work__head h1{font-size:clamp(24px,4.5vw,30px); font-weight:600}
+.work__head p{margin:4px 0 0; color:var(--ink-3); font-size:14px}
+.samplechip{
+  margin-left:auto; display:inline-flex; align-items:center; gap:7px;
+  border:1px dashed var(--line-1); border-radius:999px; padding:5px 12px;
+  font-size:12px; color:var(--ink-3); background:var(--wash);
+}
+.samplechip strong{color:var(--ink-2); font-weight:600}
+
+.cols{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-6); margin-top:var(--space-6)}
+@media(min-width:1200px){.cols{grid-template-columns:minmax(0,1fr) 330px; align-items:start}}
+
+/* ─── kpi band ─────────────────────────────────────────────────────────── */
+.kpis{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--space-3)}
+@media(min-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:900px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{
+  border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  padding:14px 15px 13px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+}
+.kpi::before{content:""; position:absolute; inset:0 0 auto 0; height:2px;
+  background:linear-gradient(to right,transparent,var(--accent),transparent)}
+.kpi__label{font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3)}
+.kpi__value{font-family:var(--font-display); font-size:32px; font-weight:600; line-height:1.05;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums; margin-top:8px}
+.kpi__unit{font-size:15px; font-weight:500; color:var(--ink-3); margin-left:4px}
+.kpi__hint{margin-top:8px; font-size:11.5px; color:var(--ink-3)}
+.meter{height:5px; border-radius:3px; background:var(--wash); border:1px solid var(--line-2);
+  margin-top:10px; overflow:hidden}
+.meter__fill{height:100%; background:var(--accent); border-radius:3px}
+.stars{margin-top:7px; font-size:16px; line-height:1; letter-spacing:.04em; color:var(--amber)}
+.stars .s-half{opacity:.6} .stars .s-off{opacity:.25}
+
+/* ─── panel + table ────────────────────────────────────────────────────── */
+.panel{
+  position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); margin-top:var(--space-6);
+}
+.panel__accent{position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent)}
+.panel__head{display:flex; align-items:center; gap:10px; padding:14px 18px 12px; flex-wrap:wrap}
+.panel__head h2{font-size:15px; font-weight:600}
+.pill{display:inline-flex; align-items:center; border:1px solid var(--line-1); background:var(--wash);
+  border-radius:999px; padding:1px 9px; font-family:var(--font-mono); font-size:11px; color:var(--ink-3)}
+.panel__hint{margin-left:auto; font-size:11.5px; color:var(--ink-3)}
+.tablewrap{overflow-x:auto}
+table{width:100%; border-collapse:separate; border-spacing:0; font-size:13px; min-width:660px}
+th{background:var(--wash); border-top:1px solid var(--line-1); border-bottom:1px solid var(--line-1);
+  font-family:var(--font-mono); font-size:10.5px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); text-align:left; padding:10px 16px; white-space:nowrap}
+th.num,td.num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums}
+td{border-bottom:1px solid var(--line-2); padding:11px 16px; color:var(--ink-2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer; transition:background var(--dur) var(--ease-out)}
+tbody tr:hover{background:var(--wash)}
+td.date{font-family:var(--font-mono); font-size:12px; white-space:nowrap}
+td.title{color:var(--ink-1); font-weight:500; min-width:220px}
+td.title a{text-decoration:none}
+tbody tr:hover td.title a{text-decoration:underline; text-underline-offset:3px}
+.pctcell{display:flex; align-items:center; justify-content:flex-end; gap:9px}
+.pctbar{width:54px; height:5px; border-radius:3px; background:var(--wash);
+  border:1px solid var(--line-2); overflow:hidden; flex:none}
+.pctbar i{display:block; height:100%; background:var(--brand-deep)}
+.empty{padding:26px 16px; text-align:center; color:var(--ink-3)}
+
+/* ─── right rail: next workshops ───────────────────────────────────────── */
+.agenda{position:relative; overflow:hidden; border:1px solid var(--line-1); border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); padding:16px 18px 18px}
+@media(min-width:1200px){.agenda{position:sticky; top:var(--space-6)}}
+.agenda__eyebrow{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3);
+  margin-bottom:var(--space-4)}
+.tile{border:1px solid var(--line-1); border-radius:10px; background:var(--surface);
+  padding:14px; margin-bottom:var(--space-3)}
+.tile:last-child{margin-bottom:0}
+.tile__date{font-family:var(--font-display); font-size:20px; font-weight:600; letter-spacing:-.02em; line-height:1.2}
+.tile__time{margin-top:2px; min-height:20px; font-size:14px; font-weight:500; color:var(--ink-2)}
+.tile__count{margin-top:12px; display:flex; align-items:baseline; gap:8px}
+.tile__num{font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1;
+  font-variant-numeric:tabular-nums}
+.tile__unit{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3)}
+.tile .btn{margin-top:14px; width:100%}
+
+/* ─── empty-state appendix ─────────────────────────────────────────────── */
+.states{margin-top:var(--space-8); border-top:1px dashed var(--line-1); padding-top:var(--space-5)}
+.states h2{font-size:15px; font-weight:600}
+.states__note{font-size:12.5px; color:var(--ink-3); margin:6px 0 var(--space-5)}
+.statecard{border:1px solid var(--line-1); border-radius:var(--radius); background:var(--surface);
+  padding:16px 18px; margin-bottom:var(--space-3)}
+.statecard__cap{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-4); margin-bottom:10px}
+.statecard h3{font-size:20px; font-weight:600; line-height:1.3}
+.statecard p{margin:8px 0 0; font-size:14.5px; font-weight:500; color:var(--ink-2)}
+.statecard a.inline{font-weight:700; color:var(--ink-1); text-decoration:underline; text-underline-offset:2px}
+
+/* ─── dialog + toast ───────────────────────────────────────────────────── */
+dialog{border:1px solid var(--line-1); border-radius:14px; background:var(--surface); color:var(--ink-1);
+  padding:0; width:min(440px,calc(100vw - 32px))}
+dialog::backdrop{background:oklch(0.17 0.02 250 / .45)}
+.dlg__body{padding:var(--space-6)}
+.dlg h2{font-size:18px; font-weight:600}
+.dlg__desc{margin:6px 0 var(--space-5); font-size:13.5px; color:var(--ink-3)}
+.field{margin-bottom:var(--space-4)}
+.field label{display:block; font-size:13px; font-weight:500; margin-bottom:6px}
+.field input{width:100%; padding:9px 11px; font:inherit; font-size:14px; color:var(--ink-1);
+  background:var(--background); border:1px solid var(--line-1); border-radius:9px}
+.field .help{margin:6px 0 0; font-size:11.5px; color:var(--ink-3)}
+.dlg__msg{min-height:20px; font-size:12.5px; margin:0 0 var(--space-3)}
+.dlg__msg.err{color:var(--danger)} .dlg__msg.ok{color:var(--brand)}
+.dlg__foot{display:flex; justify-content:flex-end; gap:var(--space-2)}
+.toast{position:fixed; right:16px; bottom:16px; z-index:60; max-width:min(380px,calc(100vw - 32px));
+  border:1px solid var(--line-1); border-radius:11px; background:var(--surface); color:var(--ink-2);
+  padding:11px 14px; font-size:12.5px; box-shadow:0 8px 28px oklch(0.17 0.02 250 / .18);
+  opacity:0; transform:translateY(8px); pointer-events:none;
+  transition:opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out)}
+.toast.show{opacity:1; transform:none}
+.toast code{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-1)}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none !important; transition-duration:120ms !important}
+  .rail{transition:none} .toast{transform:none}
+  .btn:active{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ══ side rail ══ -->
+  <aside class="rail" id="rail" aria-label="Primary">
+    <a class="rail__brand" href="/">
+      <svg class="rail__mark" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+        <g transform="translate(20,20) scale(0.6)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+          <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+          <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+          <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+        </g>
+      </svg>
+      <span class="rail__name">Fed Navigator</span>
+    </a>
+
+    <nav class="railnav" aria-label="Dashboard sections">
+      <a href="/dashboard" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Overview</a>
+      <a href="/dashboard/workshops">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v4"/></svg>
+        Workshops</a>
+      <a href="/dashboard/leads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 20v-1a4 4 0 0 0-8 0v1"/><circle cx="12" cy="8" r="3.5"/></svg>
+        Leads</a>
+      <a href="/dashboard/guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/></svg>
+        Guide</a>
+      <a href="/dashboard/settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>
+        Settings</a>
+    </nav>
+
+    <div class="rail__foot">
+      <button class="identity" id="chipBtn" type="button" title="Change password">
+        <span class="identity__avatar">DR</span>
+        <span class="identity__meta">
+          <span class="identity__email">dana.reyes@feducatedmv.com</span>
+          <span class="identity__role">Advisor</span>
+        </span>
+      </button>
+      <div class="rail__actions">
+        <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch to dark mode">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="btn btn--wide" type="button" data-preview="POST /auth/sign-out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div style="min-width:0">
+    <!-- ══ mobile topbar ══ -->
+    <div class="topbar">
+      <button class="iconbtn" id="railBtn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="rail">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <a class="topbar__brand" href="/">
+        <svg style="width:26px;height:26px;border-radius:7px;flex:none" viewBox="0 0 100 100" role="img" aria-label="Fed Navigator" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="22" fill="#0E2A52"></rect>
+          <g transform="translate(20,20) scale(0.6)">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#FFFFFF" stroke-width="6"></circle>
+            <path d="M50 18 L57 50 L43 50 Z" fill="#C8102E"></path>
+            <path d="M50 82 L57 50 L43 50 Z" fill="#FFFFFF"></path>
+            <circle cx="50" cy="50" r="5" fill="#0E2A52" stroke="#FFFFFF" stroke-width="2.5"></circle>
+          </g>
+        </svg>
+        <span style="font-family:var(--font-display);font-weight:600;font-size:14px;white-space:nowrap">Fed Navigator</span>
+      </a>
+    </div>
+
+    <!-- ══ work area ══ -->
+    <main class="work">
+      <div class="work__head">
+        <div>
+          <h1>Overview</h1>
+          <p>All-time totals across your workshops.</p>
+        </div>
+        <span class="samplechip"><strong>Sample data</strong> — layout review only</span>
+      </div>
+
+      <div class="cols">
+        <div style="min-width:0">
+          <!-- kpis -->
+          <section class="kpis" aria-label="All-time totals">
+            <div class="kpi">
+              <div class="kpi__label">Workshops</div>
+              <div class="kpi__value">6</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi__label">Total attendees</div>
+              <div class="kpi__value">1,090</div>
+              <div class="kpi__hint">1,780 registered</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi__label">Average attendance</div>
+              <div class="kpi__value">61%</div>
+              <div class="meter" aria-hidden="true"><div class="meter__fill" style="width:61%"></div></div>
+              <div class="kpi__hint">Live ÷ registered</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi__label">Average rating</div>
+              <div class="kpi__value">4.7<span class="kpi__unit">/ 5</span></div>
+              <div class="stars" aria-label="4.7 out of 5 stars">
+                <span>★</span><span>★</span><span>★</span><span>★</span><span class="s-half">★</span>
+              </div>
+              <div class="kpi__hint">Across 5 rated workshops</div>
+            </div>
+          </section>
+
+          <!-- workshops -->
+          <section class="panel" aria-labelledby="wsHead">
+            <span class="panel__accent" aria-hidden="true"></span>
+            <div class="panel__head">
+              <h2 id="wsHead">Workshops</h2>
+              <span class="pill">6</span>
+              <span class="panel__hint">Select a row to open the workshop</span>
+            </div>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Title</th>
+                    <th scope="col" class="num">Registered</th>
+                    <th scope="col" class="num">Attended (live)</th>
+                    <th scope="col" class="num">% Attended</th>
+                  </tr>
+                </thead>
+                <tbody id="wsBody">
+                  <tr data-href="/dashboard/workshops/ws-01" title="Click to view this workshop">
+                    <td class="date">May 20, 2026</td>
+                    <td class="title"><a href="/dashboard/workshops/ws-01">Your TSP in 2026: What Federal Employees Need to Know</a></td>
+                    <td class="num">412</td><td class="num">268</td>
+                    <td class="num"><span class="pctcell"><span class="pctbar" aria-hidden="true"><i style="width:65%"></i></span>65%</span></td>
+                  </tr>
+                  <tr data-href="/dashboard/workshops/ws-02" title="Click to view this workshop">
+                    <td class="date">April 15, 2026</td>
+                    <td class="title"><a href="/dashboard/workshops/ws-02">FERS Retirement Readiness Workshop</a></td>
+                    <td class="num">356</td><td class="num">214</td>
+                    <td class="num"><span class="pctcell"><span class="pctbar" aria-hidden="true"><i style="width:60%"></i></span>60%</span></td>
+                  </tr>
+                  <tr data-href="/dashboard/workshops/ws-03" title="Click to view this workshop">
+                    <td class="date">March 11, 2026</td>
+                    <td class="title"><a href="/dashboard/workshops/ws-03">Survivor Benefits &amp; FEGLI Decisions</a></td>
+                    <td class="num">289</td><td class="num">161</td>
+                    <td class="num"><span class="pctcell"><span class="pctbar" aria-hidden="true"><i style="width:56%"></i></span>56%</span></td>
+                  </tr>
+                  <tr data-href="/dashboard/workshops/ws-04" title="Click to view this workshop">
+                    <td class="date">February 12, 2026</td>
+                    <td class="title"><a href="/dashboard/workshops/ws-04">Federal Retirement Benefits Workshop</a></td>
+                    <td class="num">341</td><td class="num">233</td>
+                    <td class="num"><span class="pctcell"><span class="pctbar" aria-hidden="true"><i style="width:68%"></i></span>68%</span></td>
+                  </tr>
+                  <tr data-href="/dashboard/workshops/ws-05" title="Click to view this workshop">
+                    <td class="date">January 21, 2026</td>
+                    <td class="title"><a href="/dashboard/workshops/ws-05">Medicare &amp; FEHB at Retirement</a></td>
+                    <td class="num">208</td><td class="num">118</td>
+                    <td class="num"><span class="pctcell"><span class="pctbar" aria-hidden="true"><i style="width:57%"></i></span>57%</span></td>
+                  </tr>
+                  <tr data-href="/dashboard/workshops/ws-06" title="Click to view this workshop">
+                    <td class="date">December 10, 2025</td>
+                    <td class="title"><a href="/dashboard/workshops/ws-06">Year-End TSP Moves for Feds</a></td>
+                    <td class="num">174</td><td class="num">96</td>
+                    <td class="num"><span class="pctcell"><span class="pctbar" aria-hidden="true"><i style="width:55%"></i></span>55%</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- empty states -->
+          <section class="states" aria-labelledby="stHead">
+            <h2 id="stHead">Empty states</h2>
+            <p class="states__note">Shown for review because the sample data above is populated. In the live
+              dashboard each replaces its own module.</p>
+
+            <div class="statecard">
+              <div class="statecard__cap">Next workshop — nothing scheduled</div>
+              <div class="agenda__eyebrow" style="margin-bottom:8px">Next workshop</div>
+              <h3>No next workshop scheduled yet.</h3>
+              <p>Contact <a class="inline" href="mailto:kelly@vinjones.com?subject=Next%20Workshop%20Date">Kelly</a> to schedule your next workshop.</p>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Average rating — no ratings</div>
+              <div class="kpi__label">Average rating</div>
+              <div class="kpi__value" style="color:var(--ink-3)">—</div>
+              <div class="kpi__hint">No ratings yet</div>
+            </div>
+
+            <div class="statecard">
+              <div class="statecard__cap">Workshops table — no rows</div>
+              <div class="tablewrap">
+                <table>
+                  <thead><tr>
+                    <th scope="col">Date</th><th scope="col">Title</th>
+                    <th scope="col" class="num">Registered</th><th scope="col" class="num">Attended (live)</th>
+                    <th scope="col" class="num">% Attended</th>
+                  </tr></thead>
+                  <tbody><tr><td colspan="5" class="empty">No workshops yet.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- right rail: next workshops -->
+        <aside class="agenda" aria-labelledby="nextHead">
+          <div class="agenda__eyebrow" id="nextHead">Next workshops</div>
+          <div class="tile">
+            <div class="tile__date">Friday, June 5</div>
+            <div class="tile__time">10am Central</div>
+            <div class="tile__count"><span class="tile__num">138</span><span class="tile__unit">registered</span></div>
+            <a class="btn" href="/api/registrations/export?clientId=demo&amp;w=0" data-preview="GET /api/registrations/export?clientId=…&amp;w=0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg>
+              Download registrations
+            </a>
+          </div>
+          <div class="tile">
+            <div class="tile__date">Thursday, June 18</div>
+            <div class="tile__time">1pm Eastern</div>
+            <div class="tile__count"><span class="tile__num">92</span><span class="tile__unit">registered</span></div>
+            <a class="btn" href="/api/registrations/export?clientId=demo&amp;w=1" data-preview="GET /api/registrations/export?clientId=…&amp;w=1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg>
+              Download registrations
+            </a>
+          </div>
+          <p style="margin:14px 0 0;font-size:11.5px;color:var(--ink-3)">Soonest first. Past dates drop off automatically.</p>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- change-password dialog -->
+<dialog id="pwDlg" class="dlg" aria-labelledby="pwTitle">
+  <form class="dlg__body" id="pwForm" novalidate>
+    <h2 id="pwTitle">Change password</h2>
+    <p class="dlg__desc">Signed in as dana.reyes@feducatedmv.com. Enter your current password, then choose a new one.</p>
+    <div class="field">
+      <label for="cp-current">Current password</label>
+      <input id="cp-current" type="password" autocomplete="current-password" required>
+    </div>
+    <div class="field">
+      <label for="cp-new">New password</label>
+      <input id="cp-new" type="password" autocomplete="new-password" required minlength="8">
+      <p class="help">At least 8 characters.</p>
+    </div>
+    <div class="field">
+      <label for="cp-confirm">Confirm new password</label>
+      <input id="cp-confirm" type="password" autocomplete="new-password" required minlength="8">
+    </div>
+    <p class="dlg__msg" id="pwMsg" role="status" aria-live="polite"></p>
+    <div class="dlg__foot">
+      <button class="btn" type="button" id="pwCancel">Cancel</button>
+      <button class="btn btn--solid" type="submit" id="pwSubmit">Update password</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* theme toggle */
+(function(){
+  var btn=document.getElementById('themeBtn'), icon=document.getElementById('themeIcon');
+  var SUN='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>';
+  var MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  function sync(){var d=document.documentElement.classList.contains('dark');
+    icon.innerHTML=d?SUN:MOON; btn.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');}
+  sync();
+  btn.addEventListener('click',function(){
+    var d=document.documentElement.classList.toggle('dark');
+    try{localStorage.setItem('fednav-theme',d?'dark':'light');}catch(e){}
+    sync();
+  });
+})();
+
+/* off-canvas rail */
+(function(){
+  var rail=document.getElementById('rail'), scrim=document.getElementById('scrim'),
+      btn=document.getElementById('railBtn');
+  function set(open){rail.classList.toggle('open',open); scrim.classList.toggle('show',open);
+    btn.setAttribute('aria-expanded',String(open));}
+  btn.addEventListener('click',function(){set(!rail.classList.contains('open'));});
+  scrim.addEventListener('click',function(){set(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
+})();
+
+/* clickable rows */
+document.getElementById('wsBody').addEventListener('click',function(e){
+  var row=e.target.closest('tr[data-href]'); if(!row) return;
+  e.preventDefault();
+  toast('Opens the workshop detail page — <code>'+row.dataset.href+'</code>');
+});
+
+/* change-password dialog */
+(function(){
+  var dlg=document.getElementById('pwDlg'), msg=document.getElementById('pwMsg'),
+      form=document.getElementById('pwForm'), submit=document.getElementById('pwSubmit');
+  document.getElementById('chipBtn').addEventListener('click',function(){msg.textContent='';dlg.showModal();});
+  document.getElementById('pwCancel').addEventListener('click',function(){dlg.close();});
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var cur=document.getElementById('cp-current').value,
+        nw=document.getElementById('cp-new').value,
+        cf=document.getElementById('cp-confirm').value;
+    function err(t){msg.className='dlg__msg err';msg.textContent=t;}
+    if(nw.length<8) return err('New password must be at least 8 characters');
+    if(nw!==cf) return err('New passwords don’t match');
+    if(nw===cur) return err('New password must be different from the current one');
+    submit.disabled=true; submit.textContent='Saving…';
+    setTimeout(function(){
+      submit.disabled=false; submit.textContent='Update password';
+      msg.className='dlg__msg ok';
+      msg.textContent='Preview only — the live dialog answers "Current password is incorrect" or "Password updated".';
+    },600);
+  });
+})();
+
+/* preview toast */
+var toastEl=document.getElementById('toast'), toastT;
+function toast(html){toastEl.innerHTML=html; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){toastEl.classList.remove('show');},3200);}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-preview], a[href^="/"]');
+  if(!t) return;
+  e.preventDefault();
+  var d=t.getAttribute('data-preview')||t.getAttribute('href');
+  toast('Preview build — this navigates to <code>'+d.replace(/&/g,'&amp;')+'</code>');
+});
+</script>
+</body>
+</html>
