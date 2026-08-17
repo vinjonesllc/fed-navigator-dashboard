@@ -223,7 +223,7 @@ export function AttendeesTable({
                   <span
                     className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-[11px] ${
                       gov
-                        ? "border-lime-bord bg-lime-soft text-lime"
+                        ? "border-brand-bord bg-brand-soft text-brand-ink"
                         : "border-line-1 bg-bg-2 text-ink-2"
                     }`}
                   >
@@ -241,7 +241,7 @@ export function AttendeesTable({
                     <span className="inline-flex items-center gap-2.5 font-mono font-semibold text-ink-1">
                       {score.toFixed(1)} <span className="font-normal text-ink-4">/ 10</span>
                       <span
-                        className="inline-block h-1 rounded-sm bg-gradient-to-r from-lime to-cyan align-middle"
+                        className="inline-block h-1 rounded-sm bg-gradient-to-r from-brand to-brand-deep align-middle"
                         style={{ width: `${score * 9.6}px` }}
                       />
                     </span>

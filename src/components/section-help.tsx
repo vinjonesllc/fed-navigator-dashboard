@@ -59,7 +59,7 @@ function HelpBlock({ label, body, accent }: { label: string; body: string; accen
     <div
       className={
         accent
-          ? "rounded-r-[8px] border-l-[3px] border-[#C8102E] bg-bg-2 px-3.5 py-2.5"
+          ? "rounded-r-[8px] border-l-[3px] border-brand bg-bg-2 px-3.5 py-2.5"
           : "px-0.5"
       }
     >

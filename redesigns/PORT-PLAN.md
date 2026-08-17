@@ -62,8 +62,10 @@ Plus the dark-mode counterparts (all in the prototypes' `.dark` block, already c
 - `share/workshops/[token]/page.tsx:226-227` quote bar + mark
 - `components/change-password-dialog.tsx:103` role badge
 
+**→ brand blue** (continued):
+- `components/attendees-table.tsx:226` `.gov` agency tint. Raised as a judgement call — a federal-domain signal arguably wants its own colour rather than the brand's — and **decided blue by the owner**, matching the prototype. It stays distinguishable from the non-federal badge, which is neutral (`border-line-1 bg-bg-2 text-ink-2`).
+
 **→ keep a semantic colour, do not make it brand blue:**
-- `components/attendees-table.tsx:226` `.gov` agency tint — this is a *federal-domain* signal, not decoration. In the prototype it became `--brand-soft`; if you want it to stay distinguishable from brand chrome, give it its own token.
 - `admin/.../part2/page.tsx:42` `text-lime` emphasis on live call counters — a *live/active* state.
 - `components/charts/engagement-bar.tsx:15` categorical series colour — belongs to the chart palette, not the brand.
 - `app/forgot-password/page.tsx:10`, `app/reset-password/page.tsx:12` — auth-screen icon tiles, outside the redesign's scope.
