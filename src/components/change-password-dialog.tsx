@@ -94,14 +94,16 @@ export function ChangePasswordDialog({
         <button
           type="button"
           title="Change password"
-          className="hidden items-center gap-2.5 rounded-full border border-line-1 bg-surface py-1 pl-1.5 pr-3 transition hover:bg-bg-2 sm:flex"
+          className="flex w-full items-center gap-2.5 rounded-full border border-line-1 bg-surface py-1 pl-1.5 pr-3 text-left transition hover:bg-bg-2"
         >
-          <span className="grid h-[26px] w-[26px] place-items-center rounded-full bg-gradient-to-br from-[oklch(0.55_0.18_142)] to-[oklch(0.50_0.14_230)] font-display text-[11px] font-bold text-white">
+          <span className="grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand to-brand-deep font-display text-[11px] font-bold text-white">
             {initials || "?"}
           </span>
-          <span className="text-[12.5px] text-ink-2">{email}</span>
-          <span className="rounded border border-brand-bord bg-brand-soft px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-brand-ink">
-            {roleLabel}
+          <span className="min-w-0">
+            <span className="block truncate text-[12px] text-ink-2">{email}</span>
+            <span className="block font-mono text-[9.5px] uppercase tracking-wide text-brand">
+              {roleLabel}
+            </span>
           </span>
         </button>
       </DialogTrigger>

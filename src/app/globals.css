@@ -243,6 +243,23 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
   }
+  /* The navigation rail and the mobile top bar sit on a dark ground in both
+     themes. Rather than giving every nested control its own dark variant, the
+     subtree re-declares the surface and ink tokens — so buttons, the theme
+     toggle and the identity chip invert automatically. */
+  .nav-ground {
+    --surface: var(--nav-bg-2);
+    --bg-2: var(--nav-bg-2);
+    --ink-1: var(--nav-ink);
+    --ink-2: var(--nav-ink-2);
+    --ink-3: var(--nav-ink-3);
+    --ink-4: var(--nav-ink-3);
+    --line-1: var(--nav-line);
+    --line-2: oklch(1 0 0 / 0.08);
+    --border: var(--nav-line);
+    background: var(--nav-bg);
+    color: var(--nav-ink);
+  }
 }
 
 /* Always-visible scrollbars on scrollable list containers — opt in via .scroll-show */

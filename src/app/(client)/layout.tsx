@@ -1,16 +1,15 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { AppHeader } from "@/components/app-header";
+import { AppShell, type NavItem } from "@/components/app-shell";
 import type { Client } from "@/lib/supabase/types";
 
-const NAV = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/workshops", label: "Workshops" },
-  { href: "/dashboard/leads", label: "Leads" },
-  { href: "/dashboard/guide", label: "Guide" },
-  { href: "/dashboard/settings", label: "Settings" },
+const NAV: NavItem[] = [
+  { href: "/dashboard", label: "Overview", icon: "overview" },
+  { href: "/dashboard/workshops", label: "Workshops", icon: "workshops" },
+  { href: "/dashboard/leads", label: "Leads", icon: "leads" },
+  { href: "/dashboard/guide", label: "Guide", icon: "guide" },
+  { href: "/dashboard/settings", label: "Settings", icon: "settings" },
 ];
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -22,7 +21,7 @@ export default async function ClientLayout({ children }: { children: React.React
   const clientId = session.appUser.client_id;
   if (!clientId) redirect("/login?error=no-client");
 
-  // Authorization guard only — the header is Fed Navigator branded, so the row
+  // Authorization guard only — the shell is Fed Navigator branded, so the row
   // itself is never rendered. A user whose client_id points at nothing is out.
   const admin = createSupabaseAdminClient();
   const { data: client } = await admin
@@ -34,25 +33,8 @@ export default async function ClientLayout({ children }: { children: React.React
   if (!client) redirect("/login?error=no-client");
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <AppHeader
-        email={session.email}
-        role={session.appUser.role}
-        nav={
-          <nav className="hidden gap-1 md:flex">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-1.5 text-[13px] text-ink-3 hover:bg-bg-2 hover:text-ink-1"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        }
-      />
-      <main className="mx-auto w-full max-w-[1360px] flex-1 px-6 py-7 sm:px-8">{children}</main>
-    </div>
+    <AppShell email={session.email} role={session.appUser.role} nav={NAV}>
+      {children}
+    </AppShell>
   );
 }
