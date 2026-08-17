@@ -28,6 +28,16 @@
   --color-cyan-soft: var(--cyan-soft);
   --color-cyan-bord: var(--cyan-bord);
   --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-bord: var(--brand-bord);
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-bg-2: var(--nav-bg-2);
+  --color-nav-line: var(--nav-line);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-ink-2: var(--nav-ink-2);
+  --color-nav-ink-3: var(--nav-ink-3);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
@@ -72,32 +82,55 @@
 
 :root {
   /* Design palette — slight cool tint */
-  --background: oklch(0.985 0.003 260);
-  --foreground: oklch(0.205 0.020 260);
+  /* Palette anchored on hue ~248, taken from the Fed Pilot logo (#3080C2 brand
+     blue, #295F86 deep, #BD434A red). The page is white; every neutral carries
+     a trace of the anchor's blue rather than being flat grey. */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.225 0.028 250);
   --surface: oklch(1 0 0);
-  --bg-2: oklch(0.970 0.004 260);
-  --ink-1: oklch(0.205 0.020 260);
-  --ink-2: oklch(0.345 0.018 260);
-  --ink-3: oklch(0.505 0.016 260);
-  --ink-4: oklch(0.640 0.012 260);
-  --line-1: oklch(0.500 0.020 260 / 0.18);
-  --line-2: oklch(0.500 0.020 260 / 0.10);
+  /* Hovers, table heads, meter tracks. NOT a page background — the page and
+     the cards are both white, and the card border carries the separation. */
+  --bg-2: oklch(0.975 0.008 248);
+  --ink-1: oklch(0.225 0.028 250);
+  --ink-2: oklch(0.360 0.022 250);
+  --ink-3: oklch(0.520 0.018 250);
+  --ink-4: oklch(0.655 0.014 250);
+  --line-1: oklch(0.480 0.034 248 / 0.42);
+  --line-2: oklch(0.480 0.034 248 / 0.20);
+
+  /* Status colours. These are NOT brand colours and must not be recoloured to
+     match it: lime = positive / live / federal-domain, amber = ratings and
+     evaluation-sourced signals, rose = destructive. */
   --lime: oklch(0.62 0.18 142);
   --lime-soft: oklch(0.62 0.18 142 / 0.12);
   --lime-bord: oklch(0.62 0.18 142 / 0.30);
   --amber: oklch(0.66 0.17 60);
   --amber-soft: oklch(0.66 0.17 60 / 0.10);
   --amber-bord: oklch(0.66 0.17 60 / 0.30);
-  --rose: oklch(0.58 0.20 22);
-  --rose-soft: oklch(0.58 0.20 22 / 0.10);
-  --rose-bord: oklch(0.58 0.20 22 / 0.30);
+  --rose: oklch(0.554 0.157 21); /* #BD434A — the red from the Fed Pilot logo */
+  --rose-soft: oklch(0.554 0.157 21 / 0.10);
+  --rose-bord: oklch(0.554 0.157 21 / 0.30);
   --cyan: oklch(0.55 0.13 230);
   --cyan-soft: oklch(0.55 0.13 230 / 0.10);
   --cyan-bord: oklch(0.55 0.13 230 / 0.30);
 
   /* Fed Navigator brand blue. Single product accent — the accent strips and
-     tile hairlines all point here. Not per-client; there is no co-branding. */
+     tile hairlines all point here. Not per-client; there is no co-branding.
+     `brand` is for graphics (bars, strips, rules); `brand-ink` is the text-
+     contrast variant — brand on white is 3.87:1 and fails AA for body copy. */
   --brand: #3080C2;
+  --brand-deep: #295F86;
+  --brand-ink: oklch(0.400 0.090 248);
+  --brand-soft: oklch(0.583 0.127 247 / 0.10);
+  --brand-bord: oklch(0.583 0.127 247 / 0.32);
+
+  /* Dark navigation ground — the rail and the mobile top bar (Phase 2). */
+  --nav-bg: oklch(0.270 0.050 250);
+  --nav-bg-2: oklch(0.330 0.048 250);
+  --nav-line: oklch(1 0 0 / 0.15);
+  --nav-ink: oklch(0.985 0.006 250);
+  --nav-ink-2: oklch(0.840 0.020 250);
+  --nav-ink-3: oklch(0.700 0.024 250);
 
   --card: var(--surface);
   --card-foreground: var(--ink-1);
@@ -114,7 +147,7 @@
   --destructive: var(--rose);
   --border: var(--line-1);
   --input: var(--line-1);
-  --ring: oklch(0.62 0.18 142 / 0.4);
+  --ring: var(--brand);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -132,29 +165,39 @@
 }
 
 .dark {
-  /* Dark variant from Claude Design — deep cool palette */
-  --background: oklch(0.165 0.012 260);
-  --foreground: oklch(0.965 0.008 260);
-  --surface: oklch(0.215 0.014 260);
-  --bg-2: oklch(0.195 0.013 260);
-  --ink-1: oklch(0.965 0.008 260);
-  --ink-2: oklch(0.820 0.012 260);
-  --ink-3: oklch(0.650 0.014 260);
-  --ink-4: oklch(0.490 0.016 260);
-  --line-1: oklch(0.300 0.018 260 / 0.55);
-  --line-2: oklch(0.300 0.018 260 / 0.30);
+  /* Same anchor hue, only lightness and chroma move. Elevation goes lighter:
+     page < surface, so cards lift off the ground instead of sinking. */
+  --background: oklch(0.170 0.020 250);
+  --foreground: oklch(0.960 0.010 250);
+  --surface: oklch(0.222 0.024 250);
+  --bg-2: oklch(0.198 0.022 250);
+  --ink-1: oklch(0.960 0.010 250);
+  --ink-2: oklch(0.825 0.014 250);
+  --ink-3: oklch(0.660 0.016 250);
+  --ink-4: oklch(0.500 0.018 250);
+  --line-1: oklch(0.660 0.030 250 / 0.34);
+  --line-2: oklch(0.660 0.030 250 / 0.18);
   --lime: oklch(0.86 0.18 130);
   --lime-soft: oklch(0.86 0.18 130 / 0.14);
   --lime-bord: oklch(0.86 0.18 130 / 0.35);
   --amber: oklch(0.84 0.17 70);
   --amber-soft: oklch(0.84 0.17 70 / 0.14);
   --amber-bord: oklch(0.84 0.17 70 / 0.35);
-  --rose: oklch(0.75 0.17 25);
-  --rose-soft: oklch(0.75 0.17 25 / 0.14);
-  --rose-bord: oklch(0.75 0.17 25 / 0.35);
+  --rose: oklch(0.75 0.15 25);
+  --rose-soft: oklch(0.75 0.15 25 / 0.14);
+  --rose-bord: oklch(0.75 0.15 25 / 0.35);
   --cyan: oklch(0.82 0.10 220);
   --cyan-soft: oklch(0.82 0.10 220 / 0.14);
   --cyan-bord: oklch(0.82 0.10 220 / 0.35);
+
+  --brand: oklch(0.720 0.110 247);
+  --brand-deep: oklch(0.620 0.110 247);
+  --brand-ink: oklch(0.780 0.100 247);
+  --brand-soft: oklch(0.720 0.110 247 / 0.16);
+  --brand-bord: oklch(0.720 0.110 247 / 0.38);
+
+  --nav-bg: oklch(0.205 0.030 250);
+  --nav-bg-2: oklch(0.262 0.032 250);
 
   --card: var(--surface);
   --card-foreground: var(--ink-1);
@@ -171,7 +214,7 @@
   --destructive: var(--rose);
   --border: var(--line-1);
   --input: var(--line-1);
-  --ring: oklch(0.86 0.18 130 / 0.4);
+  --ring: var(--brand);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -192,11 +235,10 @@
     @apply border-border outline-ring/50;
   }
   body {
+    /* No page gradient. The ground is plain white (plain deep navy in dark
+       mode); separation comes from card borders, and the only large colour
+       field in the product is the navigation rail. */
     @apply bg-background text-foreground font-sans;
-    background-image:
-      radial-gradient(1200px 600px at 80% -10%, var(--lime-soft), transparent 60%),
-      radial-gradient(900px 500px at -10% 20%, var(--cyan-soft), transparent 60%);
-    background-attachment: fixed;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;

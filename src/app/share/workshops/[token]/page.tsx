@@ -223,8 +223,8 @@ export default async function PublicWorkshopPage({
                 key={c.id}
                 className={`relative flex min-h-[188px] flex-col overflow-hidden p-[16px_18px_18px] ${CARD}`}
               >
-                <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-lime to-cyan opacity-70" />
-                <div className="mb-2.5 font-display text-[30px] font-bold leading-[0.7] tracking-[-0.04em] text-lime opacity-80">
+                <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand to-brand-deep opacity-70" />
+                <div className="mb-2.5 font-display text-[30px] font-bold leading-[0.7] tracking-[-0.04em] text-brand opacity-80">
                   &ldquo;
                 </div>
                 {/* No attribution here by design — see the eval-comment query

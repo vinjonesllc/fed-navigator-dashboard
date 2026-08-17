@@ -197,7 +197,7 @@ function Stars({ avg, className }: { avg: number; className?: string }) {
 function RatingBanner({ avg, responses }: { avg: number; responses: number | null }) {
   return (
     <div className="relative flex flex-wrap items-center gap-x-7 gap-y-3 overflow-hidden rounded-[14px] border border-[oklch(0.62_0.18_142/0.30)] bg-gradient-to-r from-[oklch(0.62_0.18_142/0.07)] to-[oklch(0.55_0.13_230/0.05)] px-6 py-5 shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
-      <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-lime to-cyan" />
+      <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-brand to-brand-deep" />
       <div className="flex items-baseline gap-1.5">
         <span className="font-display text-[52px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1 dark:text-white">
           {avg.toFixed(1)}
@@ -381,8 +381,8 @@ export function WorkshopDetail({
               const canOpen = !!c.comment_author;
               const inner = (
                 <>
-                  <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-lime to-cyan opacity-60" />
-                  <div className="mb-1.5 font-display text-[18px] font-bold leading-none text-lime opacity-40">
+                  <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand to-brand-deep opacity-60" />
+                  <div className="mb-1.5 font-display text-[18px] font-bold leading-none text-brand opacity-40">
                     &ldquo;
                   </div>
                   <div className="flex-1 text-[14px] leading-[1.55] text-ink-1 [text-wrap:pretty]">
@@ -522,7 +522,7 @@ export function WorkshopDetail({
                     <span className="font-mono text-[11.5px] text-ink-4">
                       {r.attendee_email ?? ""}
                     </span>
-                    <span className="font-mono text-[11.5px] text-lime">
+                    <span className="font-mono text-[11.5px] text-brand-ink">
                       {humanizeDateIfIso(r.detail)}
                     </span>
                   </button>

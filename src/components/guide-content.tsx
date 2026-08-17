@@ -57,7 +57,7 @@ export function GuideContent() {
             </code>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="my-3 rounded-r-[8px] border-l-[3px] border-[#C8102E] bg-bg-2 px-4 py-3 text-[13.5px] italic leading-[1.6] text-ink-2">
+            <blockquote className="my-3 rounded-r-[8px] border-l-[3px] border-brand bg-bg-2 px-4 py-3 text-[13.5px] italic leading-[1.6] text-ink-2">
               {children}
             </blockquote>
           ),

@@ -100,7 +100,7 @@ export function ChangePasswordDialog({
             {initials || "?"}
           </span>
           <span className="text-[12.5px] text-ink-2">{email}</span>
-          <span className="rounded border border-lime-bord bg-lime-soft px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-lime">
+          <span className="rounded border border-brand-bord bg-brand-soft px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-brand-ink">
             {roleLabel}
           </span>
         </button>
