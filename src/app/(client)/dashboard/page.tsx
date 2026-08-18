@@ -23,21 +23,25 @@ export default async function OverviewPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-        <p className="text-sm text-muted-foreground">All-time totals across your workshops.</p>
+    <div>
+      <header className="border-b border-line-1 pb-5">
+        <h1 className="font-display text-[clamp(24px,4.5vw,30px)] font-semibold tracking-[-0.025em] text-ink-1">
+          Overview
+        </h1>
+        <p className="mt-1 text-[14px] text-ink-3">All-time totals across your workshops.</p>
+      </header>
+      <div className="mt-6">
+        <ClientOverview
+          workshops={workshops}
+          workshopHref={(id) => `/dashboard/workshops/${id}`}
+          nextWorkshops={nextWorkshops}
+          registrationsExportFor={
+            client?.eval_sheet_url
+              ? (w) => `/api/registrations/export?clientId=${clientId}&w=${w}`
+              : undefined
+          }
+        />
       </div>
-      <ClientOverview
-        workshops={workshops}
-        workshopHref={(id) => `/dashboard/workshops/${id}`}
-        nextWorkshops={nextWorkshops}
-        registrationsExportFor={
-          client?.eval_sheet_url
-            ? (w) => `/api/registrations/export?clientId=${clientId}&w=${w}`
-            : undefined
-        }
-      />
     </div>
   );
 }

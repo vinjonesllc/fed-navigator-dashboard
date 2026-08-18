@@ -2,34 +2,52 @@ import Link from "next/link";
 import { formatWorkshopDate } from "@/lib/format-date";
 import type { WorkshopWithStats } from "@/lib/queries";
 import type { NextWorkshopCard } from "@/lib/next-workshop";
-import { NextWorkshop, AccentStrip } from "@/components/next-workshop-card";
+import { NextWorkshop } from "@/components/next-workshop-card";
 import { ClickableRow } from "@/components/clickable-row";
 
 const CARD =
-  "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
+  "relative overflow-hidden rounded-[12px] border border-line-1 bg-surface shadow-[var(--shadow)]";
 const PILL =
   "inline-flex items-center gap-1.5 rounded-full border border-line-1 bg-bg-2 px-2 py-0.5 font-mono text-[11px] text-ink-3";
 
-/** Brand-blue hairline across the top of a tile. */
-const HAIRLINE = "linear-gradient(to right, transparent, var(--brand), transparent)";
+/** Hairline that seats each stat card. Brand at the centre, fading to nothing. */
+function TopHairline() {
+  return (
+    <span
+      aria-hidden
+      className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-brand to-transparent"
+    />
+  );
+}
 
 function Stat({
   label,
   value,
   hint,
+  meter,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  /** 0–100. Draws a fill bar under the value — used for attendance. */
+  meter?: number;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[14px] border border-line-1 bg-gradient-to-b from-surface to-background p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
-      <div className="absolute left-0 right-0 top-0 h-px" style={{ background: HAIRLINE }} />
-      <div className="mb-3.5 text-[12px] uppercase tracking-[0.04em] text-ink-3">{label}</div>
-      <div className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1">
+    <div className={`${CARD} px-[15px] pt-3.5 pb-[13px]`}>
+      <TopHairline />
+      <div className="text-[11.5px] uppercase tracking-[0.04em] text-ink-3">{label}</div>
+      <div className="mt-2 font-display text-[32px] font-semibold leading-[1.05] tracking-[-0.03em] tabular-nums text-ink-1">
         {value}
       </div>
-      {hint && <div className="mt-2.5 text-[12px] text-ink-3">{hint}</div>}
+      {meter !== undefined && (
+        <div
+          className="mt-2.5 h-[5px] overflow-hidden rounded-[3px] border border-line-2 bg-bg-2"
+          aria-hidden
+        >
+          <div className="h-full rounded-[3px] bg-brand" style={{ width: `${meter}%` }} />
+        </div>
+      )}
+      {hint && <div className="mt-2 text-[11.5px] text-ink-3">{hint}</div>}
     </div>
   );
 }
@@ -38,49 +56,38 @@ function RatingStat({ avg, count }: { avg: number | null; count: number }) {
   const full = avg !== null ? Math.floor(avg) : 0;
   const hasHalf = avg !== null && avg - full >= 0.25 && avg - full < 0.75;
   return (
-    <div className="relative overflow-hidden rounded-[14px] border border-line-1 bg-gradient-to-b from-surface to-background p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
-      <div className="absolute left-0 right-0 top-0 h-px" style={{ background: HAIRLINE }} />
-      <div className="mb-3.5 text-[12px] uppercase tracking-[0.04em] text-ink-3">Average rating</div>
+    <div className={`${CARD} px-[15px] pt-3.5 pb-[13px]`}>
+      <TopHairline />
+      <div className="text-[11.5px] uppercase tracking-[0.04em] text-ink-3">Average rating</div>
       {avg === null ? (
         <>
-          <div className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] text-ink-3">
+          <div className="mt-2 font-display text-[32px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink-3">
             —
           </div>
-          <div className="mt-2.5 text-[12px] text-ink-3">No ratings yet</div>
+          <div className="mt-2 text-[11.5px] text-ink-3">No ratings yet</div>
         </>
       ) : (
         <>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-display text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1">
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="font-display text-[32px] font-semibold leading-[1.05] tracking-[-0.03em] tabular-nums text-ink-1">
               {avg.toFixed(1)}
             </span>
-            <span className="text-[18px] font-medium text-ink-3">/ 5</span>
+            <span className="text-[15px] font-medium text-ink-3">/ 5</span>
           </div>
           <div
             aria-label={`${avg.toFixed(1)} out of 5 stars`}
-            className="mt-2 text-[18px] leading-none tracking-wide"
+            className="mt-1.5 text-[16px] leading-none tracking-wide text-amber"
           >
             {Array.from({ length: 5 }).map((_, i) => {
-              if (i < full)
-                return (
-                  <span key={i} style={{ color: "oklch(0.66 0.17 60)" }}>
-                    ★
-                  </span>
-                );
-              if (i === full && hasHalf)
-                return (
-                  <span key={i} style={{ color: "oklch(0.66 0.17 60)", opacity: 0.6 }}>
-                    ★
-                  </span>
-                );
+              const opacity = i < full ? "" : i === full && hasHalf ? " opacity-60" : " opacity-25";
               return (
-                <span key={i} style={{ color: "oklch(0.66 0.17 60)", opacity: 0.25 }}>
+                <span key={i} className={opacity.trim()}>
                   ★
                 </span>
               );
             })}
           </div>
-          <div className="mt-2.5 text-[12px] text-ink-3">
+          <div className="mt-2 text-[11.5px] text-ink-3">
             Across {count} rated workshop{count === 1 ? "" : "s"}
           </div>
         </>
@@ -88,6 +95,10 @@ function RatingStat({ avg, count }: { avg: number | null; count: number }) {
     </div>
   );
 }
+
+const TH =
+  "border-y border-line-1 bg-bg-2 px-4 py-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4 whitespace-nowrap";
+const TD = "border-b border-line-2 px-4 py-[11px] text-ink-2";
 
 export function ClientOverview({
   workshops,
@@ -120,107 +131,116 @@ export function ClientOverview({
         ) / 10
       : null;
 
+  const columns = ["Date", "Title", "Registered", "Attended (live)", "% Attended"];
+
   return (
-    <div className="space-y-6">
-      <NextWorkshop items={nextWorkshops ?? []} exportHrefFor={registrationsExportFor} />
-
-      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Workshops" value={workshops.length} />
-        <Stat
-          label="Total attendees"
-          value={totalAttendees}
-          hint={`${totalRegistered} registered`}
-        />
-        <Stat
-          label="Average attendance"
-          value={`${avgAttendancePct}%`}
-          hint="Live ÷ registered"
-        />
-        <RatingStat avg={avgRating} count={ratedWorkshops.length} />
-      </div>
-
-      <div className={`relative ${CARD} overflow-hidden`}>
-        <AccentStrip />
-        <div className="flex items-center gap-2.5 px-5 pb-3.5 pt-4">
-          <h3 className="m-0 font-display text-[14.5px] font-semibold text-ink-1">Workshops</h3>
-          <span className={PILL}>{workshops.length}</span>
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
+      <div className="min-w-0 space-y-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Workshops" value={workshops.length} />
+          <Stat
+            label="Total attendees"
+            value={totalAttendees.toLocaleString()}
+            hint={`${totalRegistered.toLocaleString()} registered`}
+          />
+          <Stat
+            label="Average attendance"
+            value={`${avgAttendancePct}%`}
+            meter={avgAttendancePct}
+            hint="Live ÷ registered"
+          />
+          <RatingStat avg={avgRating} count={ratedWorkshops.length} />
         </div>
-        <table className="w-full border-separate border-spacing-0 text-[13px]">
-          <thead>
-            <tr>
-              {[
-                "Date",
-                "Title",
-                "Registered",
-                "Attended (live)",
-                "% Attended",
-                ...(editHref ? ["Actions"] : []),
-              ].map((h, i) => (
-                <th
-                  key={h}
-                  className={`border-b border-line-1 bg-bg-2 px-4 py-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-4 ${
-                    i >= 2 ? "text-right" : "text-left"
-                  }`}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {workshops.length === 0 && (
-              <tr>
-                <td
-                  colSpan={editHref ? 6 : 5}
-                  className="border-b border-line-2 px-4 py-6 text-center text-ink-3"
-                >
-                  No workshops yet.
-                </td>
-              </tr>
-            )}
-            {workshops.map((w) => {
-              const pct =
-                w.registered_count > 0
-                  ? Math.round((w.live_count / w.registered_count) * 100)
-                  : 0;
-              return (
-                <ClickableRow
-                  key={w.id}
-                  href={workshopHref(w.id)}
-                  className="cursor-pointer hover:bg-bg-2"
-                  title="Click to view this workshop"
-                >
-                  <td className="border-b border-line-2 px-4 py-3 font-mono text-[12px] text-ink-2">
-                    {formatWorkshopDate(w.workshop_date)}
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3 font-medium text-ink-1">
-                    {w.title}
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3 text-right font-mono text-ink-2">
-                    {w.registered_count}
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3 text-right font-mono text-ink-2">
-                    {w.live_count}
-                  </td>
-                  <td className="border-b border-line-2 px-4 py-3 text-right font-mono text-ink-2">
-                    {pct}%
-                  </td>
-                  {editHref && (
-                    <td className="border-b border-line-2 px-4 py-3 text-right">
-                      <Link
-                        href={editHref(w.id)}
-                        className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
-                      >
-                        Edit
-                      </Link>
+
+        <section className={CARD}>
+          <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-brand" />
+          <div className="flex flex-wrap items-center gap-2.5 px-[18px] pt-3.5 pb-3">
+            <h3 className="m-0 font-display text-[15px] font-semibold text-ink-1">Workshops</h3>
+            <span className={PILL}>{workshops.length}</span>
+            <span className="ml-auto text-[11.5px] text-ink-3">
+              Select a row to open the workshop
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[660px] border-separate border-spacing-0 text-[13px]">
+              <thead>
+                <tr>
+                  {columns.map((h, i) => (
+                    <th key={h} scope="col" className={`${TH} ${i >= 2 ? "text-right" : "text-left"}`}>
+                      {h}
+                    </th>
+                  ))}
+                  {editHref && <th scope="col" className={`${TH} text-right`}>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {workshops.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={editHref ? 6 : 5}
+                      className="border-b border-line-2 px-4 py-6 text-center text-ink-3"
+                    >
+                      No workshops yet.
                     </td>
-                  )}
-                </ClickableRow>
-              );
-            })}
-          </tbody>
-        </table>
+                  </tr>
+                )}
+                {workshops.map((w) => {
+                  const pct =
+                    w.registered_count > 0
+                      ? Math.round((w.live_count / w.registered_count) * 100)
+                      : 0;
+                  return (
+                    <ClickableRow
+                      key={w.id}
+                      href={workshopHref(w.id)}
+                      className="cursor-pointer transition-colors hover:bg-bg-2"
+                      title="Click to view this workshop"
+                    >
+                      <td className={`${TD} whitespace-nowrap font-mono text-[12px]`}>
+                        {formatWorkshopDate(w.workshop_date)}
+                      </td>
+                      <td className={`${TD} min-w-[220px] font-medium text-ink-1`}>{w.title}</td>
+                      <td className={`${TD} text-right font-mono tabular-nums`}>
+                        {w.registered_count}
+                      </td>
+                      <td className={`${TD} text-right font-mono tabular-nums`}>{w.live_count}</td>
+                      <td className={`${TD} text-right font-mono tabular-nums`}>
+                        <span className="flex items-center justify-end gap-2.5">
+                          <span
+                            aria-hidden
+                            className="h-[5px] w-[54px] shrink-0 overflow-hidden rounded-[3px] border border-line-2 bg-bg-2"
+                          >
+                            <span className="block h-full bg-brand-deep" style={{ width: `${pct}%` }} />
+                          </span>
+                          {pct}%
+                        </span>
+                      </td>
+                      {editHref && (
+                        <td className={`${TD} text-right`}>
+                          <Link
+                            href={editHref(w.id)}
+                            className="inline-flex items-center gap-1 rounded-[7px] border border-line-1 bg-surface px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:bg-bg-2 hover:text-ink-1"
+                          >
+                            Edit
+                          </Link>
+                        </td>
+                      )}
+                    </ClickableRow>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
+
+      <aside className="xl:sticky xl:top-6">
+        <NextWorkshop
+          items={nextWorkshops ?? []}
+          exportHrefFor={registrationsExportFor}
+          variant="rail"
+        />
+      </aside>
     </div>
   );
 }
