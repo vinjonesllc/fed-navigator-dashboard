@@ -19,6 +19,7 @@
 |---|---|---|
 | 3, 4, 5 | Client co-branding (separator, client logo, client name) removed product-wide. Fed Navigator branding only. | owner, this session |
 | 21, 44, 47 | The accent is no longer per-client (`clients.accent_color`); it is the single Fed Navigator/Fed Pilot brand blue `#3080C2`. The strips and hairlines remain — only their source changes. | owner, this session (included in the cleanup task) |
+| 42, 63 | Average rating becomes a **cumulative** average — every response weighted once (`Σ rating × responses ÷ Σ responses`) instead of a mean of per-workshop means. The caption changes from "Across {N} rated workshops" to "Across {N} responses from {M} workshops"; the old wording survives as a fallback when no workshop carries a response count. | owner, this session (flag F3) |
 
 ---
 

@@ -52,7 +52,15 @@ function Stat({
   );
 }
 
-function RatingStat({ avg, count }: { avg: number | null; count: number }) {
+function RatingStat({
+  avg,
+  workshops,
+  responses,
+}: {
+  avg: number | null;
+  workshops: number;
+  responses: number;
+}) {
   const full = avg !== null ? Math.floor(avg) : 0;
   const hasHalf = avg !== null && avg - full >= 0.25 && avg - full < 0.75;
   return (
@@ -88,7 +96,9 @@ function RatingStat({ avg, count }: { avg: number | null; count: number }) {
             })}
           </div>
           <div className="mt-2 text-[11.5px] text-ink-3">
-            Across {count} rated workshop{count === 1 ? "" : "s"}
+            {responses > 0
+              ? `Across ${responses.toLocaleString()} response${responses === 1 ? "" : "s"} from ${workshops} workshop${workshops === 1 ? "" : "s"}`
+              : `Across ${workshops} rated workshop${workshops === 1 ? "" : "s"}`}
           </div>
         </>
       )}
@@ -118,18 +128,35 @@ export function ClientOverview({
   const avgAttendancePct =
     totalRegistered > 0 ? Math.round((totalAttendees / totalRegistered) * 100) : 0;
 
-  // Average of each workshop's own "average rating" (unweighted mean across the
-  // workshops that have one).
+  // Cumulative average: every response counts once, wherever it was given.
+  // Averaging each workshop's own average instead would let a workshop with one
+  // response move the figure as much as one with sixty.
   const ratedWorkshops = workshops.filter(
     (w): w is WorkshopWithStats & { eval_rating_avg: number } => w.eval_rating_avg !== null,
   );
+  const totalResponses = ratedWorkshops.reduce(
+    (acc, w) => acc + (w.eval_rating_responses ?? 0),
+    0,
+  );
   const avgRating =
-    ratedWorkshops.length > 0
+    totalResponses > 0
       ? Math.round(
-          (ratedWorkshops.reduce((acc, w) => acc + w.eval_rating_avg, 0) / ratedWorkshops.length) *
+          (ratedWorkshops.reduce(
+            (acc, w) => acc + w.eval_rating_avg * (w.eval_rating_responses ?? 0),
+            0,
+          ) /
+            totalResponses) *
             10,
         ) / 10
-      : null;
+      : // No workshop carries a response count (older imports). Fall back to the
+        // unweighted mean rather than showing nothing.
+        ratedWorkshops.length > 0
+        ? Math.round(
+            (ratedWorkshops.reduce((acc, w) => acc + w.eval_rating_avg, 0) /
+              ratedWorkshops.length) *
+              10,
+          ) / 10
+        : null;
 
   const columns = ["Date", "Title", "Registered", "Attended (live)", "% Attended"];
 
@@ -149,7 +176,11 @@ export function ClientOverview({
             meter={avgAttendancePct}
             hint="Live ÷ registered"
           />
-          <RatingStat avg={avgRating} count={ratedWorkshops.length} />
+          <RatingStat
+            avg={avgRating}
+            workshops={ratedWorkshops.length}
+            responses={totalResponses}
+          />
         </div>
 
         <section className={CARD}>

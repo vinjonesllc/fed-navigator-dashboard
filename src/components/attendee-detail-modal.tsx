@@ -34,6 +34,17 @@ function rowMatches(
 
 export type PersonRef = { name: string | null; email: string | null };
 
+/**
+ * Evaluation lookups, remembered for the life of the page.
+ *
+ * Each open used to re-query the client's evaluations sheet, so working a call
+ * list of ten people cost ten round trips and re-opening anyone paid the
+ * "Looking up evaluation…" wait again. Module scope means the cache clears on a
+ * full page load, which is the right staleness window: if someone edits the
+ * sheet mid-session, a refresh picks it up.
+ */
+const EVAL_CACHE = new Map<string, AttendeeEvalResult>();
+
 type AttendeeEvalResult = {
   configured: boolean;
   found: boolean;
@@ -81,11 +92,21 @@ export function AttendeeDetailModal({
   const email = attendee?.email ?? person.email;
   const name = attendee ? fullName(attendee) : person.name;
 
+  const cacheKey = `${workshopId}|${normEmail(email)}|${normName(name)}`;
   const [evalState, setEvalState] = useState<
     { status: "loading" } | { status: "done"; data: AttendeeEvalResult } | { status: "error"; message: string }
-  >({ status: "loading" });
+  >(() => {
+    const hit = EVAL_CACHE.get(cacheKey);
+    return hit ? { status: "done", data: hit } : { status: "loading" };
+  });
 
   useEffect(() => {
+    // Already looked up during this page session — no request, no spinner.
+    const hit = EVAL_CACHE.get(cacheKey);
+    if (hit) {
+      setEvalState({ status: "done", data: hit });
+      return;
+    }
     let cancelled = false;
     const params = new URLSearchParams({ workshopId });
     if (email) params.set("email", email);
@@ -93,9 +114,14 @@ export function AttendeeDetailModal({
     fetch(`/api/evals/attendee?${params.toString()}`)
       .then(async (r) => {
         const body = await r.json();
-        if (cancelled) return;
-        if (!r.ok) setEvalState({ status: "error", message: body?.error ?? "Failed to load" });
-        else setEvalState({ status: "done", data: body as AttendeeEvalResult });
+        if (!r.ok) {
+          if (!cancelled) setEvalState({ status: "error", message: body?.error ?? "Failed to load" });
+          return;
+        }
+        // Only successful lookups are cached, so a transient failure retries on
+        // the next open instead of sticking.
+        EVAL_CACHE.set(cacheKey, body as AttendeeEvalResult);
+        if (!cancelled) setEvalState({ status: "done", data: body as AttendeeEvalResult });
       })
       .catch((e) => {
         if (!cancelled) setEvalState({ status: "error", message: e?.message ?? "Failed to load" });
@@ -103,7 +129,7 @@ export function AttendeeDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [workshopId, email, name]);
+  }, [workshopId, email, name, cacheKey]);
 
   const myChats = chats.filter((c) => rowMatches(c.sender_email, c.sender_name, email, name));
   const myQuestions = qa.filter(
