@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FedNavLogo } from "@/components/fed-nav-logo";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
+import { UpdatedStamp } from "@/components/updated-stamp";
 import { ROLE_LABELS, type AppRole } from "@/lib/supabase/types";
 
 /**
@@ -53,11 +54,14 @@ export function AppShell({
   email,
   role,
   nav,
+  renderedAt,
   children,
 }: {
   email: string;
   role: AppRole;
   nav: NavItem[];
+  /** ISO instant the page was rendered, stamped at the foot of the content. */
+  renderedAt: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -180,7 +184,10 @@ export function AppShell({
           </Link>
         </div>
 
-        <main className="px-4 py-6 sm:px-8 sm:py-8">{children}</main>
+        <main className="px-4 py-6 sm:px-8 sm:py-8">
+          {children}
+          <UpdatedStamp iso={renderedAt} />
+        </main>
       </div>
     </div>
   );

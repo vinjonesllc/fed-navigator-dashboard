@@ -33,7 +33,12 @@ export default async function ClientLayout({ children }: { children: React.React
   if (!client) redirect("/login?error=no-client");
 
   return (
-    <AppShell email={session.email} role={session.appUser.role} nav={NAV}>
+    <AppShell
+      email={session.email}
+      role={session.appUser.role}
+      nav={NAV}
+      renderedAt={new Date().toISOString()}
+    >
       {children}
     </AppShell>
   );

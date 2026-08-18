@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   nav.push({ href: "/admin/guide", label: "Guide", icon: "guide" });
 
   return (
-    <AppShell email={session.email} role={role} nav={nav}>
+    <AppShell email={session.email} role={role} nav={nav} renderedAt={new Date().toISOString()}>
       {children}
     </AppShell>
   );
