@@ -35,11 +35,25 @@ function findAttendee(attendees: Attendee[], ref: PersonRef): Attendee | null {
 }
 
 const CARD =
-  "rounded-[14px] border border-line-1 bg-surface shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]";
+  "relative overflow-hidden rounded-[12px] border border-line-1 bg-surface shadow-[var(--shadow)]";
 const PILL =
   "inline-flex items-center gap-1.5 rounded-full border border-line-1 bg-bg-2 px-2 py-0.5 font-mono text-[11px] text-ink-3";
 // Demoted card-internal title: clearly subordinate to a SectionHeading so the
 // eye can tell a region title from a widget label.
+const RAIL_LABEL =
+  "m-0 mb-3 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-4";
+const RAIL_BTN =
+  "flex w-full items-center justify-center gap-2 rounded-[9px] border px-3 py-2 text-[13px] font-medium transition";
+
+function GlanceRow({ label, value }: { label: string; value: string | number }) {
+  return (
+    <li className="flex items-baseline justify-between gap-3 border-b border-line-2 py-2 text-[12.5px] text-ink-3 last:border-b-0">
+      {label}
+      <b className="font-display text-[17px] font-semibold tabular-nums text-ink-1">{value}</b>
+    </li>
+  );
+}
+
 const CARD_LABEL =
   "m-0 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ink-3";
 
@@ -65,7 +79,7 @@ function SectionHeading({
         {eyebrow}
       </div>
       <div className="flex flex-wrap items-center gap-2.5">
-        <h2 className="m-0 font-display text-[21px] font-semibold tracking-[-0.02em] text-ink-1 dark:text-white">
+        <h2 className="m-0 font-display text-[21px] font-semibold tracking-[-0.02em] text-ink-1">
           {title}
         </h2>
         {help}
@@ -79,7 +93,7 @@ function SectionHeading({
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <span>
-      <span className="mr-1.5 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-4 dark:text-[oklch(0.7_0.012_260)]">
+      <span className="mr-1.5 font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-4">
         {label}
       </span>
       <b className="font-medium text-ink-2 dark:text-white">{value}</b>
@@ -108,27 +122,27 @@ function KpiCard({
   // against the dark page in dark mode.
   return (
     <div
-      className={`relative overflow-hidden rounded-[14px] border p-[18px_18px_16px] shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)] ${
+      className={`relative overflow-hidden rounded-[12px] border p-[15px_15px_13px] shadow-[var(--shadow)] ${
         isPrimary
-          ? "border-[oklch(0.62_0.18_142/0.45)] bg-gradient-to-b from-[oklch(0.62_0.18_142/0.06)] to-white"
-          : "border-[oklch(0.500_0.020_260/0.18)] bg-gradient-to-b from-white to-[oklch(0.985_0.003_260)]"
+          ? "border-brand-bord bg-brand-soft"
+          : "border-line-1 bg-surface"
       }`}
     >
       {isPrimary && (
-        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[oklch(0.62_0.18_142)] to-[oklch(0.50_0.14_230)]" />
+        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-brand to-brand-deep" />
       )}
       {isSecondary && (
-        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-[oklch(0.55_0.13_230/0.55)]" />
+        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-deep/55" />
       )}
-      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[oklch(0.60_0.02_260/0.18)] to-transparent" />
+      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-brand to-transparent" />
       <div
         className={`mb-3.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.04em] ${
-          isPrimary ? "text-[oklch(0.42_0.10_150)]" : "text-[oklch(0.505_0.016_260)]"
+          isPrimary ? "text-brand-ink" : "text-ink-3"
         }`}
       >
         {label}
         {isPrimary && (
-          <span className="rounded-full bg-[oklch(0.62_0.18_142/0.14)] px-1.5 py-px font-mono text-[9px] font-semibold tracking-[0.08em] text-[oklch(0.42_0.10_150)]">
+          <span className="rounded-full bg-brand-soft px-1.5 py-px font-mono text-[9px] font-semibold tracking-[0.08em] text-brand-ink">
             KEY
           </span>
         )}
@@ -136,18 +150,18 @@ function KpiCard({
       <div
         className={`flex items-baseline gap-1.5 font-display font-semibold leading-none tracking-[-0.03em] tabular-nums ${
           isPrimary
-            ? "text-[54px] text-[oklch(0.46_0.13_150)]"
+            ? "text-[44px] text-brand-ink"
             : isSecondary
-              ? "text-[44px] text-[oklch(0.205_0.020_260)]"
-              : "text-[36px] text-[oklch(0.38_0.018_260)]"
+              ? "text-[36px] text-ink-1"
+              : "text-[30px] text-ink-2"
         }`}
       >
         {value}
         {unit && (
-          <span className="text-[22px] font-medium text-[oklch(0.505_0.016_260)]">{unit}</span>
+          <span className="text-[18px] font-medium text-ink-3">{unit}</span>
         )}
       </div>
-      {hint && <div className="mt-2.5 text-[12px] text-[oklch(0.505_0.016_260)]">{hint}</div>}
+      {hint && <div className="mt-2.5 text-[11.5px] text-ink-3">{hint}</div>}
     </div>
   );
 }
@@ -164,7 +178,7 @@ function SourceBadge({ source }: { source: WorkshopIntent["source"] }) {
     <span
       className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.04em] ${
         isEval
-          ? "border-[oklch(0.62_0.13_50/0.4)] bg-[oklch(0.62_0.13_50/0.09)] text-[oklch(0.52_0.13_50)]"
+          ? "border-amber-bord bg-amber-soft text-amber"
           : "border-line-2 bg-bg-2 text-ink-4"
       }`}
       title={isEval ? "From a post-workshop evaluation comment" : "From the live chat / Q&A"}
@@ -182,7 +196,7 @@ function Stars({ avg, className }: { avg: number; className?: string }) {
       {Array.from({ length: 5 }).map((_, i) => {
         const opacity = i < full ? "" : i === full && hasHalf ? " opacity-60" : " opacity-25";
         return (
-          <span key={i} className={`text-[oklch(0.66_0.17_60)]${opacity}`}>
+          <span key={i} className={`text-amber${opacity}`}>
             ★
           </span>
         );
@@ -196,10 +210,10 @@ function Stars({ avg, className }: { avg: number; className?: string }) {
 // 8th cell of the quote grid.
 function RatingBanner({ avg, responses }: { avg: number; responses: number | null }) {
   return (
-    <div className="relative flex flex-wrap items-center gap-x-7 gap-y-3 overflow-hidden rounded-[14px] border border-[oklch(0.62_0.18_142/0.30)] bg-gradient-to-r from-[oklch(0.62_0.18_142/0.07)] to-[oklch(0.55_0.13_230/0.05)] px-6 py-5 shadow-[0_1px_2px_oklch(0.20_0.02_260/0.04),0_8px_24px_oklch(0.20_0.02_260/0.04)]">
+    <div className="relative flex flex-wrap items-center gap-x-7 gap-y-3 overflow-hidden rounded-[12px] border border-brand-bord bg-gradient-to-r from-brand-soft to-transparent px-6 py-5 shadow-[var(--shadow)]">
       <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-brand to-brand-deep" />
       <div className="flex items-baseline gap-1.5">
-        <span className="font-display text-[52px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1 dark:text-white">
+        <span className="font-display text-[52px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-1">
           {avg.toFixed(1)}
         </span>
         <span className="text-[20px] text-ink-3">/ 5</span>
@@ -264,7 +278,7 @@ export function WorkshopDetail({
   );
 
   return (
-    <div className="space-y-11">
+    <div className="space-y-6">
       {shareBar}
       {/* breadcrumb */}
       <div className="flex flex-wrap items-center gap-2.5 text-[12.5px] text-ink-3">
@@ -278,10 +292,10 @@ export function WorkshopDetail({
       {/* page head */}
       <div className="flex flex-wrap items-start gap-7 border-b border-line-2 pb-5">
         <div className="flex-1 min-w-[300px]">
-          <h1 className="m-0 mb-2.5 font-display text-[38px] font-semibold tracking-[-0.025em] text-ink-1 dark:text-white">
+          <h1 className="m-0 mb-2.5 font-display text-[38px] font-semibold tracking-[-0.025em] text-ink-1">
             {workshop.title}
             {workshop.topic && (
-              <span className="ml-3 text-[22px] font-normal text-ink-3 dark:text-[oklch(0.8_0.012_260)]">
+              <span className="ml-3 text-[22px] font-normal text-ink-3">
                 · {workshop.topic}
               </span>
             )}
@@ -310,7 +324,7 @@ export function WorkshopDetail({
           {leadsExportHref && (
             <a
               href={leadsExportHref}
-              className="inline-flex items-center gap-2 rounded-[9px] border border-[oklch(0.10_0.01_260)] bg-[oklch(0.18_0.02_260)] px-3.5 py-2 text-[13px] font-medium text-white shadow-[0_1px_0_oklch(1_0_0_/_0.15)_inset,0_6px_18px_oklch(0.20_0.02_260/0.20)] transition hover:bg-[oklch(0.12_0.02_260)]"
+              className="inline-flex items-center gap-2 rounded-[9px] border border-brand-deep bg-brand-deep px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-ink"
             >
               ↓ Export Attendees
             </a>
@@ -318,6 +332,8 @@ export function WorkshopDetail({
         </div>
       </div>
 
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-8">
       {/* KPI grid — ordered by what a follow-up team acts on: the outcome
           metrics lead and are visually ranked; the raw counts trail, muted. */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -337,7 +353,7 @@ export function WorkshopDetail({
       </div>
 
       {/* Attendee feedback — rating banner leads, then the quote wall */}
-      <section className="space-y-4">
+      <section id="said" className="space-y-4">
         <SectionHeading
           eyebrow="Social proof"
           title="What attendees said"
@@ -399,7 +415,7 @@ export function WorkshopDetail({
                   )}
                 </>
               );
-              const cardClass = `relative flex min-h-[168px] flex-col overflow-hidden p-[16px_18px_18px] ${CARD}`;
+              const cardClass = `relative flex min-h-[160px] flex-col overflow-hidden p-[15px_17px_17px] ${CARD}`;
               return canOpen ? (
                 <button
                   key={c.id}
@@ -426,7 +442,7 @@ export function WorkshopDetail({
       </section>
 
       {/* Charts row */}
-      <section className="space-y-4">
+      <section id="participation" className="space-y-4">
         <SectionHeading eyebrow="Participation" title="Engagement & retention" />
         <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         <div className={`relative p-[18px_20px_20px] ${CARD}`}>
@@ -436,9 +452,9 @@ export function WorkshopDetail({
           </div>
           <div className="space-y-2.5">
             {[
-              { label: "Chats", value: totals.chats, color: "oklch(0.62 0.18 142)" },
-              { label: "Questions", value: totals.questions, color: "oklch(0.55 0.13 230)" },
-              { label: "Reactions", value: totals.reactions, color: "oklch(0.66 0.17 60)" },
+              { label: "Chats", value: totals.chats, color: "var(--brand)" },
+              { label: "Questions", value: totals.questions, color: "var(--brand-deep)" },
+              { label: "Reactions", value: totals.reactions, color: "var(--amber)" },
             ].map((item) => (
               <div
                 key={item.label}
@@ -479,7 +495,7 @@ export function WorkshopDetail({
       </section>
 
       {/* Intent panels — one region: the warm follow-up lists */}
-      <section className="space-y-3.5">
+      <section id="signals" className="space-y-3.5">
         <SectionHeading
           eyebrow="Follow-up"
           title="Buying signals"
@@ -611,7 +627,7 @@ export function WorkshopDetail({
                   title="View this person's details"
                 >
                   {quote && (
-                    <p className="mb-3 text-[13px] italic leading-snug text-[oklch(0.60_0.13_50)] [text-wrap:pretty]">
+                    <p className="mb-3 text-[13px] italic leading-snug text-amber [text-wrap:pretty]">
                       &ldquo;{quote}&rdquo;
                     </p>
                   )}
@@ -633,7 +649,7 @@ export function WorkshopDetail({
       </section>
 
       {/* Q&A */}
-      <section className="space-y-4">
+      <section id="qa" className="space-y-4">
         <SectionHeading
           eyebrow="Transcript"
           title="Q&A"
@@ -713,7 +729,7 @@ export function WorkshopDetail({
       </section>
 
       {/* Attendees */}
-      <section className="space-y-4">
+      <section id="attendees" className="space-y-4">
         <SectionHeading
           eyebrow="Directory"
           title="Live attendees"
@@ -739,7 +755,7 @@ export function WorkshopDetail({
               {leadsExportHref && (
                 <a
                   href={leadsExportHref}
-                  className="inline-flex items-center gap-2 rounded-[9px] border border-[oklch(0.10_0.01_260)] bg-[oklch(0.18_0.02_260)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[0_1px_0_oklch(1_0_0_/_0.15)_inset,0_4px_12px_oklch(0.20_0.02_260/0.20)] transition hover:bg-[oklch(0.12_0.02_260)]"
+                  className="inline-flex items-center gap-2 rounded-[9px] border border-brand-deep bg-brand-deep px-3 py-1.5 text-[12px] font-medium text-white transition hover:bg-brand-ink"
                 >
                   ↓ Export Attendees
                 </a>
@@ -755,6 +771,71 @@ export function WorkshopDetail({
           />
         </div>
       </section>
+
+        </div>
+
+        <aside className="space-y-4 xl:sticky xl:top-6">
+          {(exportAllHref || leadsExportHref || evalsExportHref) && (
+            <div className={`${CARD} p-[15px_17px]`}>
+              <h2 className={RAIL_LABEL}>Report actions</h2>
+              <div className="space-y-2">
+                {leadsExportHref && (
+                  <a href={leadsExportHref} className={`${RAIL_BTN} border-brand-deep bg-brand-deep text-white hover:bg-brand-ink`}>
+                    ↓ Export Attendees
+                  </a>
+                )}
+                {exportAllHref && (
+                  <a href={exportAllHref} className={`${RAIL_BTN} border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1`}>
+                    ↓ Export All
+                  </a>
+                )}
+                {evalsExportHref && (
+                  <a href={evalsExportHref} className={`${RAIL_BTN} border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1`}>
+                    ↓ Download evaluations
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className={`${CARD} p-[15px_17px]`}>
+            <h2 className={RAIL_LABEL}>At a glance</h2>
+            <ul className="m-0 list-none p-0">
+              {workshop.eval_rating_avg !== null && (
+                <GlanceRow label="Average rating" value={workshop.eval_rating_avg.toFixed(1)} />
+              )}
+              <GlanceRow
+                label="Buying signals"
+                value={retiring.length + cliff.length + worried.length}
+              />
+              <GlanceRow label="Questions asked" value={visibleQA.length} />
+              <GlanceRow label="Live attendees" value={liveAttendees.length} />
+              {evalComments.length > 0 && (
+                <GlanceRow label="Evaluations quoted" value={evalComments.length} />
+              )}
+            </ul>
+          </div>
+
+          <div className={`${CARD} p-[15px_17px]`}>
+            <h2 className={RAIL_LABEL}>Jump to</h2>
+            <ul className="m-0 list-none p-0">
+              {[
+                ["#said", "What attendees said"],
+                ["#participation", "Engagement & retention"],
+                ["#signals", "Buying signals"],
+                ["#qa", "Q&A"],
+                ["#attendees", "Live attendees"],
+              ].map(([href, label]) => (
+                <li key={href} className="border-b border-line-2 last:border-b-0">
+                  <a href={href} className="block py-[7px] text-[13px] text-ink-2 hover:text-ink-1">
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      </div>
 
       {selected && (
         <AttendeeDetailModal

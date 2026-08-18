@@ -17,8 +17,8 @@ export function RetentionChart({ data }: { data: { minute: number; attendees: nu
         <AreaChart data={data}>
           <defs>
             <linearGradient id="retGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="oklch(0.62 0.18 142)" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="oklch(0.62 0.18 142)" stopOpacity={0} />
+              <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.28} />
+              <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--line-2)" />
@@ -47,7 +47,7 @@ export function RetentionChart({ data }: { data: { minute: number; attendees: nu
           <Area
             type="monotone"
             dataKey="attendees"
-            stroke="oklch(0.62 0.18 142)"
+            stroke="var(--brand)"
             strokeWidth={1.75}
             fill="url(#retGradient)"
           />
