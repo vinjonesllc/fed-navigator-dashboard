@@ -6,7 +6,6 @@ export type WorkshopWithStats = Workshop & {
   // attended_count from workshops table can be stale; this is computed from attendees.
   live_count: number;
   avg_engagement: number | null;
-  opted_in_count: number;
 };
 
 export async function getClientWorkshops(clientId: string): Promise<WorkshopWithStats[]> {
@@ -30,13 +29,12 @@ export async function getClientWorkshops(clientId: string): Promise<WorkshopWith
   const stats: {
     workshop_id: string;
     engagement_score: number | null;
-    text_opt_in: boolean | null;
     participation: string | null;
   }[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data: page, error } = await admin
       .from("attendees")
-      .select("workshop_id, engagement_score, text_opt_in, participation")
+      .select("workshop_id, engagement_score, participation")
       .in("workshop_id", ids)
       .order("id", { ascending: true })
       .range(from, from + PAGE - 1);
@@ -46,14 +44,13 @@ export async function getClientWorkshops(clientId: string): Promise<WorkshopWith
     if (rows.length < PAGE) break;
   }
 
-  const byWs = new Map<string, { sum: number; n: number; opted: number; live: number }>();
+  const byWs = new Map<string, { sum: number; n: number; live: number }>();
   for (const r of stats) {
-    const cur = byWs.get(r.workshop_id) ?? { sum: 0, n: 0, opted: 0, live: 0 };
+    const cur = byWs.get(r.workshop_id) ?? { sum: 0, n: 0, live: 0 };
     if (r.engagement_score !== null) {
       cur.sum += Number(r.engagement_score);
       cur.n += 1;
     }
-    if (r.text_opt_in) cur.opted += 1;
     if (r.participation === "Live") cur.live += 1;
     byWs.set(r.workshop_id, cur);
   }
@@ -64,7 +61,6 @@ export async function getClientWorkshops(clientId: string): Promise<WorkshopWith
       ...w,
       live_count: s?.live ?? 0,
       avg_engagement: s && s.n > 0 ? Math.round((s.sum / s.n) * 10) / 10 : null,
-      opted_in_count: s?.opted ?? 0,
     };
   });
 }

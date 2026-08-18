@@ -318,7 +318,7 @@ export function WorkshopDetail({
               href={exportAllHref}
               className="inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3.5 py-2 text-[13px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
             >
-              ↓ Export All
+              ↓ Export All Registrants
             </a>
           )}
           {leadsExportHref && (
@@ -737,7 +737,7 @@ export function WorkshopDetail({
             <SectionHelp
               title="Live attendees"
               whatItIs="Everyone who attended live, with their engagement score and time in the session."
-              whatToClick="Click any name to open their profile — chats, questions, time in session, and evaluation in one place. “Export All” downloads the whole list with every field for your CRM."
+              whatToClick="Click any name to open their profile — chats, questions, time in session, and evaluation in one place. “Export All Registrants” downloads every registrant — including no-shows — with every field for your CRM. “Export Attendees” is the live attendees only."
               booking="Work the list by heat: people who stayed to the end or asked questions are your warmest leads. Open each person's profile to personalize the outreach, and export to tag the hot ones for follow-up."
             />
           }
@@ -749,7 +749,7 @@ export function WorkshopDetail({
                   href={exportAllHref}
                   className="inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3 py-1.5 text-[12px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
                 >
-                  ↓ Export All
+                  ↓ Export All Registrants
                 </a>
               )}
               {leadsExportHref && (
@@ -786,7 +786,7 @@ export function WorkshopDetail({
                 )}
                 {exportAllHref && (
                   <a href={exportAllHref} className={`${RAIL_BTN} border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1`}>
-                    ↓ Export All
+                    ↓ Export All Registrants
                   </a>
                 )}
                 {evalsExportHref && (
