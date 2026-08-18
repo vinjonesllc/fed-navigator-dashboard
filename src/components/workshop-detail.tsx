@@ -308,28 +308,7 @@ export function WorkshopDetail({
             )}
           </div>
         </div>
-        <div className="flex flex-wrap justify-end gap-2">
-          {deleteAction}
-          {exportAllHref && (
-            // Plain <a>, not <Link>: this hits an API route that streams a CSV
-            // download (Content-Disposition: attachment). Next's client-side
-            // <Link> navigation silently no-ops on a file response.
-            <a
-              href={exportAllHref}
-              className="inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3.5 py-2 text-[13px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
-            >
-              ↓ Export All Registrants
-            </a>
-          )}
-          {leadsExportHref && (
-            <a
-              href={leadsExportHref}
-              className="inline-flex items-center gap-2 rounded-[9px] border border-brand-deep bg-brand-deep px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-ink"
-            >
-              ↓ Export Attendees
-            </a>
-          )}
-        </div>
+        {deleteAction && <div className="flex flex-wrap justify-end gap-2">{deleteAction}</div>}
       </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -361,21 +340,11 @@ export function WorkshopDetail({
             <SectionHelp
               title="What attendees said"
               whatItIs="Attendees' own evaluation comments and star ratings for this workshop, pulled live from your evaluations sheet."
-              whatToClick="Click any comment to open that person's full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” to export them all."
+              whatToClick="Click any comment to open that person's full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” in Report actions to export them all."
               booking="Their own words are your best opener. Reach out referencing a specific comment (“you mentioned … in your feedback”) and quote the rating (“attendees rated this 4.7/5”) to make the ask feel earned."
             />
           }
           count={evalComments.length > 0 ? `${evalComments.length} quoted` : undefined}
-          action={
-            evalsExportHref ? (
-              <a
-                href={evalsExportHref}
-                className="inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3 py-1.5 text-[12px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
-              >
-                ↓ Download evaluations
-              </a>
-            ) : undefined
-          }
         />
         {evalComments.length === 0 && workshop.eval_rating_avg === null ? (
           <div className={`${CARD} px-5 py-6 text-[13px] text-ink-3`}>
@@ -436,7 +405,7 @@ export function WorkshopDetail({
         )}
         {evalComments.length > 6 && (
           <p className="text-[12px] text-ink-3">
-            Showing 6 of {evalComments.length}. Download evaluations for the full set.
+            Showing 6 of {evalComments.length}. Use Report actions to download them all.
           </p>
         )}
       </section>
@@ -737,31 +706,11 @@ export function WorkshopDetail({
             <SectionHelp
               title="Live attendees"
               whatItIs="Everyone who attended live, with their engagement score and time in the session."
-              whatToClick="Click any name to open their profile — chats, questions, time in session, and evaluation in one place. “Export All Registrants” downloads every registrant — including no-shows — with every field for your CRM. “Export Attendees” is the live attendees only."
+              whatToClick="Click any name to open their profile — chats, questions, time in session, and evaluation in one place. To take the list away, use Report actions: “Export Attendees” is the live attendees only, “Export All Registrants” is every registrant including no-shows, both with every field for your CRM."
               booking="Work the list by heat: people who stayed to the end or asked questions are your warmest leads. Open each person's profile to personalize the outreach, and export to tag the hot ones for follow-up."
             />
           }
           count={liveAttendees.length}
-          action={
-            <>
-              {exportAllHref && (
-                <a
-                  href={exportAllHref}
-                  className="inline-flex items-center gap-2 rounded-[9px] border border-line-1 bg-surface px-3 py-1.5 text-[12px] font-medium text-ink-2 transition hover:bg-bg-2 hover:text-ink-1"
-                >
-                  ↓ Export All Registrants
-                </a>
-              )}
-              {leadsExportHref && (
-                <a
-                  href={leadsExportHref}
-                  className="inline-flex items-center gap-2 rounded-[9px] border border-brand-deep bg-brand-deep px-3 py-1.5 text-[12px] font-medium text-white transition hover:bg-brand-ink"
-                >
-                  ↓ Export Attendees
-                </a>
-              )}
-            </>
-          }
         />
         <div className={`overflow-hidden ${CARD}`}>
           <AttendeesTable
