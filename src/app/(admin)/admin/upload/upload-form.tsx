@@ -17,6 +17,11 @@ import {
 import { DatePicker } from "@/components/date-picker";
 import { uploadCsv } from "./actions";
 import { classifyCsv, CSV_KIND_LABEL, type CsvKind } from "@/lib/csv/classify";
+import {
+  DEFAULT_WORKSHOP_TYPE,
+  WORKSHOP_TYPES,
+  type WorkshopType,
+} from "@/lib/workshop-type";
 
 type ClientOption = {
   id: string;
@@ -57,6 +62,7 @@ export function UploadForm({
   const [unknownFiles, setUnknownFiles] = useState<UnknownFile[]>([]);
   const [classifying, setClassifying] = useState(false);
   const [presenter, setPresenter] = useState<string>("");
+  const [workshopType, setWorkshopType] = useState<WorkshopType>(DEFAULT_WORKSHOP_TYPE);
   const [workshopDate, setWorkshopDate] = useState<string>("");
   const [uploadToAc, setUploadToAc] = useState(false);
   const [regTabs, setRegTabs] = useState<string[]>([]);
@@ -186,6 +192,7 @@ export function UploadForm({
     if (qaFile) fd.set("qaFile", qaFile);
     else fd.delete("qaFile");
     fd.set("presenter", presenter);
+    fd.set("workshopType", workshopType);
     fd.set("workshopDate", workshopDate);
     fd.set("uploadToAc", isFedPilot && uploadToAc ? "true" : "false");
     fd.set("registrantTab", regTab);
@@ -315,7 +322,7 @@ export function UploadForm({
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
           <Input
@@ -339,6 +346,27 @@ export function UploadForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Workshop type</Label>
+          <Select
+            value={workshopType}
+            onValueChange={(v) => setWorkshopType(v as WorkshopType)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WORKSHOP_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            L&amp;Ls have no evaluation — the report drops that section and its download.
+          </p>
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import { RetentionChart } from "@/components/charts/retention-chart";
 import { AttendeesTable } from "@/components/attendees-table";
 import { AttendeeDetailModal, fullName, type PersonRef } from "@/components/attendee-detail-modal";
 import { SectionHelp } from "@/components/section-help";
+import { hasEvaluations } from "@/lib/workshop-type";
 
 const normEmail = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
 const normName = (v: string | null | undefined) =>
@@ -261,6 +262,10 @@ export function WorkshopDetail({
   shareBar?: React.ReactNode;
 }) {
   const funnel = buildFunnel(attendees);
+  // L&Ls run no evaluation, so every eval-shaped part of the report drops out:
+  // the "What attendees said" section, its jump link, the two At-a-glance rows,
+  // the download button, and the per-attendee eval lookup in the modal.
+  const showEvals = hasEvaluations(workshop);
   const liveAttendees = attendees.filter(isLive);
   const visibleQA = qa.filter((q) => !q.dismissed);
   const totals = engagementTotals(liveAttendees, visibleQA.length);
@@ -331,84 +336,88 @@ export function WorkshopDetail({
         />
       </div>
 
-      {/* Attendee feedback — rating banner leads, then the quote wall */}
-      <section id="said" className="space-y-4">
-        <SectionHeading
-          eyebrow="Social proof"
-          title="What attendees said"
-          help={
-            <SectionHelp
-              title="What attendees said"
-              whatItIs="Attendees' own evaluation comments and star ratings for this workshop, pulled live from your evaluations sheet."
-              whatToClick="Click any comment to open that person's full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” in Report actions to export them all."
-              booking="Their own words are your best opener. Reach out referencing a specific comment (“you mentioned … in your feedback”) and quote the rating (“attendees rated this 4.7/5”) to make the ask feel earned."
-            />
-          }
-          count={evalComments.length > 0 ? `${evalComments.length} quoted` : undefined}
-        />
-        {evalComments.length === 0 && workshop.eval_rating_avg === null ? (
-          <div className={`${CARD} px-5 py-6 text-[13px] text-ink-3`}>
-            No eval responses linked to this workshop yet. They&apos;ll appear here once
-            attendees fill out the evaluation form and the date in the sheet falls within
-            7 days after the workshop date. Click <b className="text-ink-2">Re-fetch evals</b>
-            {" "}to retry.
-          </div>
-        ) : null}
-        {workshop.eval_rating_avg !== null && (
-          <RatingBanner
-            avg={workshop.eval_rating_avg}
-            responses={workshop.eval_rating_responses}
+      {showEvals && (
+        <>
+        {/* Attendee feedback — rating banner leads, then the quote wall */}
+        <section id="said" className="space-y-4">
+          <SectionHeading
+            eyebrow="Social proof"
+            title="What attendees said"
+            help={
+              <SectionHelp
+                title="What attendees said"
+                whatItIs="Attendees' own evaluation comments and star ratings for this workshop, pulled live from your evaluations sheet."
+                whatToClick="Click any comment to open that person's full profile — their questions, chats, time in session, and evaluation. Use “Download evaluations” in Report actions to export them all."
+                booking="Their own words are your best opener. Reach out referencing a specific comment (“you mentioned … in your feedback”) and quote the rating (“attendees rated this 4.7/5”) to make the ask feel earned."
+              />
+            }
+            count={evalComments.length > 0 ? `${evalComments.length} quoted` : undefined}
           />
-        )}
-        {evalComments.length > 0 && (
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-            {evalComments.slice(0, 6).map((c) => {
-              const canOpen = !!c.comment_author;
-              const inner = (
-                <>
-                  <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand to-brand-deep opacity-60" />
-                  <div className="mb-1.5 font-display text-[18px] font-bold leading-none text-brand opacity-40">
-                    &ldquo;
-                  </div>
-                  <div className="flex-1 text-[14px] leading-[1.55] text-ink-1 [text-wrap:pretty]">
-                    {c.comment_text}
-                  </div>
-                  {(c.comment_author || c.comment_agency) && (
-                    <div className="mt-3.5 flex items-center gap-2.5 border-t border-line-2 pt-3 font-mono text-[11px] tracking-[0.02em] text-ink-3">
-                      <span className="text-ink-4">—</span>
-                      <span>
-                        {c.comment_author ?? "Anonymous"}
-                        {c.comment_agency ? `, ${c.comment_agency}` : ""}
-                      </span>
+          {evalComments.length === 0 && workshop.eval_rating_avg === null ? (
+            <div className={`${CARD} px-5 py-6 text-[13px] text-ink-3`}>
+              No eval responses linked to this workshop yet. They&apos;ll appear here once
+              attendees fill out the evaluation form and the date in the sheet falls within
+              7 days after the workshop date. Click <b className="text-ink-2">Re-fetch evals</b>
+              {" "}to retry.
+            </div>
+          ) : null}
+          {workshop.eval_rating_avg !== null && (
+            <RatingBanner
+              avg={workshop.eval_rating_avg}
+              responses={workshop.eval_rating_responses}
+            />
+          )}
+          {evalComments.length > 0 && (
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+              {evalComments.slice(0, 6).map((c) => {
+                const canOpen = !!c.comment_author;
+                const inner = (
+                  <>
+                    <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand to-brand-deep opacity-60" />
+                    <div className="mb-1.5 font-display text-[18px] font-bold leading-none text-brand opacity-40">
+                      &ldquo;
                     </div>
-                  )}
-                </>
-              );
-              const cardClass = `relative flex min-h-[160px] flex-col overflow-hidden p-[15px_17px_17px] ${CARD}`;
-              return canOpen ? (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setSelected({ name: c.comment_author, email: c.comment_email })}
-                  className={`${cardClass} text-left transition hover:border-line-1 hover:shadow-md`}
-                  title="View this person's details"
-                >
-                  {inner}
-                </button>
-              ) : (
-                <div key={c.id} className={cardClass}>
-                  {inner}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {evalComments.length > 6 && (
-          <p className="text-[12px] text-ink-3">
-            Showing 6 of {evalComments.length}. Use Report actions to download them all.
-          </p>
-        )}
-      </section>
+                    <div className="flex-1 text-[14px] leading-[1.55] text-ink-1 [text-wrap:pretty]">
+                      {c.comment_text}
+                    </div>
+                    {(c.comment_author || c.comment_agency) && (
+                      <div className="mt-3.5 flex items-center gap-2.5 border-t border-line-2 pt-3 font-mono text-[11px] tracking-[0.02em] text-ink-3">
+                        <span className="text-ink-4">—</span>
+                        <span>
+                          {c.comment_author ?? "Anonymous"}
+                          {c.comment_agency ? `, ${c.comment_agency}` : ""}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+                const cardClass = `relative flex min-h-[160px] flex-col overflow-hidden p-[15px_17px_17px] ${CARD}`;
+                return canOpen ? (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelected({ name: c.comment_author, email: c.comment_email })}
+                    className={`${cardClass} text-left transition hover:border-line-1 hover:shadow-md`}
+                    title="View this person's details"
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <div key={c.id} className={cardClass}>
+                    {inner}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {evalComments.length > 6 && (
+            <p className="text-[12px] text-ink-3">
+              Showing 6 of {evalComments.length}. Use Report actions to download them all.
+            </p>
+          )}
+        </section>
+        </>
+      )}
 
       {/* Charts row */}
       <section id="participation" className="space-y-4">
@@ -724,7 +733,7 @@ export function WorkshopDetail({
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-6">
-          {(exportAllHref || leadsExportHref || evalsExportHref) && (
+          {(exportAllHref || leadsExportHref || (showEvals && evalsExportHref)) && (
             <div className={`${CARD} p-[15px_17px]`}>
               <h2 className={RAIL_LABEL}>Report actions</h2>
               <div className="space-y-2">
@@ -738,7 +747,7 @@ export function WorkshopDetail({
                     ↓ Export All Registrants
                   </a>
                 )}
-                {evalsExportHref && (
+                {showEvals && evalsExportHref && (
                   <a href={evalsExportHref} className={`${RAIL_BTN} border-line-1 bg-surface text-ink-2 hover:bg-bg-2 hover:text-ink-1`}>
                     ↓ Download evaluations
                   </a>
@@ -750,7 +759,7 @@ export function WorkshopDetail({
           <div className={`${CARD} p-[15px_17px]`}>
             <h2 className={RAIL_LABEL}>At a glance</h2>
             <ul className="m-0 list-none p-0">
-              {workshop.eval_rating_avg !== null && (
+              {showEvals && workshop.eval_rating_avg !== null && (
                 <GlanceRow label="Average rating" value={workshop.eval_rating_avg.toFixed(1)} />
               )}
               <GlanceRow
@@ -759,7 +768,7 @@ export function WorkshopDetail({
               />
               <GlanceRow label="Questions asked" value={visibleQA.length} />
               <GlanceRow label="Live attendees" value={liveAttendees.length} />
-              {evalComments.length > 0 && (
+              {showEvals && evalComments.length > 0 && (
                 <GlanceRow label="Evaluations quoted" value={evalComments.length} />
               )}
             </ul>
@@ -769,7 +778,7 @@ export function WorkshopDetail({
             <h2 className={RAIL_LABEL}>Jump to</h2>
             <ul className="m-0 list-none p-0">
               {[
-                ["#said", "What attendees said"],
+                ...(showEvals ? [["#said", "What attendees said"]] : []),
                 ["#participation", "Engagement & retention"],
                 ["#signals", "Buying signals"],
                 ["#qa", "Q&A"],
@@ -792,6 +801,7 @@ export function WorkshopDetail({
           person={selected}
           attendee={selectedAttendee}
           workshopId={workshop.id}
+          showEvals={showEvals}
           scheduledMinutes={workshop.scheduled_minutes}
           chats={chats}
           qa={qa}

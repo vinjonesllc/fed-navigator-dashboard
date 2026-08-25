@@ -6,6 +6,7 @@ import { engagementIndex } from "@/lib/workshop-stats";
 import { getAttendeeEvalColumns, getEvalColumnsByIdentity } from "@/lib/eval-comments";
 import { fetchTabCsvForExport } from "@/lib/google-sheets";
 import { splitName } from "@/lib/name";
+import { hasEvaluations } from "@/lib/workshop-type";
 import type { Attendee, Workshop } from "@/lib/supabase/types";
 
 type Preset = "hot" | "engaged" | "live" | "noshow" | "all";
@@ -166,7 +167,8 @@ async function buildRegistrationCsv(
   }
 
   // Evaluation columns — attendee reports only, matched by first+last+agency.
-  const includeEval = ATTENDEE_PRESETS.has(preset);
+  // L&Ls have no evaluation, so they get the registration columns alone.
+  const includeEval = ATTENDEE_PRESETS.has(preset) && hasEvaluations(workshop);
   let evalHeaders: string[] = [];
   let evalPerRow: (Record<string, string> | null)[] = [];
   if (includeEval) {
@@ -298,7 +300,7 @@ async function buildAttendeeFallbackCsv(
   // Eval append (best-effort), only for attendee reports.
   let evalHeaders: string[] = [];
   let evalPerRow: (Record<string, string> | null)[] = [];
-  if (sheetUrl && ATTENDEE_PRESETS.has(preset)) {
+  if (sheetUrl && ATTENDEE_PRESETS.has(preset) && hasEvaluations(workshop)) {
     const people = rows.map((r) => {
       const n = splitName(r.first_name, r.last_name);
       return { email: r.email ?? null, name: `${n.first} ${n.last}`.trim() || null };

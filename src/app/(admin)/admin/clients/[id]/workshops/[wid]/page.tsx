@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isContentManager, requireConsoleAccess, userCanAccessClient } from "@/lib/auth";
 import { WorkshopDetail } from "@/components/workshop-detail";
+import { hasEvaluations } from "@/lib/workshop-type";
 import type {
   Attendee,
   Client,
@@ -87,7 +88,11 @@ export default async function AdminWorkshopDetailPage({
       backLabel={client.name}
       leadsExportHref={`/api/leads/export?workshopId=${wid}&preset=live`}
       exportAllHref={`/api/leads/export?workshopId=${wid}&preset=all`}
-      evalsExportHref={client.eval_sheet_url ? `/api/evals/export?workshopId=${wid}` : undefined}
+      evalsExportHref={
+        client.eval_sheet_url && hasEvaluations(workshop)
+          ? `/api/evals/export?workshopId=${wid}`
+          : undefined
+      }
       shareBar={
         manager ? (
           <ShareLinkBar workshopId={wid} shareToken={workshop.share_token ?? null} />
@@ -114,7 +119,7 @@ export default async function AdminWorkshopDetailPage({
             </Link>
             <ReuploadButton workshopId={wid} kind="chat" label="Re-upload Chat" />
             <ReuploadButton workshopId={wid} kind="qa" label="Re-upload Q&A" />
-            <RefetchEvalButton workshopId={wid} />
+            {hasEvaluations(workshop) && <RefetchEvalButton workshopId={wid} />}
             <ReextractButton workshopId={wid} />
             <DeleteWorkshopButton workshopId={wid} clientId={id} />
           </>

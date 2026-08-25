@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { WorkshopDetail } from "@/components/workshop-detail";
+import { hasEvaluations } from "@/lib/workshop-type";
 import type {
   Attendee,
   Workshop,
@@ -79,7 +80,11 @@ export default async function WorkshopDetailPage({
       backLabel="Workshops"
       leadsExportHref={`/api/leads/export?workshopId=${id}&preset=live`}
       exportAllHref={`/api/leads/export?workshopId=${id}&preset=all`}
-      evalsExportHref={client?.eval_sheet_url ? `/api/evals/export?workshopId=${id}` : undefined}
+      evalsExportHref={
+        client?.eval_sheet_url && hasEvaluations(workshop)
+          ? `/api/evals/export?workshopId=${id}`
+          : undefined
+      }
     />
   );
 }

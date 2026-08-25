@@ -17,6 +17,11 @@ import {
 import { DatePicker } from "@/components/date-picker";
 import { updateWorkshop } from "@/app/(admin)/admin/upload/actions";
 import type { Workshop } from "@/lib/supabase/types";
+import {
+  DEFAULT_WORKSHOP_TYPE,
+  WORKSHOP_TYPES,
+  type WorkshopType,
+} from "@/lib/workshop-type";
 
 const PRESENTERS = ["Dionne Belk", "Kevin Jones"];
 
@@ -38,6 +43,9 @@ export function WorkshopEditForm({
   const [workshopDate, setWorkshopDate] = useState<string>(workshop.workshop_date ?? "");
   const [presenter, setPresenter] = useState<string>(workshop.presenter ?? "");
   const [regTab, setRegTab] = useState<string>(workshop.registrant_tab ?? NONE);
+  const [workshopType, setWorkshopType] = useState<WorkshopType>(
+    workshop.workshop_type === "lnl" ? "lnl" : DEFAULT_WORKSHOP_TYPE,
+  );
 
   // Include the current presenter as an option even if it's not in the canned
   // list, so editing a workshop never silently drops an existing value.
@@ -61,6 +69,7 @@ export function WorkshopEditForm({
     fd.set("workshopDate", workshopDate);
     fd.set("presenter", presenter);
     fd.set("registrantTab", regTab === NONE ? "" : regTab);
+    fd.set("workshopType", workshopType);
 
     const pendingToast = toast.loading("Saving workshop…");
     startTransition(async () => {
@@ -102,7 +111,7 @@ export function WorkshopEditForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label>Presenter</Label>
           <Select value={presenter} onValueChange={setPresenter}>
@@ -117,6 +126,28 @@ export function WorkshopEditForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Workshop type</Label>
+          <Select
+            value={workshopType}
+            onValueChange={(v) => setWorkshopType(v as WorkshopType)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WORKSHOP_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Switching to L&amp;L drops the evaluation section, its download, and any
+            eval quotes already pulled in.
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="topic">Topic</Label>

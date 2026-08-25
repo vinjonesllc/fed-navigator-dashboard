@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { listSheetTabs } from "@/lib/google-sheets";
+import { hasEvaluations } from "@/lib/workshop-type";
 
 type ExtractedComment = {
   comment_text: string;
@@ -533,13 +534,20 @@ export async function fetchEvalComments(
 
   const admin = createSupabaseAdminClient();
 
+  // `*` rather than a column list: `workshop_type` doesn't exist until
+  // migration 0032 is applied, and naming a missing column errors the query.
   const { data: workshop } = await admin
     .from("workshops")
-    .select("id, client_id, workshop_date")
+    .select("*")
     .eq("id", workshopId)
     .maybeSingle();
 
   if (!workshop) return { inserted: 0, error: "Workshop not found" };
+  // L&Ls don't run an evaluation. Guarded here rather than at each call site so
+  // the upload, the Re-fetch evals button, and anything added later all agree.
+  if (!hasEvaluations(workshop)) {
+    return { inserted: 0, error: "This is an L&L — it has no evaluation." };
+  }
 
   const { data: client } = await admin
     .from("clients")

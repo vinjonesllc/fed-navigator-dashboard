@@ -74,6 +74,7 @@ export function AttendeeDetailModal({
   person,
   attendee,
   workshopId,
+  showEvals,
   scheduledMinutes,
   chats,
   qa,
@@ -83,6 +84,8 @@ export function AttendeeDetailModal({
   person: PersonRef;
   attendee: Attendee | null;
   workshopId: string;
+  /** False on an L&L — no evaluation exists, so skip the lookup and the section. */
+  showEvals: boolean;
   scheduledMinutes: number | null;
   chats: WorkshopChat[];
   qa: WorkshopQA[];
@@ -101,6 +104,7 @@ export function AttendeeDetailModal({
   });
 
   useEffect(() => {
+    if (!showEvals) return;
     // Already looked up during this page session — no request, no spinner.
     const hit = EVAL_CACHE.get(cacheKey);
     if (hit) {
@@ -129,7 +133,7 @@ export function AttendeeDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [workshopId, email, name, cacheKey]);
+  }, [workshopId, email, name, cacheKey, showEvals]);
 
   const myChats = chats.filter((c) => rowMatches(c.sender_email, c.sender_name, email, name));
   const myQuestions = qa.filter(
@@ -219,7 +223,8 @@ export function AttendeeDetailModal({
           )}
         </section>
 
-        {/* Evaluation */}
+        {/* Evaluation — omitted for L&Ls, which don't run one */}
+        {showEvals && (
         <section className="space-y-2">
           <h4 className="font-display text-[13px] font-semibold text-ink-1">Evaluation</h4>
           {evalState.status === "loading" && (
@@ -246,6 +251,7 @@ export function AttendeeDetailModal({
               </dl>
             ))}
         </section>
+        )}
       </DialogContent>
     </Dialog>
   );

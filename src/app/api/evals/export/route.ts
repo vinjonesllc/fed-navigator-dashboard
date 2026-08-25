@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireUser, userCanAccessClient } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getEvalExportCsv } from "@/lib/eval-comments";
+import { hasEvaluations } from "@/lib/workshop-type";
 import type { Workshop } from "@/lib/supabase/types";
 
 // Downloads all evaluation responses for a workshop — every row in the eval
@@ -14,17 +15,25 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = createSupabaseAdminClient();
+  // `*` because `workshop_type` doesn't exist until migration 0032 is applied.
   const { data: workshop } = await admin
     .from("workshops")
-    .select("id, client_id, title, workshop_date")
+    .select("*")
     .eq("id", workshopId)
-    .maybeSingle<Pick<Workshop, "id" | "client_id" | "title" | "workshop_date">>();
+    .maybeSingle<Workshop>();
 
   if (!workshop) {
     return NextResponse.json({ error: "Workshop not found" }, { status: 404 });
   }
   if (!userCanAccessClient(session, workshop.client_id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  // The button is hidden for L&Ls; this covers a stale tab or a shared link.
+  if (!hasEvaluations(workshop)) {
+    return NextResponse.json(
+      { error: "This is an L&L — it has no evaluation to download." },
+      { status: 404 },
+    );
   }
 
   const { data: client } = await admin

@@ -1,3 +1,5 @@
+import type { WorkshopType } from "@/lib/workshop-type";
+
 export type AppRole = "admin" | "editor" | "super_advisor" | "advisor" | "client";
 
 export const ROLE_LABELS: Record<AppRole, string> = {
@@ -86,6 +88,10 @@ export type Workshop = {
   /** The eval/registration Google Sheet tab chosen at upload; the leads export
    *  reads exactly this tab. Null on older workshops (falls back). */
   registrant_tab: string | null;
+  /** "full" (has an evaluation) or "lnl" (Lunch & Learn — no evaluation).
+   *  Undefined on rows read before migration 0032; treat anything that isn't
+   *  "lnl" as a full workshop. See `hasEvaluations` in lib/workshop-type. */
+  workshop_type: WorkshopType;
   part2_enabled: boolean;
   /** Random hex token that keys the public /share/workshops/<token> page.
    *  Separate from `id` so a shared link can be rotated or revoked without

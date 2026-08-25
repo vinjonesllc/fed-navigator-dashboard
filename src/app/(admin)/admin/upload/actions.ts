@@ -46,6 +46,8 @@ const Schema = z.object({
   uploadToAc: z.coerce.boolean().optional(),
   // Optional override of the client's saved registrations tab, chosen per upload.
   registrantTab: z.string().optional(),
+  // "lnl" suppresses everything evaluation-related; anything else is a full workshop.
+  workshopType: z.enum(["full", "lnl"]).default("full"),
 });
 
 export async function uploadCsv(formData: FormData) {
@@ -77,6 +79,7 @@ export async function uploadCsv(formData: FormData) {
     notes: formData.get("notes") ?? undefined,
     uploadToAc: formData.get("uploadToAc") === "true",
     registrantTab: formData.get("registrantTab") ?? undefined,
+    workshopType: formData.get("workshopType") ?? undefined,
   });
 
   const [attendeeCsv, chatCsv, qaCsv] = await Promise.all([
@@ -112,6 +115,17 @@ export async function uploadCsv(formData: FormData) {
     console.error("[upload] enrich failed:", e);
   }
 
+  // Persist the workshop type. Best-effort for the same reason as the tab below:
+  // until migration 0032 is applied the column doesn't exist, and an upload must
+  // not fail over it. Skipped for "full", which is the column default anyway.
+  if (parsed.workshopType === "lnl") {
+    const { error } = await admin
+      .from("workshops")
+      .update({ workshop_type: parsed.workshopType })
+      .eq("id", result.workshopId);
+    if (error) console.warn(`[upload] could not save workshop_type (column may be missing): ${error.message}`);
+  }
+
   // Persist the chosen registrations tab so the leads export reads exactly it.
   // Best-effort: if the registrant_tab column hasn't been added yet, don't fail
   // the upload — the export just falls back until the migration is applied.
@@ -144,9 +158,11 @@ export async function uploadCsv(formData: FormData) {
   // 4. Run Claude-side analyses synchronously so the workshop detail page
   //    renders with intents + eval comments already populated.
   //    Adds ~20-40s to upload.
+  const isLnl = parsed.workshopType === "lnl";
   const claudeResults = await Promise.allSettled([
     extractIntents(result.workshopId),
-    fetchEvalComments(result.workshopId),
+    // L&Ls have no evaluation to fetch.
+    ...(isLnl ? [] : [fetchEvalComments(result.workshopId)]),
   ]);
   for (const r of claudeResults) {
     if (r.status === "rejected") {
@@ -325,6 +341,8 @@ const UpdateSchema = z.object({
   scheduledMinutes: z.coerce.number().int().positive().max(720),
   // Optional; "" clears it. Persisted separately so a missing column can't fail the edit.
   registrantTab: z.string().optional(),
+  // Also persisted separately, for the same reason.
+  workshopType: z.enum(["full", "lnl"]).optional(),
 });
 
 export async function updateWorkshop(formData: FormData) {
@@ -338,6 +356,7 @@ export async function updateWorkshop(formData: FormData) {
     notes: formData.get("notes") ?? undefined,
     scheduledMinutes: formData.get("scheduledMinutes"),
     registrantTab: formData.get("registrantTab") ?? undefined,
+    workshopType: formData.get("workshopType") ?? undefined,
   });
 
   const admin = createSupabaseAdminClient();
@@ -365,6 +384,25 @@ export async function updateWorkshop(formData: FormData) {
       .update({ registrant_tab: parsed.registrantTab.trim() || null })
       .eq("id", parsed.workshopId);
     if (tabErr) console.warn(`[updateWorkshop] could not save registrant_tab (column may be missing): ${tabErr.message}`);
+  }
+
+  // Workshop type — same best-effort treatment (migration 0032).
+  if (parsed.workshopType) {
+    const { error: typeErr } = await admin
+      .from("workshops")
+      .update({ workshop_type: parsed.workshopType })
+      .eq("id", parsed.workshopId);
+    if (typeErr) {
+      console.warn(`[updateWorkshop] could not save workshop_type (column may be missing): ${typeErr.message}`);
+    } else if (parsed.workshopType === "lnl") {
+      // Switching to L&L retires any eval data already attached, so the report
+      // doesn't keep serving quotes from a workshop that has no evaluation.
+      await admin.from("workshop_eval_comments").delete().eq("workshop_id", parsed.workshopId);
+      await admin
+        .from("workshops")
+        .update({ eval_rating_avg: null, eval_rating_responses: null })
+        .eq("id", parsed.workshopId);
+    }
   }
 
   revalidatePath("/admin/clients");
