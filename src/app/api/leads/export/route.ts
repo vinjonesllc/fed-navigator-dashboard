@@ -105,6 +105,23 @@ async function buildRegistrationCsv(
   const attEmails = new Set(attendees.map((a) => norm(a.email)).filter(Boolean));
   const regRows = parsed.data.filter((r) => attEmails.has(norm(r[emailCol])));
 
+  // The Zoom upload IS the registration list, so a tab that belongs to this
+  // workshop covers nearly all of it. Near-zero overlap means the workshop is
+  // pointed at the wrong tab (e.g. a "MASTER" tab holding a different month) —
+  // and because the join is what filters the rows, that used to produce a
+  // header-only CSV with no error. Skip to the attendee fallback instead, so a
+  // misconfigured tab degrades to a usable export rather than a blank one.
+  const covered = new Set(regRows.map((r) => norm(r[emailCol]))).size;
+  const coverage = attEmails.size > 0 ? covered / attEmails.size : 1;
+  console.log(
+    `[leads/export] tab "${tab}" covers ${covered}/${attEmails.size} attendees`,
+  );
+  if (attEmails.size >= 5 && coverage < 0.25) {
+    return {
+      skip: `tab "${tab}" matches only ${covered} of ${attEmails.size} attendees — wrong tab for this workshop`,
+    };
+  }
+
   // Index this workshop's Zoom attendees by email for the engagement / time join.
   const attByEmail = new Map<string, Attendee>();
   for (const a of attendees) {

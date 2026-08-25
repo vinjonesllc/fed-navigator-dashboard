@@ -52,6 +52,30 @@ export async function listSheetTabs(sheetUrl: string | null | undefined): Promis
 }
 
 /**
+ * Decode the JS string escapes Google emits in the htmlview bootstrap block.
+ * Beyond `\/` and `\"` it uses `\xNN` / `\uNNNN` for punctuation — notably `&`,
+ * so a tab literally named "L&L Registrations" arrives as `L\x26L Registrations`.
+ * A naive `\\(.)` strip turned that into "Lx26L Registrations", a name that then
+ * matched no real tab.
+ */
+function unescapeJsString(raw: string): string {
+  return raw.replace(
+    /\\(?:x([0-9a-fA-F]{2})|u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|(.))/g,
+    (_m, hex2, uBrace, u4, other) => {
+      if (hex2) return String.fromCodePoint(parseInt(hex2, 16));
+      if (uBrace) return String.fromCodePoint(parseInt(uBrace, 16));
+      if (u4) return String.fromCodePoint(parseInt(u4, 16));
+      switch (other) {
+        case "n": return "\n";
+        case "t": return "\t";
+        case "r": return "\r";
+        default: return other;
+      }
+    },
+  );
+}
+
+/**
  * Pull tab {name, gid} pairs out of the sheet's htmlview page, which embeds them
  * in an `items.push({name: "Tab", pageUrl: "...gid=NNN", ...})` bootstrap block.
  * No API key needed. The gid lets us read a tab via the fresher export endpoint.
@@ -67,7 +91,7 @@ async function getTabItems(sheetId: string): Promise<{ name: string; gid: string
     for (const m of html.matchAll(
       /name:\s*\\?"((?:\\.|[^"\\])*?)\\?",\s*pageUrl:[^}]*?gid=(\d+)/g,
     )) {
-      const name = m[1].replace(/\\(.)/g, "$1").trim(); // unescape \/ and \"
+      const name = unescapeJsString(m[1]).trim();
       if (name) items.push({ name, gid: m[2] });
     }
     return items;
@@ -105,11 +129,16 @@ function isSignInHtml(text: string): boolean {
   return text.trim().startsWith("<");
 }
 
+// Tab names travel through a saved DB column, a <select>, and two different
+// Google endpoints, so compare them forgivingly: trailing spaces in the sheet's
+// own title and casing differences must not cost us the gid.
+const sameTab = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
 async function fetchTabCsv(sheetId: string, tab: string): Promise<string | null> {
   // 1) Fresh path: resolve the tab's gid and use the export endpoint.
   try {
     const items = await getTabItems(sheetId);
-    const match = items.find((t) => t.name === tab);
+    const match = items.find((t) => sameTab(t.name, tab));
     if (match) {
       const cb = Date.now(); // cache-buster — keep reads current
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${match.gid}&_cb=${cb}`;
@@ -118,6 +147,17 @@ async function fetchTabCsv(sheetId: string, tab: string): Promise<string | null>
         const text = await res.text();
         if (!isSignInHtml(text)) return text;
       }
+    } else if (items.length > 0) {
+      // We can see every tab and this isn't one of them (renamed or deleted).
+      // Do NOT fall through to gviz: asked for a tab that doesn't exist, gviz
+      // silently serves the FIRST sheet, which would export a different
+      // workshop's registrants under this workshop's filename.
+      console.warn(
+        `[google-sheets] tab "${tab}" not found in ${sheetId}; available: ${items
+          .map((t) => t.name)
+          .join(", ")}`,
+      );
+      return null;
     }
   } catch (e) {
     console.error("[google-sheets] fetchTabCsv (export) failed:", e);

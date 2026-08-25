@@ -46,6 +46,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: 502 });
   }
 
+  // No rows in the workshop_date → +7-day window means the responses for this
+  // workshop have not landed in the eval tab yet. Say so — a CSV containing
+  // nothing but a header row reads as a broken download.
+  if (result.count === 0) {
+    return NextResponse.json(
+      {
+        error: `No evaluation responses dated ${workshop.workshop_date} through ${result.windowEnd} were found in the "${result.tab}" tab (it holds ${result.total} rows overall). Add this workshop's responses to that tab, then download again.`,
+      },
+      { status: 404 },
+    );
+  }
+
   const safeTitle = (workshop.title || "workshop").replace(/[^a-z0-9]+/gi, "_").slice(0, 40);
   const filename = `evaluations_${safeTitle}_${workshop.workshop_date}.csv`;
 
