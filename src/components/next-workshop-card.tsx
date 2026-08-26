@@ -1,4 +1,5 @@
 import type { NextWorkshopCard } from "@/lib/next-workshop";
+import { ViewRegistrationsButton } from "@/components/registrations-modal";
 
 const CARD =
   "relative overflow-hidden rounded-[12px] border border-line-1 bg-surface shadow-[var(--shadow)]";
@@ -9,8 +10,19 @@ export function AccentStrip() {
   return <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-brand" />;
 }
 
-/** One workshop, stacked vertically: date → time → # registered → download. */
-function WorkshopTile({ item, exportHref }: { item: NextWorkshopCard; exportHref?: string }) {
+const TILE_BUTTON =
+  "inline-flex w-full items-center justify-center gap-1.5 rounded-[9px] border border-line-1 bg-surface px-3 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink-1";
+
+/** One workshop, stacked vertically: date → time → # registered → view/download. */
+function WorkshopTile({
+  item,
+  exportHref,
+  listHref,
+}: {
+  item: NextWorkshopCard;
+  exportHref?: string;
+  listHref?: string;
+}) {
   return (
     <div className="rounded-[10px] border border-line-1 bg-bg-2 p-3.5">
       <div className="font-display text-[20px] font-semibold leading-tight tracking-[-0.02em] text-ink-1">
@@ -25,26 +37,34 @@ function WorkshopTile({ item, exportHref }: { item: NextWorkshopCard; exportHref
         </span>
         <span className="text-[11px] uppercase tracking-[0.04em] text-ink-3">registered</span>
       </div>
-      {exportHref && (
-        <a
-          href={exportHref}
-          className="mt-3.5 inline-flex w-full items-center justify-center gap-1.5 rounded-[9px] border border-line-1 bg-surface px-3 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-bg-2 hover:text-ink-1"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-3.5 w-3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
-            <path d="M5 21h14" />
-          </svg>
-          Download registrations
-        </a>
+      {(listHref || exportHref) && (
+        <div className="mt-3.5 grid gap-2">
+          {listHref && (
+            <ViewRegistrationsButton
+              href={listHref}
+              dateLabel={item.dateLabel}
+              className={TILE_BUTTON}
+            />
+          )}
+          {exportHref && (
+            <a href={exportHref} className={TILE_BUTTON}>
+              <svg
+                viewBox="0 0 24 24"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+                <path d="M5 21h14" />
+              </svg>
+              Download registrations
+            </a>
+          )}
+        </div>
       )}
     </div>
   );
@@ -61,10 +81,12 @@ function WorkshopTile({ item, exportHref }: { item: NextWorkshopCard; exportHref
 export function NextWorkshop({
   items,
   exportHrefFor,
+  listHrefFor,
   variant = "wide",
 }: {
   items: NextWorkshopCard[];
   exportHrefFor?: (index: number) => string;
+  listHrefFor?: (index: number) => string;
   variant?: "rail" | "wide";
 }) {
   if (items.length === 0) {
@@ -105,6 +127,7 @@ export function NextWorkshop({
             key={item.index}
             item={item}
             exportHref={exportHrefFor && item.hasTab ? exportHrefFor(item.index) : undefined}
+            listHref={listHrefFor && item.hasTab ? listHrefFor(item.index) : undefined}
           />
         ))}
       </div>

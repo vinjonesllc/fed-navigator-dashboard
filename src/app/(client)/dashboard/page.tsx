@@ -40,6 +40,11 @@ export default async function OverviewPage() {
               ? (w) => `/api/registrations/export?clientId=${clientId}&w=${w}`
               : undefined
           }
+          registrationsListFor={
+            client?.eval_sheet_url
+              ? (w) => `/api/registrations/list?clientId=${clientId}&w=${w}`
+              : undefined
+          }
         />
       </div>
     </div>

@@ -116,12 +116,14 @@ export function ClientOverview({
   editHref,
   nextWorkshops,
   registrationsExportFor,
+  registrationsListFor,
 }: {
   workshops: WorkshopWithStats[];
   workshopHref: (id: string) => string;
   editHref?: (id: string) => string;
   nextWorkshops?: NextWorkshopCard[];
   registrationsExportFor?: (index: number) => string;
+  registrationsListFor?: (index: number) => string;
 }) {
   const totalAttendees = workshops.reduce((acc, w) => acc + w.live_count, 0);
   const totalRegistered = workshops.reduce((acc, w) => acc + w.registered_count, 0);
@@ -269,6 +271,7 @@ export function ClientOverview({
         <NextWorkshop
           items={nextWorkshops ?? []}
           exportHrefFor={registrationsExportFor}
+          listHrefFor={registrationsListFor}
           variant="rail"
         />
       </aside>

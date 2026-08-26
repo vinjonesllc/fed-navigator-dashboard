@@ -84,6 +84,11 @@ export default async function ClientDetailPage({
                 ? (w) => `/api/registrations/export?clientId=${id}&w=${w}`
                 : undefined
             }
+            registrationsListFor={
+              client.eval_sheet_url
+                ? (w) => `/api/registrations/list?clientId=${id}&w=${w}`
+                : undefined
+            }
           />
         </TabsContent>
 
