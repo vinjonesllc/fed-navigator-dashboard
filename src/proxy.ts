@@ -15,6 +15,7 @@ const PUBLIC_PATHS = [
   "/api/calendly/webhook",
   "/api/calls/cron", // secret-gated scheduler entrypoint (pinged by pg_cron)
   "/api/calls/reconcile-clickup", // secret-gated ClickUp reconciler (pinged by pg_cron)
+  "/api/qa/export", // token-gated read-only Q&A feed for automation (AGENT_API_TOKEN)
 ];
 
 export async function proxy(request: NextRequest) {

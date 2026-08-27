@@ -39,6 +39,7 @@ Email + password (no magic links — switched to passwords because of SMTP rate-
 - `/admin/upload` — admin/editor, drag the three Zoom CSVs (attendees + chat + Q&A)
 - `/admin/agency-lookup` — admin/editor, edit email-domain → agency table
 - `/api/leads/export?workshopId=…&preset=live|all|engaged|hot|noshow` — CSV download
+- `/api/qa/export` — **no user session**; read-only workshop Q&A for cloud agents / scripts, gated on the `AGENT_API_TOKEN` env var (sent as `Authorization: Bearer …` or `x-agent-token`). `?list=1` to find a workshop, then `?workshopId=…` (or `?client=…&date=YYYY-MM-DD`); `&format=csv`, `&includeDismissed=1`. Rotate the token in Vercel to revoke access
 - `/share/workshops/[token]` — **public**, no auth required; keyed on `workshops.share_token` (never the workshop id). `noindex, nofollow` via page metadata + an `X-Robots-Tag` header on `/share/:path*`. Names nobody — no attendee names, agencies or presenter; eval quotes render text only. Copy / Revoke / Open from the admin workshop page; Revoke rolls the token and 404s the old URL
 
 ## First-time setup (local dev)
