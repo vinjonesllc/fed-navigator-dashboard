@@ -26,7 +26,10 @@ const LIST_MAX = 100;
 
 /** Returns an error response when the caller isn't authorised, else null. */
 function unauthorized(request: NextRequest): NextResponse | null {
-  const expected = process.env.AGENT_API_TOKEN;
+  // Trimmed: a value pasted into the Vercel env editor often carries a trailing
+  // newline, and the length check inside timingSafeEqualStr would reject every
+  // otherwise-correct token because of it.
+  const expected = process.env.AGENT_API_TOKEN?.trim();
   // Distinct from 401 on purpose: this one means "nobody can call this yet",
   // which is a deploy-config problem, not a bad credential.
   if (!expected) {
