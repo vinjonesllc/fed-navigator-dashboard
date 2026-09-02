@@ -47,6 +47,10 @@ const norm = (e: string | null | undefined) => (e ?? "").toLowerCase().trim();
 const ENGAGEMENT_COL = "Engagement";
 const TOTAL_TIME_COL = "Total time spent";
 
+// Leading Y/N column on Export All Registrants, so a mixed registrant list can
+// be sorted by who actually showed up. Attendee reports are already live-only.
+const ATTENDED_COL = "ATTENDED?";
+
 // ---------------------------------------------------------------------------
 // Registration-sheet-driven export (primary path)
 //
@@ -202,6 +206,7 @@ async function buildRegistrationCsv(
     return key;
   };
   const used = new Set<string>();
+  const attendedKey = preset === "all" ? uniq(ATTENDED_COL, used) : null;
   const regOut = regHeaders.map((h) => ({ header: h, key: uniq(h, used) }));
   const engKey = uniq(ENGAGEMENT_COL, used);
   const timeKey = uniq(TOTAL_TIME_COL, used);
@@ -209,8 +214,9 @@ async function buildRegistrationCsv(
 
   const outRows = joined.map(({ reg, att }, i) => {
     const row: Record<string, string | number> = {};
-    for (const { header, key } of regOut) row[key] = reg[header] ?? "";
     const live = att?.participation === "Live";
+    if (attendedKey) row[attendedKey] = live ? "Y" : "N";
+    for (const { header, key } of regOut) row[key] = reg[header] ?? "";
     row[engKey] = live ? engagementIndex(att, workshop.scheduled_minutes) ?? "" : "";
     row[timeKey] = att?.total_time_minutes ?? "";
     const ev = evalPerRow[i] ?? null;
@@ -218,7 +224,13 @@ async function buildRegistrationCsv(
     return row;
   });
 
-  const allColumns = [...regOut.map((r) => r.key), engKey, timeKey, ...evalOut.map((e) => e.key)];
+  const allColumns = [
+    ...(attendedKey ? [attendedKey] : []),
+    ...regOut.map((r) => r.key),
+    engKey,
+    timeKey,
+    ...evalOut.map((e) => e.key),
+  ];
   const nonEmpty = allColumns.filter((col) =>
     outRows.some((row) => row[col] !== "" && row[col] != null),
   );
@@ -316,6 +328,7 @@ async function buildAttendeeFallbackCsv(
     }
   }
 
+  const attendedKey = preset === "all" ? ATTENDED_COL : null;
   const baseKeys = Object.keys(fullRow({} as Attendee, workshop));
   const customKeys = Array.from(
     new Set(rows.flatMap((r) => Object.keys(r.custom_responses ?? {}))),
@@ -326,13 +339,14 @@ async function buildAttendeeFallbackCsv(
 
   const fullRows = rows.map((r, i) => {
     const obj = fullRow(r, workshop);
+    if (attendedKey) obj[attendedKey] = r.participation === "Live" ? "Y" : "N";
     for (const k of customKeys) obj[k] = (r.custom_responses ?? {})[k] ?? "";
     const ev = evalPerRow[i] ?? null;
     for (const h of evalHeaders) obj[evalKey(h)] = ev ? (ev[h] ?? "") : "";
     return obj;
   });
 
-  const allColumns = [...baseKeys, ...customKeys, ...evalKeys];
+  const allColumns = [...(attendedKey ? [attendedKey] : []), ...baseKeys, ...customKeys, ...evalKeys];
   const nonEmpty = allColumns.filter((col) =>
     fullRows.some((row) => row[col] !== "" && row[col] != null),
   );
